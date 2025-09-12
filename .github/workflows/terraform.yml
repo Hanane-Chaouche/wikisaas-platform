@@ -9,7 +9,6 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     env:
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
       TF_CLOUD_ORGANIZATION: "wikisaas-org"
@@ -17,137 +16,29 @@ jobs:
       CONFIG_DIRECTORY: "./terraform"
 
     steps:
-      # 1. Récupérer le code du repo
+      # 1. Récupérer ton code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Récupérer l'ID interne du workspace
-      - name: Get Workspace ID
-        id: get-ws
-        run: |
-          echo "➡️ Récupération de l’ID du workspace..."
-          workspace_resp=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE})
-
-          ws_id=$(echo $workspace_resp | jq -r '.data.id')
-          echo "Workspace ID: $ws_id"
-          echo "ws_id=$ws_id" >> $GITHUB_OUTPUT
-
-      # 3. Créer une configuration-version et uploader le code
+      # 2. Uploader ta configuration vers Terraform Cloud
       - name: Upload Config
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: upload
-        run: |
-          ws_id=${{ steps.get-ws.outputs.ws_id }}
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
 
-          echo "➡️ Création d’une configuration-version..."
-          resp=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            --header "Content-Type: application/vnd.api+json" \
-            --request POST \
-            --data "{\"data\":{\"type\":\"configuration-versions\",\"attributes\":{\"auto-queue-runs\":true}}}" \
-            https://app.terraform.io/api/v2/workspaces/$ws_id/configuration-versions)
-
-          upload_url=$(echo $resp | jq -r '.data.attributes."upload-url"')
-          echo "Upload URL: $upload_url"
-
-          echo " Compression et upload de la config..."
-          cd $CONFIG_DIRECTORY
-          tar -czf ../config.tar.gz .
-          cd -
-          curl --request PUT --header "Content-Type: application/octet-stream" --data-binary @config.tar.gz "$upload_url"
-
-      # 4. Créer un run Terraform
+      # 3. Créer un run (plan + apply)
       - name: Create Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
         id: create-run
-        run: |
-          ws_id=${{ steps.get-ws.outputs.ws_id }}
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
+          auto-apply: true   # ⚡ exécute directement l’apply sans attendre
 
-          echo " Création d’un run Terraform"
-          payload=$(cat <<EOF
-          {
-            "data": {
-              "attributes": {
-                "is-destroy": false,
-                "message": "Run déclenché par GitHub Actions"
-              },
-              "type": "runs",
-              "relationships": {
-                "workspace": {
-                  "data": {
-                    "type": "workspaces",
-                    "id": "$ws_id"
-                  }
-                }
-              }
-            }
-          }
-          EOF
-          )
-
-          response=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            --header "Content-Type: application/vnd.api+json" \
-            --request POST \
-            --data "$payload" \
-            https://app.terraform.io/api/v2/runs)
-
-          echo "$response"
-          run_id=$(echo "$response" | jq -r '.data.id')
-          echo "run_id=$run_id" >> $GITHUB_OUTPUT
-
-      # 4b. Attendre la fin du run
-      - name: Wait for Run to Complete
-        run: |
-          run_id=${{ steps.create-run.outputs.run_id }}
-          echo " Attente de la fin du run $run_id ..."
-          
-          for i in {1..30}; do
-            status=$(curl -s \
-              --header "Authorization: Bearer $TF_API_TOKEN" \
-              https://app.terraform.io/api/v2/runs/$run_id \
-              | jq -r '.data.attributes.status')
-
-            echo " Statut actuel : $status"
-
-            if [ "$status" = "applied" ] || [ "$status" = "planned_and_finished" ]; then
-              echo " Run terminé avec succès"
-              exit 0
-            elif [ "$status" = "errored" ] || [ "$status" = "canceled" ]; then
-              echo " Run échoué ou annulé"
-              exit 1
-            fi
-
-            sleep 10
-          done
-
-          echo " Timeout : le run n'a pas fini après 5 minutes"
-          exit 1
-
-      # 5. Récupérer et afficher les outputs (toujours depuis le state courant)
+      # 4. Récupérer les outputs
       - name: Get Terraform Outputs
         run: |
-          echo " Récupération des outputs Terraform..."
-
-          # 1. Récupérer l’ID du workspace
-          ws_resp=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE})
-          ws_id=$(echo "$ws_resp" | jq -r '.data.id')
-
-          # 2. Récupérer l’ID de la dernière state-version
-          state_resp=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            https://app.terraform.io/api/v2/workspaces/$ws_id/current-state-version)
-          state_id=$(echo "$state_resp" | jq -r '.data.id')
-
-          # 3. Récupérer les outputs liés à cette state-version
-          outputs_resp=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            https://app.terraform.io/api/v2/state-versions/$state_id/outputs)
-
-          if [ "$(echo "$outputs_resp" | jq '.data | length')" -eq 0 ]; then
-            echo "Aucun output trouvé dans l’état courant."
-          else
-            echo "$outputs_resp" | jq -r '.data[] | "\(.attributes.name) = \(.attributes.value)"'
-          fi
+          echo " Récupération des outputs..."
+          terraform output -json || echo "Pas d’outputs dispo"
