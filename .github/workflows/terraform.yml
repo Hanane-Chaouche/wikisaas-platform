@@ -12,7 +12,7 @@ jobs:
 
     env:
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}   # Ton token Terraform Cloud (GitHub Secret)
-      TF_CLOUD_ORGANIZATION: "wikisaas-org"       # Nom de ton organisation HCP/Terraform Cloud
+      TF_CLOUD_ORGANIZATION: "wikisaas-org"       # Nom de ton organisation Terraform Cloud
       TF_WORKSPACE: "wikisaas-platform"           # Workspace Terraform Cloud
       CONFIG_DIRECTORY: "./terraform"             # Chemin des fichiers .tf
 
@@ -37,10 +37,30 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
 
-      # 4. Appliquer les changements
-      - name: Apply Run
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.0.0
-        if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
-        with:
-          run: ${{ steps.apply-run.outputs.run_id }}
-          comment: "Apply triggered by push on main (${{ github.sha }})"
+      # 4. Appliquer les changements (corrigé → pas de boucle infinie)
+      - name: Handle Apply
+        run: |
+          run_id=${{ steps.apply-run.outputs.run_id }}
+          is_confirmable=$(echo '${{ steps.apply-run.outputs.payload }}' | jq -r '.data.attributes.actions.IsConfirmable')
+          
+          if [ "$is_confirmable" = "true" ]; then
+            echo "➡️ Applying run $run_id"
+            curl -s \
+              --header "Authorization: Bearer $TF_API_TOKEN" \
+              --header "Content-Type: application/vnd.api+json" \
+              --request POST \
+              --data '{"comment":"Apply triggered by GitHub Actions"}' \
+              https://app.terraform.io/api/v2/runs/$run_id/actions/apply
+          else
+            echo " Run $run_id is auto-applied or has nothing to do."
+          fi
+
+      # 5. Récupérer et afficher les outputs Terraform Cloud
+      - name: Get Terraform Outputs
+        run: |
+          echo "Récupération des outputs Terraform..."
+          curl -s \
+            --header "Authorization: Bearer $TF_API_TOKEN" \
+            --header "Content-Type: application/vnd.api+json" \
+            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE}/current-state-version-outputs \
+            | jq -r '.data[] | "\(.attributes.name) = \(.attributes.value)"'
