@@ -9,6 +9,7 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+
     env:
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
       TF_CLOUD_ORGANIZATION: "wikisaas-org"
@@ -16,11 +17,11 @@ jobs:
       CONFIG_DIRECTORY: "./terraform"
 
     steps:
-      # 1. Récupérer ton code
+      # 1. Récupérer le code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Uploader ta configuration vers Terraform Cloud
+      # 2. Uploader la configuration vers Terraform Cloud
       - name: Upload Config
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: upload
@@ -28,17 +29,36 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
-      # 3. Créer un run (plan + apply)
+      # 3. Créer un run Terraform (plan + apply auto)
       - name: Create Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
         id: create-run
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-          auto-apply: true   # ⚡ exécute directement l’apply sans attendre
+          auto-apply: true
 
-      # 4. Récupérer les outputs
+      # 4. Installer Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      # 5. Init Terraform (backend = Terraform Cloud)
+      - name: Init Terraform
+        run: terraform -chdir=terraform init
+
+      # 6. Récupérer les outputs
       - name: Get Terraform Outputs
+        run: terraform -chdir=terraform output -json
+
+      # 7. Exporter outputs dans les variables GitHub (optionnel)
+      - name: Export Outputs
         run: |
-          echo " Récupération des outputs..."
-          terraform output -json || echo "Pas d’outputs dispo"
+          eval "$(terraform -chdir=terraform output -json | jq -r 'to_entries|map("echo \(.key)=\(.value.value) >> $GITHUB_ENV")|.[]')"
+
+      # 8. Exemple d’utilisation (Ansible ou autre)
+      - name: Test access to outputs
+        run: |
+          echo "EC2 Public IP = $EC2_PUBLIC_IP"
+          echo "DB Endpoints = $DB_ENDPOINTS"
