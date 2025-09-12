@@ -124,12 +124,30 @@ jobs:
           echo "❌ Timeout : le run n'a pas fini après 5 minutes"
           exit 1
 
-      # 5. Récupérer et afficher les outputs Terraform Cloud
+      # 5. Récupérer et afficher les outputs (toujours depuis le state courant)
       - name: Get Terraform Outputs
         run: |
           echo "📦 Récupération des outputs Terraform..."
-          curl -s \
+
+          # 1. Récupérer l’ID du workspace
+          ws_resp=$(curl -s \
             --header "Authorization: Bearer $TF_API_TOKEN" \
-            --header "Content-Type: application/vnd.api+json" \
-            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE}/current-state-version-outputs \
-            | jq -r '.data[] | "\(.attributes.name) = \(.attributes.value)"'
+            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE})
+          ws_id=$(echo "$ws_resp" | jq -r '.data.id')
+
+          # 2. Récupérer l’ID de la dernière state-version
+          state_resp=$(curl -s \
+            --header "Authorization: Bearer $TF_API_TOKEN" \
+            https://app.terraform.io/api/v2/workspaces/$ws_id/current-state-version)
+          state_id=$(echo "$state_resp" | jq -r '.data.id')
+
+          # 3. Récupérer les outputs liés à cette state-version
+          outputs_resp=$(curl -s \
+            --header "Authorization: Bearer $TF_API_TOKEN" \
+            https://app.terraform.io/api/v2/state-versions/$state_id/outputs)
+
+          if [ "$(echo "$outputs_resp" | jq '.data | length')" -eq 0 ]; then
+            echo "ℹ️ Aucun output trouvé dans l’état courant."
+          else
+            echo "$outputs_resp" | jq -r '.data[] | "\(.attributes.name) = \(.attributes.value)"'
+          fi
