@@ -51,7 +51,7 @@ jobs:
           upload_url=$(echo $resp | jq -r '.data.attributes."upload-url"')
           echo "Upload URL: $upload_url"
 
-          echo "➡️ Compression et upload de la config..."
+          echo " Compression et upload de la config..."
           cd $CONFIG_DIRECTORY
           tar -czf ../config.tar.gz .
           cd -
@@ -63,7 +63,7 @@ jobs:
         run: |
           ws_id=${{ steps.get-ws.outputs.ws_id }}
 
-          echo "➡️ Création d’un run Terraform"
+          echo " Création d’un run Terraform"
           payload=$(cat <<EOF
           {
             "data": {
@@ -100,7 +100,7 @@ jobs:
       - name: Wait for Run to Complete
         run: |
           run_id=${{ steps.create-run.outputs.run_id }}
-          echo "⏳ Attente de la fin du run $run_id ..."
+          echo " Attente de la fin du run $run_id ..."
           
           for i in {1..30}; do
             status=$(curl -s \
@@ -108,26 +108,26 @@ jobs:
               https://app.terraform.io/api/v2/runs/$run_id \
               | jq -r '.data.attributes.status')
 
-            echo "➡️ Statut actuel : $status"
+            echo " Statut actuel : $status"
 
             if [ "$status" = "applied" ] || [ "$status" = "planned_and_finished" ]; then
-              echo "✅ Run terminé avec succès"
+              echo " Run terminé avec succès"
               exit 0
             elif [ "$status" = "errored" ] || [ "$status" = "canceled" ]; then
-              echo "❌ Run échoué ou annulé"
+              echo " Run échoué ou annulé"
               exit 1
             fi
 
             sleep 10
           done
 
-          echo "❌ Timeout : le run n'a pas fini après 5 minutes"
+          echo " Timeout : le run n'a pas fini après 5 minutes"
           exit 1
 
       # 5. Récupérer et afficher les outputs (toujours depuis le state courant)
       - name: Get Terraform Outputs
         run: |
-          echo "📦 Récupération des outputs Terraform..."
+          echo " Récupération des outputs Terraform..."
 
           # 1. Récupérer l’ID du workspace
           ws_resp=$(curl -s \
@@ -147,7 +147,7 @@ jobs:
             https://app.terraform.io/api/v2/state-versions/$state_id/outputs)
 
           if [ "$(echo "$outputs_resp" | jq '.data | length')" -eq 0 ]; then
-            echo "ℹ️ Aucun output trouvé dans l’état courant."
+            echo "Aucun output trouvé dans l’état courant."
           else
             echo "$outputs_resp" | jq -r '.data[] | "\(.attributes.name) = \(.attributes.value)"'
           fi
