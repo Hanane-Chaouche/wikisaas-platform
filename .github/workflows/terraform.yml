@@ -45,8 +45,8 @@ jobs:
             --header "Authorization: Bearer $TF_API_TOKEN" \
             --header "Content-Type: application/vnd.api+json" \
             --request POST \
-            --data "{\"data\":{\"type\":\"configuration-versions\",\"attributes\":{\"auto-queue-runs\":true},\"relationships\":{\"workspace\":{\"data\":{\"type\":\"workspaces\",\"id\":\"$ws_id\"}}}}}" \
-            https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE}/configuration-versions)
+            --data "{\"data\":{\"type\":\"configuration-versions\",\"attributes\":{\"auto-queue-runs\":true}}}" \
+            https://app.terraform.io/api/v2/workspaces/$ws_id/configuration-versions)
 
           upload_url=$(echo $resp | jq -r '.data.attributes."upload-url"')
           echo "Upload URL: $upload_url"
