@@ -3,62 +3,87 @@ name: Terraform Cloud (Apply on main)
 on:
   push:
     branches:
-      - main      # Le workflow s'exécute uniquement sur les pushes vers main
-  workflow_dispatch: # Tu peux aussi le lancer manuellement depuis GitHub
+      - main
+  workflow_dispatch:
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
     env:
-      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}   # Ton token Terraform Cloud (GitHub Secret)
-      TF_CLOUD_ORGANIZATION: "wikisaas-org"       # Nom de ton organisation Terraform Cloud
-      TF_WORKSPACE: "wikisaas-platform"           # Workspace Terraform Cloud
-      CONFIG_DIRECTORY: "./terraform"             # Chemin des fichiers .tf
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+      TF_CLOUD_ORGANIZATION: "wikisaas-org"
+      TF_WORKSPACE: "wikisaas-platform"
+      CONFIG_DIRECTORY: "./terraform"
 
     steps:
       # 1. Récupérer le code du repo
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Uploader la configuration Terraform
+      # 2. Uploader la configuration vers Terraform Cloud
       - name: Upload Config
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: upload
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
-
-      # 3. Créer un run Terraform (apply direct)
-      - name: Create Apply Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
-        id: apply-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-
-      # 4. Appliquer les changements (corrigé → pas de boucle infinie)
-      - name: Handle Apply
         run: |
-          run_id=${{ steps.apply-run.outputs.run_id }}
-          is_confirmable=$(echo '${{ steps.apply-run.outputs.payload }}' | jq -r '.data.attributes.actions.IsConfirmable')
-          
-          if [ "$is_confirmable" = "true" ]; then
-            echo "➡️ Applying run $run_id"
-            curl -s \
-              --header "Authorization: Bearer $TF_API_TOKEN" \
-              --header "Content-Type: application/vnd.api+json" \
-              --request POST \
-              --data '{"comment":"Apply triggered by GitHub Actions"}' \
-              https://app.terraform.io/api/v2/runs/$run_id/actions/apply
-          else
-            echo " Run $run_id is auto-applied or has nothing to do."
-          fi
+          echo "➡️ Upload de la configuration vers Terraform Cloud"
+          resp=$(curl -s \
+            --header "Authorization: Bearer $TF_API_TOKEN" \
+            --header "Content-Type: application/vnd.api+json" \
+            --request POST \
+            --data "{\"data\":{\"type\":\"configuration-versions\",\"attributes\":{\"auto-queue-runs\":true},\"relationships\":{\"workspace\":{\"data\":{\"type\":\"workspaces\",\"id\":\"${TF_WORKSPACE}\"}}}}}" \
+            https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE}/configuration-versions)
 
-      # 5. Récupérer et afficher les outputs Terraform Cloud
+          upload_url=$(echo $resp | jq -r '.data.attributes."upload-url"')
+          echo "Upload URL: $upload_url"
+
+          # Crée l’archive de ton dossier terraform
+          cd $CONFIG_DIRECTORY
+          tar -czf ../config.tar.gz .
+          cd -
+
+          curl --request PUT --header "Content-Type: application/octet-stream" --data-binary @config.tar.gz $upload_url
+
+      # 3. Créer un run Terraform
+      - name: Create Run
+        id: create-run
+        run: |
+          echo "➡️ Création d’un run Terraform"
+          payload=$(cat <<EOF
+          {
+            "data": {
+              "attributes": {
+                "is-destroy": false,
+                "message": "Run déclenché par GitHub Actions"
+              },
+              "type": "runs",
+              "relationships": {
+                "workspace": {
+                  "data": {
+                    "type": "workspaces",
+                    "id": "${TF_WORKSPACE}"
+                  }
+                }
+              }
+            }
+          }
+          EOF
+          )
+
+          response=$(curl -s \
+            --header "Authorization: Bearer $TF_API_TOKEN" \
+            --header "Content-Type: application/vnd.api+json" \
+            --request POST \
+            --data "$payload" \
+            https://app.terraform.io/api/v2/runs)
+
+          echo "$response"
+          run_id=$(echo "$response" | jq -r '.data.id')
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+
+      # 4. Afficher les outputs
       - name: Get Terraform Outputs
         run: |
-          echo "Récupération des outputs Terraform..."
+          echo "📦 Récupération des outputs Terraform..."
           curl -s \
             --header "Authorization: Bearer $TF_API_TOKEN" \
             --header "Content-Type: application/vnd.api+json" \
