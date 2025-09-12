@@ -1,2 +1,0 @@
-# wikisaas-platform
-hello
