@@ -1,7 +1,7 @@
 # providers.tf
 variable "aws_region" {
   description = "Region AWS"
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 # dns.tf
 variable "cloudflare_zone_id" {
