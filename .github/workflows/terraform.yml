@@ -21,32 +21,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Uploader la configuration vers Terraform Cloud
+      # 2. Récupérer l'ID interne du workspace
+      - name: Get Workspace ID
+        id: get-ws
+        run: |
+          echo "➡️ Récupération de l’ID du workspace..."
+          workspace_resp=$(curl -s \
+            --header "Authorization: Bearer $TF_API_TOKEN" \
+            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE})
+
+          ws_id=$(echo $workspace_resp | jq -r '.data.id')
+          echo "Workspace ID: $ws_id"
+          echo "ws_id=$ws_id" >> $GITHUB_OUTPUT
+
+      # 3. Créer une configuration-version et uploader le code
       - name: Upload Config
         id: upload
         run: |
-          echo "➡️ Upload de la configuration vers Terraform Cloud"
+          ws_id=${{ steps.get-ws.outputs.ws_id }}
+
+          echo "➡️ Création d’une configuration-version..."
           resp=$(curl -s \
             --header "Authorization: Bearer $TF_API_TOKEN" \
             --header "Content-Type: application/vnd.api+json" \
             --request POST \
-            --data "{\"data\":{\"type\":\"configuration-versions\",\"attributes\":{\"auto-queue-runs\":true},\"relationships\":{\"workspace\":{\"data\":{\"type\":\"workspaces\",\"id\":\"${TF_WORKSPACE}\"}}}}}" \
+            --data "{\"data\":{\"type\":\"configuration-versions\",\"attributes\":{\"auto-queue-runs\":true},\"relationships\":{\"workspace\":{\"data\":{\"type\":\"workspaces\",\"id\":\"$ws_id\"}}}}}" \
             https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE}/configuration-versions)
 
           upload_url=$(echo $resp | jq -r '.data.attributes."upload-url"')
           echo "Upload URL: $upload_url"
 
-          # Crée l’archive de ton dossier terraform
+          echo "➡️ Compression et upload de la config..."
           cd $CONFIG_DIRECTORY
           tar -czf ../config.tar.gz .
           cd -
+          curl --request PUT --header "Content-Type: application/octet-stream" --data-binary @config.tar.gz "$upload_url"
 
-          curl --request PUT --header "Content-Type: application/octet-stream" --data-binary @config.tar.gz $upload_url
-
-      # 3. Créer un run Terraform
+      # 4. Créer un run Terraform
       - name: Create Run
         id: create-run
         run: |
+          ws_id=${{ steps.get-ws.outputs.ws_id }}
+
           echo "➡️ Création d’un run Terraform"
           payload=$(cat <<EOF
           {
@@ -60,7 +76,7 @@ jobs:
                 "workspace": {
                   "data": {
                     "type": "workspaces",
-                    "id": "${TF_WORKSPACE}"
+                    "id": "$ws_id"
                   }
                 }
               }
@@ -80,7 +96,7 @@ jobs:
           run_id=$(echo "$response" | jq -r '.data.id')
           echo "run_id=$run_id" >> $GITHUB_OUTPUT
 
-      # 4. Afficher les outputs
+      # 5. Récupérer et afficher les outputs Terraform Cloud
       - name: Get Terraform Outputs
         run: |
           echo "📦 Récupération des outputs Terraform..."
