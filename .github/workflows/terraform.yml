@@ -1,118 +1,39 @@
-@@ -0,0 +1,39 @@
-
-
 name: Terraform Cloud   # Nom du workflow (visible dans GitHub Actions)
 
-
-
-
-
 on:
-
-
   push:
-
-
     branches:
-
-
       - main            # Le workflow s’exécute uniquement sur les pushes vers main
-
-
   workflow_dispatch:     # Permet aussi de lancer le workflow manuellement depuis GitHub
 
-
-
-
-
 jobs:
-
-
   terraform:
-
-
     runs-on: ubuntu-latest   # GitHub lance une VM Ubuntu temporaire (runner)
 
-
-
-
-
     env:
-
-
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}     # Ton token Terraform Cloud (secret GitHub)
-
-
       TF_CLOUD_ORGANIZATION: "wikisaas-org"         # Nom de ton organisation Terraform Cloud
-
-
       TF_WORKSPACE: "wikisaas-platform"             # Nom de ton workspace Terraform Cloud
-
-
       CONFIG_DIRECTORY: "./terraform"               # Dossier contenant tes fichiers .tf
 
-
-
-
-
     steps:
-
-
       # 1. Récupérer le code du repo
-
-
       - name: Checkout
-
-
         uses: actions/checkout@v3
 
-
-
-
-
       # 2. Uploader la configuration Terraform vers Terraform Cloud
-
-
       - name: Upload Configuration
-
-
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
-
-
         id: upload
-
-
         with:
-
-
           workspace: ${{ env.TF_WORKSPACE }}
-
-
           directory: ${{ env.CONFIG_DIRECTORY }}
 
-
-
-
-
-      # 3. Créer un run Terraform (apply auto)
-
-
+      # 3. Créer un run Terraform (Plan + Apply automatique via Auto Apply du workspace)
       - name: Create Apply Run
-
-
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
-
-
         id: apply
-
-
         with:
-
-
           workspace: ${{ env.TF_WORKSPACE }}
-
-
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-
-
-          auto_apply: true   #  applique directement sans approbation manuelle
+          plan_only: false   # 👉 déclenche un vrai Apply
