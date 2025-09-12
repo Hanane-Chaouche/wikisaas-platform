@@ -96,6 +96,34 @@ jobs:
           run_id=$(echo "$response" | jq -r '.data.id')
           echo "run_id=$run_id" >> $GITHUB_OUTPUT
 
+      # 4b. Attendre la fin du run
+      - name: Wait for Run to Complete
+        run: |
+          run_id=${{ steps.create-run.outputs.run_id }}
+          echo "⏳ Attente de la fin du run $run_id ..."
+          
+          for i in {1..30}; do
+            status=$(curl -s \
+              --header "Authorization: Bearer $TF_API_TOKEN" \
+              https://app.terraform.io/api/v2/runs/$run_id \
+              | jq -r '.data.attributes.status')
+
+            echo "➡️ Statut actuel : $status"
+
+            if [ "$status" = "applied" ]; then
+              echo "✅ Run terminé avec succès"
+              exit 0
+            elif [ "$status" = "errored" ] || [ "$status" = "canceled" ]; then
+              echo "❌ Run échoué ou annulé"
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "❌ Timeout : le run n'a pas fini après 5 minutes"
+          exit 1
+
       # 5. Récupérer et afficher les outputs Terraform Cloud
       - name: Get Terraform Outputs
         run: |
