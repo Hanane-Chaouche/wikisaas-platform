@@ -110,7 +110,7 @@ jobs:
 
             echo "➡️ Statut actuel : $status"
 
-            if [ "$status" = "applied" ]; then
+            if [ "$status" = "applied" ] || [ "$status" = "planned_and_finished" ]; then
               echo "✅ Run terminé avec succès"
               exit 0
             elif [ "$status" = "errored" ] || [ "$status" = "canceled" ]; then
