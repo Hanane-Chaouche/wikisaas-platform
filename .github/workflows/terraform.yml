@@ -36,7 +36,7 @@ jobs:
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-          auto-apply: true
+          plan_only: false
 
       # 4. Installer Terraform CLI
       - name: Setup Terraform
@@ -69,4 +69,4 @@ jobs:
       - name: Test access to outputs
         run: |
           echo "EC2 Public IP = $EC2_PUBLIC_IP"
-          echo " DB Endpoints (JSON) = $DB_ENDPOINTS"
+          echo "🗄️ DB Endpoints (JSON) = $DB_ENDPOINTS"
