@@ -29,7 +29,7 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
-      # 3. Créer un run Terraform (plan + apply auto)
+      # 3. Créer un run Terraform (apply automatique)
       - name: Create Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
         id: create-run
@@ -48,17 +48,25 @@ jobs:
       - name: Init Terraform
         run: terraform -chdir=terraform init
 
-      # 6. Récupérer les outputs
+      # 6. Récupérer les outputs bruts
       - name: Get Terraform Outputs
         run: terraform -chdir=terraform output -json
 
-      # 7. Exporter outputs dans les variables GitHub (optionnel)
+      # 7. Exporter les outputs dans les variables GitHub (string + objets)
       - name: Export Outputs
         run: |
-          eval "$(terraform -chdir=terraform output -json | jq -r 'to_entries|map("echo \(.key)=\(.value.value) >> $GITHUB_ENV")|.[]')"
+          terraform -chdir=terraform output -json \
+            | jq -r 'to_entries[] 
+              | "echo \(.key)=" 
+                + (if (.value.value | type) == "string" 
+                     then (.value.value) 
+                     else "'"'" + (.value.value | tostring) + "'"'" 
+                   end) 
+                + " >> $GITHUB_ENV"' \
+            | bash
 
-      # 8. Exemple d’utilisation (Ansible ou autre)
+      # 8. Exemple d’utilisation (test affichage)
       - name: Test access to outputs
         run: |
           echo "EC2 Public IP = $EC2_PUBLIC_IP"
-          echo "DB Endpoints = $DB_ENDPOINTS"
+          echo " DB Endpoints (JSON) = $DB_ENDPOINTS"
