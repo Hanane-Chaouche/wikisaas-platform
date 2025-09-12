@@ -23,39 +23,4 @@ jobs:
         uses: actions/checkout@v3
 
       # 2. Uploader la configuration Terraform vers Terraform Cloud
-      - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.4
-        id: upload
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
-
-      # 3. Créer un run Terraform Cloud (plan + apply)
-      - name: Create Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.4
-        id: run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-          plan_only: false
-
-      # 4. Récupérer les outputs via l’API Terraform Cloud
-      - name: Get Outputs from Terraform Cloud API
-        run: |
-          echo "=== Fetching Terraform Outputs from TFC API ==="
-          # 1. Récupérer l'ID de la state version
-          STATE_VERSION_ID=$(curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            --header "Content-Type: application/vnd.api+json" \
-            https://app.terraform.io/api/v2/organizations/${TF_CLOUD_ORGANIZATION}/workspaces/${TF_WORKSPACE}/current-state-version \
-            | jq -r '.data.id')
-
-          echo "State Version ID: $STATE_VERSION_ID"
-
-          # 2. Récupérer les outputs avec cet ID
-          curl -s \
-            --header "Authorization: Bearer $TF_API_TOKEN" \
-            --header "Content-Type: application/vnd.api+json" \
-            https://app.terraform.io/api/v2/state-versions/$STATE_VERSION_ID/outputs \
-            | jq .
-
+      - name: Upload Co
