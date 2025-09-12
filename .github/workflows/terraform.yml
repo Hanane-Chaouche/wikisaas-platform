@@ -36,7 +36,7 @@ jobs:
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-          auto-apply: true
+          
 
       # 4. Installer Terraform CLI
       - name: Setup Terraform
