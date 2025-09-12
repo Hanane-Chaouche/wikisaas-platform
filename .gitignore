@@ -1,0 +1,26 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ansible
+*.retry
+
+# Clés privées / SSH
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# VS Code
+.vscode/
+
+# Autres fichiers sensibles
+*.csv
+*.log

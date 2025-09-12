@@ -1,0 +1,43 @@
+---
+# Domaine principal (Cloudflare gère le wildcard *.wikiplatform.app)
+base_domain: "wikiplatform.app"
+acme_email: "chamer6@hotmail.com"
+
+# ==============================
+# Bases PostgreSQL (RDS managé)
+# ==============================
+
+# Wiki IA
+pg_host_ia: "wiki-ia.xxxxx.rds.amazonaws.com"
+pg_port_ia: 5432
+pg_user_ia: "wikijs"
+pg_pass_ia: "{{ vault_pg_pass_ia }}"
+pg_db_ia: "wiki_ia"
+
+# Wiki DevOps
+pg_host_devops: "wiki-devops.xxxxx.rds.amazonaws.com"
+pg_port_devops: 5432
+pg_user_devops: "wikijs"
+pg_pass_devops: "{{ vault_pg_pass_devops }}"
+pg_db_devops: "wiki_devops"
+
+# Wiki Cyber
+pg_host_cyber: "wiki-cyber.xxxxx.rds.amazonaws.com"
+pg_port_cyber: 5432
+pg_user_cyber: "wikijs"
+pg_pass_cyber: "{{ vault_pg_pass_cyber }}"
+pg_db_cyber: "wiki_cyber"
+
+# ==============================
+# Keycloak (SSO)
+# ==============================
+kc_admin: "admin"
+kc_admin_password: "{{ vault_kc_admin_pass }}"
+
+# ==============================
+# R2 (Cloudflare S3-compatible)
+# ==============================
+s3_endpoint: "https://<accountid>.r2.cloudflarestorage.com"
+s3_bucket: "wikijs-uploads"
+s3_access_key: "{{ vault_s3_access }}"
+s3_secret_key: "{{ vault_s3_secret }}"
