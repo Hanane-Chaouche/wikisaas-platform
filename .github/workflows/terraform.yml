@@ -9,7 +9,7 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    timeout-minutes: 15   # évite que le job bloque trop longtemps
+    timeout-minutes: 15
 
     env:
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
@@ -18,9 +18,11 @@ jobs:
       CONFIG_DIRECTORY: "./terraform"
 
     steps:
+      # 1. Récupérer le code du repo
       - name: Checkout
         uses: actions/checkout@v3
 
+      # 2. Uploader la configuration Terraform vers Terraform Cloud
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.4
         id: upload
@@ -28,15 +30,29 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
-      - name: Create Run (Plan + Apply)
+      # 3. Créer un run Terraform Cloud (plan + apply)
+      - name: Create Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.4
         id: run
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-          plan_only: false   # Exécute plan + apply automatiquement
+          plan_only: false
 
-      - name: Show Terraform Outputs
+      # 4. Récupérer les outputs depuis Terraform Cloud
+      - name: Get Outputs
+        uses: hashicorp/tfc-workflows-github/actions/get-outputs@v1.0.4
+        id: outputs
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+
+      # 5. Afficher quelques outputs utiles dans les logs
+      - name: Show Outputs
         run: |
           echo "=== Terraform Outputs ==="
-          terraform -chdir=terraform output
+          echo "EC2 Public IP      : ${{ steps.outputs.outputs_ec2_public_ip }}"
+          echo "EC2 Public DNS     : ${{ steps.outputs.outputs_ec2_public_dns }}"
+          echo "RDS Endpoints      : ${{ steps.outputs.outputs_db_endpoints }}"
+          echo "Cloudflare DNS     : ${{ steps.outputs.outputs_dns_records }}"
+          echo "Cloudflare R2 Name : ${{ steps.outputs.outputs_r2_bucket_name }}"
+          echo "Cloudflare R2 URL  : ${{ steps.outputs.outputs_r2_bucket_endpoint }}"
