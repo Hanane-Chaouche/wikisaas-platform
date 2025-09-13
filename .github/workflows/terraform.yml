@@ -9,62 +9,65 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+
     env:
-      TF_WORKSPACE: wikisaas-platform
+      TF_CLOUD_ORGANIZATION: "wikisaas-org"
+      TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+      TF_WORKSPACE: "wikisaas-platform"
+      CONFIG_DIRECTORY: "./terraform"
 
     steps:
       - uses: actions/checkout@v4
 
+      # 1) Upload de la config vers Terraform Cloud
       - name: Upload configuration
         id: upload
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
         with:
-          workspace: ${{ env.TF_WORKSPACE }}
+          token: ${{ env.TF_API_TOKEN }}                 # <-- OBLIGATOIRE
+          organization: ${{ env.TF_CLOUD_ORGANIZATION }} # <-- OBLIGATOIRE
+          workspace: ${{ env.TF_WORKSPACE }}             # <-- OBLIGATOIRE
+          directory: ${{ env.CONFIG_DIRECTORY }}         # <-- OBLIGATOIRE
+          speculative: false
 
+      # 2) Créer le run (pas d'apply-run si Auto-apply ON dans le workspace)
       - name: Create run
         id: create
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
         with:
+          token: ${{ env.TF_API_TOKEN }}
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
 
-      # ⛔️ PAS d'étape apply-run ici (Auto-apply va appliquer tout seul)
-
-      - name: Show run (poll until finished)
-        id: wait
+      # 3) Attendre la fin du run (poll de l’API TFC)
+      - name: Wait until run finishes
         shell: bash
         env:
-          TFC_TOKEN: ${{ secrets.TF_API_TOKEN }}
+          TFC_TOKEN: ${{ env.TF_API_TOKEN }}
           RUN_ID: ${{ steps.create.outputs.run_id }}
         run: |
           set -euo pipefail
           finals=("applied" "planned_and_finished" "canceled" "errored" "discarded")
-          echo "Polling run $RUN_ID"
           for i in {1..180}; do
             RESP=$(curl -sS -w " HTTP_CODE:%{http_code}" \
               -H "Authorization: Bearer $TFC_TOKEN" \
               -H "Content-Type: application/vnd.api+json" \
               "https://app.terraform.io/api/v2/runs/$RUN_ID") || true
-            CODE="${RESP##*HTTP_CODE:}"
-            BODY="${RESP% HTTP_CODE:*}"
-            if [[ "$CODE" != "200" ]]; then
-              echo "HTTP $CODE from TFC, retrying..."; sleep 10; continue
-            fi
+            CODE="${RESP##*HTTP_CODE:}"; BODY="${RESP% HTTP_CODE:*}"
+            [[ "$CODE" != "200" ]] && echo "HTTP $CODE, retry..." && sleep 10 && continue
             STATUS=$(printf '%s' "$BODY" | jq -r '.data.attributes.status // ""' | tr -d '\r' | xargs)
             echo "Run Status: '$STATUS'"
             for f in "${finals[@]}"; do
               if [[ "$STATUS" == "$f" ]]; then
-                echo "Final status: $STATUS"
                 [[ "$STATUS" == "applied" || "$STATUS" == "planned_and_finished" ]] && exit 0 || exit 1
               fi
             done
             sleep 10
           done
-          echo "Timeout waiting for run to finish"
-          exit 1
+          echo "Timeout waiting run"; exit 1
 
-      # (Optionnel) Lire les outputs via le CLI
+      # (optionnel) Lire les outputs via le CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
       - name: Terraform Output
-        run: terraform -chdir=./terraform output
+        run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} output
