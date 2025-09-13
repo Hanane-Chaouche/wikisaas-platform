@@ -1,98 +1,70 @@
-name: Terraform Apply
+name: Terraform Cloud
 
 on:
   push:
-    branches:
-      - main
-
-env:
-  TF_CLOUD_ORGANIZATION: "wikisaas-org"
-  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "wikisaas-platform"
-  CONFIG_DIRECTORY: "./terraform"
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   terraform:
-    if: github.repository != 'hashicorp-education/learn-terraform-github-actions'
-    name: "Terraform Apply"
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 35
+    env:
+      TF_WORKSPACE: wikisaas-platform
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
-        id: apply-upload
+      - name: Upload configuration
+        id: upload
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
         with:
           workspace: ${{ env.TF_WORKSPACE }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
 
-      - name: Create Apply Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
-        id: apply-run
+      - name: Create run
+        id: create
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
         with:
           workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
-          auto-apply: true
-      - name: Apply
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.0.0
-        if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
-        id: apply
-        with:
-          run: ${{ steps.apply-run.outputs.run_id }}
-          comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
-      # ✅ Étape ajoutée : attendre proprement la fin du run
-      - name: Wait for Apply to Finish
+          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
+
+      # ⛔️ PAS d'étape apply-run ici (Auto-apply va appliquer tout seul)
+
+      - name: Show run (poll until finished)
+        id: wait
+        shell: bash
+        env:
+          TFC_TOKEN: ${{ secrets.TF_API_TOKEN }}
+          RUN_ID: ${{ steps.create.outputs.run_id }}
         run: |
-          run_id=${{ steps.apply-run.outputs.run_id }}
-
-          for i in {1..30}; do
-            status=$(curl -s \
-              --header "Authorization: Bearer $TF_API_TOKEN" \
-              https://app.terraform.io/api/v2/runs/$run_id \
-              | jq -r '.data.attributes.status')
-
-            echo "Run Status: $status"
-
-            if [ "$status" = "applied" ]; then
-              echo "✅ Apply terminé avec succès"
-              exit 0
-            elif [ "$status" = "errored" ] || [ "$status" = "canceled" ]; then
-              echo "❌ Apply échoué ou annulé"
-              exit 1
+          set -euo pipefail
+          finals=("applied" "planned_and_finished" "canceled" "errored" "discarded")
+          echo "Polling run $RUN_ID"
+          for i in {1..180}; do
+            RESP=$(curl -sS -w " HTTP_CODE:%{http_code}" \
+              -H "Authorization: Bearer $TFC_TOKEN" \
+              -H "Content-Type: application/vnd.api+json" \
+              "https://app.terraform.io/api/v2/runs/$RUN_ID") || true
+            CODE="${RESP##*HTTP_CODE:}"
+            BODY="${RESP% HTTP_CODE:*}"
+            if [[ "$CODE" != "200" ]]; then
+              echo "HTTP $CODE from TFC, retrying..."; sleep 10; continue
             fi
-
+            STATUS=$(printf '%s' "$BODY" | jq -r '.data.attributes.status // ""' | tr -d '\r' | xargs)
+            echo "Run Status: '$STATUS'"
+            for f in "${finals[@]}"; do
+              if [[ "$STATUS" == "$f" ]]; then
+                echo "Final status: $STATUS"
+                [[ "$STATUS" == "applied" || "$STATUS" == "planned_and_finished" ]] && exit 0 || exit 1
+              fi
+            done
             sleep 10
           done
-
-          echo "❌ Timeout : le run n’a pas fini après 5 minutes"
+          echo "Timeout waiting for run to finish"
           exit 1
-          
-      # Installer Terraform CLI pour récupérer les outputs
+
+      # (Optionnel) Lire les outputs via le CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-      - name: Init Terraform
-        run: terraform -chdir=terraform init
-
-      - name: Capture Terraform Outputs
-        run: |
-          EC2_PUBLIC_IP=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -raw ec2_public_ip 2>/dev/null || echo "")
-          EC2_PUBLIC_DNS=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -raw ec2_public_dns 2>/dev/null || echo "")
-          DB_ENDPOINTS=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -json db_endpoints 2>/dev/null || echo "")
-
-          echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
-          echo "EC2_PUBLIC_DNS=$EC2_PUBLIC_DNS" >> $GITHUB_ENV
-          echo "DB_ENDPOINTS=$DB_ENDPOINTS" >> $GITHUB_ENV
-
-      - name: Test access to outputs
-        run: |
-          echo "✅ EC2 Public IP = $EC2_PUBLIC_IP"
-          echo "✅ EC2 Public DNS = $EC2_PUBLIC_DNS"
-          echo "✅ DB Endpoints = $DB_ENDPOINTS"
-
+      - name: Terraform Output
+        run: terraform -chdir=./terraform output
