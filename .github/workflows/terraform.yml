@@ -36,7 +36,7 @@ jobs:
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
-
+          auto-apply: true
       - name: Apply
         uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.0.0
         if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
@@ -44,6 +44,32 @@ jobs:
         with:
           run: ${{ steps.apply-run.outputs.run_id }}
           comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
+      # ✅ Étape ajoutée : attendre proprement la fin du run
+      - name: Wait for Apply to Finish
+        run: |
+          run_id=${{ steps.apply-run.outputs.run_id }}
+
+          for i in {1..30}; do
+            status=$(curl -s \
+              --header "Authorization: Bearer $TF_API_TOKEN" \
+              https://app.terraform.io/api/v2/runs/$run_id \
+              | jq -r '.data.attributes.status')
+
+            echo "Run Status: $status"
+
+            if [ "$status" = "applied" ]; then
+              echo "✅ Apply terminé avec succès"
+              exit 0
+            elif [ "$status" = "errored" ] || [ "$status" = "canceled" ]; then
+              echo "❌ Apply échoué ou annulé"
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "❌ Timeout : le run n’a pas fini après 5 minutes"
+          exit 1
           
       # Installer Terraform CLI pour récupérer les outputs
       - name: Setup Terraform
