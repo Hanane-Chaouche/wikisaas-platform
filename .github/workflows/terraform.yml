@@ -1,63 +1,72 @@
-name: Terraform Cloud (Apply on main)
+name: Terraform Apply
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+
+env:
+  TF_CLOUD_ORGANIZATION: "wikisaas-org"
+  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+  TF_WORKSPACE: "wikisaas-platform"
+  CONFIG_DIRECTORY: "./terraform"
 
 jobs:
   terraform:
+    if: github.repository != 'hashicorp-education/learn-terraform-github-actions'
+    name: "Terraform Apply"
     runs-on: ubuntu-latest
-
-    env:
-      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
-      TF_CLOUD_ORGANIZATION: "wikisaas-org"
-      TF_WORKSPACE: "wikisaas-platform"
-      CONFIG_DIRECTORY: "./terraform"
+    permissions:
+      contents: read
 
     steps:
-      # 1. Récupérer le code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Uploader la configuration vers Terraform Cloud
-      - name: Upload Config
+      - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
-        id: upload
+        id: apply-upload
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
-      # 3. Créer un run Terraform (plan + apply auto)
-      - name: Create Run
+      - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
-        id: create-run
+        id: apply-run
         with:
           workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-          
+          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
 
-      # 4. Installer Terraform CLI
+      - name: Apply
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.0.0
+        if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
+        id: apply
+        with:
+          run: ${{ steps.apply-run.outputs.run_id }}
+          comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
+          
+      # Installer Terraform CLI pour récupérer les outputs
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-      # 5. Init Terraform (backend = Terraform Cloud)
       - name: Init Terraform
         run: terraform -chdir=terraform init
 
-      # 6. Récupérer les outputs
-      - name: Get Terraform Outputs
-        run: terraform -chdir=terraform output -json
-
-      # 7. Exporter outputs dans les variables GitHub (optionnel)
-      - name: Export Outputs
+      - name: Capture Terraform Outputs
         run: |
-          eval "$(terraform -chdir=terraform output -json | jq -r 'to_entries|map("echo \(.key)=\(.value.value) >> $GITHUB_ENV")|.[]')"
-      # 8. Exemple d’utilisation (Ansible ou autre)
+          EC2_PUBLIC_IP=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -raw ec2_public_ip 2>/dev/null || echo "")
+          EC2_PUBLIC_DNS=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -raw ec2_public_dns 2>/dev/null || echo "")
+          DB_ENDPOINTS=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -json db_endpoints 2>/dev/null || echo "")
+
+          echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
+          echo "EC2_PUBLIC_DNS=$EC2_PUBLIC_DNS" >> $GITHUB_ENV
+          echo "DB_ENDPOINTS=$DB_ENDPOINTS" >> $GITHUB_ENV
+
       - name: Test access to outputs
         run: |
-          echo "EC2 Public IP = $EC2_PUBLIC_IP"
-          echo "DB Endpoints = $DB_ENDPOINTS"
+          echo "✅ EC2 Public IP = $EC2_PUBLIC_IP"
+          echo "✅ EC2 Public DNS = $EC2_PUBLIC_DNS"
+          echo "✅ DB Endpoints = $DB_ENDPOINTS"
+
