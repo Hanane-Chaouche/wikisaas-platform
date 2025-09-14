@@ -21,7 +21,7 @@ output "db_endpoints" {
     devops = aws_db_instance.wiki_devops.endpoint
     cyber  = aws_db_instance.wiki_cyber.endpoint
   }
-  sensitive = true # cache les infos dans la console
+  
 }
 
 ####################################
