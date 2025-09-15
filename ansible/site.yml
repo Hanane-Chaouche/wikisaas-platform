@@ -1,0 +1,10 @@
+- hosts: wikijs_servers
+  become: true
+  roles:
+    - common     # Préparation de la VM
+    - docker     # Installer Docker
+    - traefik    # Reverse proxy + certificats
+    - postgres   # Bases de données
+    - keycloak   # SSO
+    - minio      # Stockage
+    - wiki       # Tes 3 Wiki.js

@@ -3,6 +3,9 @@ name: Terraform Cloud
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'terraform/**'     # seulement si quelque chose change dans terraform/
+      - '.github/workflows/terraform.yml'  # ou si tu modifies le workflow lui-même
   workflow_dispatch:
 
 jobs:

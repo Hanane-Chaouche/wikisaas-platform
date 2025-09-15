@@ -1,0 +1,29 @@
+name: Ansible Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1) Recréer la clé SSH à partir du secret GitHub
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/newtest.pem
+          chmod 600 ~/.ssh/newtest.pem
+
+      # 2) Installer Ansible
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      # 3) Exécuter Ansible
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
