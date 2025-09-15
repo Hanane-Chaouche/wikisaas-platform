@@ -1,0 +1,64 @@
+---
+# === MAJ système ===
+- name: Update and upgrade all packages
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+
+# === Paquets utiles ===
+- name: Install useful packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - unzip
+      - ufw
+      - htop
+    state: present
+
+# === Gestion utilisateur ===
+- name: Ensure main user exists
+  become: true
+  ansible.builtin.user:
+    name: "{{ ec2_user }}"       # défini dans group_vars/all.yml
+    groups: sudo
+    append: true
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+# Déploie toutes les clés publiques données dans ec2_user_ssh_keys dans ~/.ssh/authorized_keys
+# (idempotent, ne fait rien si la clé est déjà présente; si la liste est vide -> aucune action)
+- name: Déployer plusieurs clés SSH
+  become: true
+  ansible.posix.authorized_key:
+    user: "{{ ec2_user }}"
+    key: "{{ item }}"
+    state: present
+  loop: "{{ ec2_user_ssh_keys | default([]) }}"
+
+
+# === Pare-feu UFW ===
+- name: Allow SSH via UFW
+  become: true
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Allow HTTP and HTTPS via UFW
+  become: true
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - 80
+    - 443
+
+- name: Enable UFW firewall
+  become: true
+  community.general.ufw:
+    state: enabled
+    policy: deny
