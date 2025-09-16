@@ -1,0 +1,35 @@
+# --- Fonction utilitaire pour récupérer le secret d'un client
+get_client_secret () {
+  local client_id=$1
+  local client_uuid
+  client_uuid=$($KEYCLOAK_HOME/bin/kcadm.sh get clients -r ${REALM} --fields id,clientId \
+    | jq -r ".[] | select(.clientId==\"${client_id}\") | .id")
+  $KEYCLOAK_HOME/bin/kcadm.sh get clients/${client_uuid}/client-secret -r ${REALM} | jq -r .value
+}
+
+# --- Récupérer les secrets des 3 clients
+IA_SECRET=$(get_client_secret wiki-ia)
+DEVOPS_SECRET=$(get_client_secret wiki-devops)
+CYBER_SECRET=$(get_client_secret wiki-cyber)
+
+# --- Écrire un fichier JSON lisible par Ansible
+SECRETS_DIR=/opt/keycloak
+SECRETS_FILE=${SECRETS_DIR}/clients_secrets.json
+mkdir -p "${SECRETS_DIR}"
+
+cat > "${SECRETS_FILE}" <<EOF
+{
+  "realm": "${REALM}",
+  "issuer": "https://auth.{{ base_domain }}/realms/${REALM}",
+  "clients": {
+    "wiki-ia":     { "secret": "${IA_SECRET}" },
+    "wiki-devops": { "secret": "${DEVOPS_SECRET}" },
+    "wiki-cyber":  { "secret": "${CYBER_SECRET}" }
+  }
+}
+EOF
+
+chmod 600 "${SECRETS_FILE}"
+
+echo " Secrets Keycloak écrits dans ${SECRETS_FILE}"
+echo "Tu peux maintenant lancer Ansible pour générer les .env des Wikis."

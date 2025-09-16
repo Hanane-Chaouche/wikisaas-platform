@@ -16,6 +16,7 @@
       - unzip
       - ufw
       - htop
+      - jq    # nécessaire pour extraire les secrets Keycloak
     state: present
 
 # === Gestion utilisateur ===

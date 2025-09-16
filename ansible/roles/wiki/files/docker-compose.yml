@@ -1,0 +1,60 @@
+---
+version: "3.9"
+networks:
+  proxy:
+    external: true
+  wikinet-ia:
+    driver: bridge
+  wikinet-devops:
+    driver: bridge
+  wikinet-cyber:
+    driver: bridge
+
+services:
+  # === Wiki IA ===
+  wiki-ia:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wiki-ia
+    restart: unless-stopped
+    env_file:
+      - ./envs/wiki-ia.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wiki-ia.rule=Host(`ia.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.wiki-ia.entrypoints=websecure"
+      - "traefik.http.routers.wiki-ia.tls.certresolver=myresolver"
+    networks:
+      - proxy
+      - wikinet-ia
+
+  # === Wiki DevOps ===
+  wiki-devops:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wiki-devops
+    restart: unless-stopped
+    env_file:
+      - ./envs/wiki-devops.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wiki-devops.rule=Host(`devops.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.wiki-devops.entrypoints=websecure"
+      - "traefik.http.routers.wiki-devops.tls.certresolver=myresolver"
+    networks:
+      - proxy
+      - wikinet-devops
+
+  # === Wiki Cyber ===
+  wiki-cyber:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wiki-cyber
+    restart: unless-stopped
+    env_file:
+      - ./envs/wiki-cyber.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wiki-cyber.rule=Host(`cyber.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.wiki-cyber.entrypoints=websecure"
+      - "traefik.http.routers.wiki-cyber.tls.certresolver=myresolver"
+    networks:
+      - proxy
+      - wikinet-cyber

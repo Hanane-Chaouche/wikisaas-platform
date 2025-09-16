@@ -26,7 +26,7 @@ jobs:
         id: upload
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
         with:
-          token: ${{ secrets.TF_API_TOKEN }}            # SECRET GitHub à créer
+          token: ${{ secrets.TF_API_TOKEN }}            # Ensure this secret exists in your GitHub repository settings
           organization: ${{ env.TF_CLOUD_ORGANIZATION }}
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}

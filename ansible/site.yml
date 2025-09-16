@@ -1,10 +1,14 @@
-- hosts: wikijs_servers
+---
+- name: Déploiement complet plateforme Wiki.js SaaS
+  hosts: wikijs_servers
   become: true
+
+  vars_files:
+    - group_vars/all.yml
+
   roles:
-    - common     # Préparation de la VM
-    - docker     # Installer Docker
-    - traefik    # Reverse proxy + certificats
-    - postgres   # Bases de données
-    - keycloak   # SSO
-    - minio      # Stockage
-    - wiki       # Tes 3 Wiki.js
+    - role: common     # installe Docker + dépendances
+    - role: docker     # installe Docker + dépendances
+    - role: traefik    # déploie Traefik
+    - role: keycloak   # déploie Keycloak + init
+    - role: wiki       # déploie les Wikis (ia/devops/cyber)

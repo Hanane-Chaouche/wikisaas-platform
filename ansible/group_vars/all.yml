@@ -20,6 +20,8 @@ r2_account_id:          "{{ lookup('env','R2_ACCOUNT_ID') | default('') }}"
 r2_location:            "{{ lookup('env','R2_LOCATION') | default('') }}"
 r2_bucket_endpoint:     "{{ lookup('env','R2_BUCKET_ENDPOINT') | default('') }}"
 
+ec2_user: "ubuntu"
+
 ############################################
 # Outputs Terraform (objets JSON)
 ############################################
@@ -48,11 +50,38 @@ pg_db_devops:   "wiki_devops"
 pg_db_cyber:    "wiki_cyber"
 
 ############################################
+# Wiki.js instances (boucle avec "item")
+############################################
+wikis:
+  - name: ia
+    pg_host: "{{ pg_host_ia }}"
+    pg_user: "{{ pg_user_ia }}"
+    pg_pass: "{{ pg_pass_ia }}"
+    pg_db:   "{{ pg_db_ia }}"
+    admin_email: "chamer6@hotmail.com"
+    admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
+
+  - name: devops
+    pg_host: "{{ pg_host_devops }}"
+    pg_user: "{{ pg_user_devops }}"
+    pg_pass: "{{ pg_pass_devops }}"
+    pg_db:   "{{ pg_db_devops }}"
+    admin_email: "chamer6@hotmail.com"
+    admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
+
+  - name: cyber
+    pg_host: "{{ pg_host_cyber }}"
+    pg_user: "{{ pg_user_cyber }}"
+    pg_pass: "{{ pg_pass_cyber }}"
+    pg_db:   "{{ pg_db_cyber }}"
+    admin_email: "chamer6@hotmail.com"
+    admin_password: "{{ lookup('env','ADMIN_PASS_CYBER') | mandatory }}"
+
+############################################
 # Keycloak
 ############################################
 kc_admin:          "admin"
 kc_admin_password: "{{ lookup('env','KEYCLOAK_ADMIN_PASS') | mandatory }}"
-
 ############################################
 # Cloudflare R2
 ############################################
@@ -60,7 +89,11 @@ s3_bucket:      "{{ r2_bucket_name }}"
 s3_endpoint:    "{{ r2_bucket_endpoint }}"
 s3_access_key:  "{{ lookup('env','R2_ACCESS_KEY') | mandatory }}"
 s3_secret_key:  "{{ lookup('env','R2_SECRET_KEY') | mandatory }}"
-
+cloudflare_api_token_r2: "{{ lookup('env','CLOUDFLARE_API_TOKEN_R2') | mandatory }}"
+############################################
+# Cloudflare API (pour Traefik DNS-01)
+############################################
+cloudflare_dns_api_token: "{{ lookup('env','CLOUDFLARE_API_TOKEN') | mandatory }}"
 ############################################
 # SSH / Connexion
 ############################################
@@ -72,3 +105,21 @@ ec2_user_ssh_keys: []
 ############################################
 wiki_media_base_url: "https://{{ r2_bucket_name }}.{{ r2_account_id }}.r2.cloudflarestorage.com"
 traefik_dashboard_host: "traefik.{{ base_domain }}"
+############################################
+# Keycloak Admin Password
+############################################
+kc_admin: admin
+kc_admin_password: "{{ lookup('env','KC_ADMIN_PASS') | mandatory }}"
+kc_realm: "saas"
+############################################
+# Aliases vers Vault
+############################################
+r2_access_key: "{{ vault_r2_access_key }}"
+r2_secret_key: "{{ vault_r2_secret_key }}"
+ec2_user: "{{ vault_ec2_user }}"
+db_password: "{{ vault_db_password }}"
+vm_ssh_key: "{{ vault_vm_ssh_key }}"
+cloudflare_api_token_r2: "{{ vault_cloudflare_api_token_r2 }}"
+tf_api_token: "{{ vault_tf_api_token }}"
+cloudflare_dns_api_token: "{{ vault_cloudflare_dns_api_token }}"
+############################################
