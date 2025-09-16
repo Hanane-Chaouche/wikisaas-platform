@@ -40,4 +40,4 @@ jobs:
 
       # 3) Exécuter Ansible
       - name: Run Ansible Playbook
-        run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
+        run: ansible-playbook -i ansible/inventories/prod/hosts.yml ansible/site.yml
