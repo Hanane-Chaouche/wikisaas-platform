@@ -3,8 +3,10 @@
 
 - name: Créer le répertoire Keycloak
   file:
-    path: /opt/keycloak
+    path: /opt/keycloak/data
     state: directory
+    owner: 1000        # UID utilisé par l'utilisateur "keycloak" dans le conteneur
+    group: 1000
     mode: '0755'
 
 - name: Copier le docker-compose.yml

@@ -1,7 +1,7 @@
 ---
 
 # roles/traefik/tasks/main.yml
-- name: Créer le réseau Docker proxy (si absent)
+- name: Créer le réseau Docker proxy
   community.docker.docker_network:
     name: proxy
     state: present
