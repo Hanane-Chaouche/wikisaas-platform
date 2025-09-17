@@ -3,51 +3,65 @@
 # Domaine / ACME
 ############################################
 base_domain: "{{ lookup('env','DOMAIN') | default('wikiplatform.app') }}"
-acme_email:  "{{ lookup('env','ACME_EMAIL') | default('chamer6@hotmail.com') }}"
+acme_email: "{{ lookup('env','ACME_EMAIL') | default('chamer6@hotmail.com') }}"
 
 ############################################
 # Outputs Terraform (scalaires)
 ############################################
-ec2_public_ip:          "{{ lookup('env','EC2_PUBLIC_IP') | default('') }}"
-ec2_public_dns:         "{{ lookup('env','EC2_PUBLIC_DNS') | default('') }}"
-vpc_id:                 "{{ lookup('env','VPC_ID') | default('') }}"
-public_subnet_id:       "{{ lookup('env','PUBLIC_SUBNET_ID') | default('') }}"
-rds_subnet_group:       "{{ lookup('env','RDS_SUBNET_GROUP') | default('') }}"
-ec2_security_group_id:  "{{ lookup('env','EC2_SECURITY_GROUP_ID') | default('') }}"
-rds_security_group_id:  "{{ lookup('env','RDS_SECURITY_GROUP_ID') | default('') }}"
-r2_bucket_name:         "{{ lookup('env','R2_BUCKET_NAME') | default('') }}"
-r2_account_id:          "{{ lookup('env','R2_ACCOUNT_ID') | default('') }}"
-r2_location:            "{{ lookup('env','R2_LOCATION') | default('') }}"
-r2_bucket_endpoint:     "{{ lookup('env','R2_BUCKET_ENDPOINT') | default('') }}"
+ec2_public_ip: "{{ lookup('env','EC2_PUBLIC_IP') | default('') }}"
+ec2_public_dns: "{{ lookup('env','EC2_PUBLIC_DNS') | default('') }}"
+vpc_id: "{{ lookup('env','VPC_ID') | default('') }}"
+public_subnet_id: "{{ lookup('env','PUBLIC_SUBNET_ID') | default('') }}"
+rds_subnet_group: "{{ lookup('env','RDS_SUBNET_GROUP') | default('') }}"
+ec2_security_group_id: >-
+  {{ lookup('env','EC2_SECURITY_GROUP_ID')
+     | default('') }}
+rds_security_group_id: >-
+  {{ lookup('env','RDS_SECURITY_GROUP_ID')
+     | default('') }}
+r2_bucket_name: "{{ lookup('env','R2_BUCKET_NAME') | default('') }}"
+r2_account_id: "{{ lookup('env','R2_ACCOUNT_ID') | default('') }}"
+r2_location: "{{ lookup('env','R2_LOCATION') | default('') }}"
+r2_bucket_endpoint: "{{ lookup('env','R2_BUCKET_ENDPOINT') | default('') }}"
 
 ec2_user: "ubuntu"
 
 ############################################
 # Outputs Terraform (objets JSON)
 ############################################
-db_endpoints:  "{{ (lookup('env','DB_ENDPOINTS')  | default('{}')) | from_json }}"
-dns_records:   "{{ (lookup('env','DNS_RECORDS')   | default('{}')) | from_json }}"
+db_endpoints: >-
+  {{ (lookup('env','DB_ENDPOINTS') | default('{}'))
+     | from_json }}
+dns_records: "{{ (lookup('env','DNS_RECORDS')   | default('{}')) | from_json }}"
 first_dns_name: >-
   {{ (dns_records.keys() | list | first | default('')) }}
 
 ############################################
 # PostgreSQL
 ############################################
-pg_host_ia:     "{{ (db_endpoints.ia     | default('')) | regex_replace(':.*','') }}"
-pg_host_devops: "{{ (db_endpoints.devops | default('')) | regex_replace(':.*','') }}"
-pg_host_cyber:  "{{ (db_endpoints.cyber  | default('')) | regex_replace(':.*','') }}"
+pg_host_ia: >-
+  {{ (db_endpoints.ia | default(''))
+     | regex_replace(':.*', '') }}
+
+pg_host_devops: >-
+  {{ (db_endpoints.devops | default(''))
+     | regex_replace(':.*', '') }}
+
+pg_host_cyber: >-
+  {{ (db_endpoints.cyber | default(''))
+     | regex_replace(':.*', '') }}
 pg_port_ia: 5432
 pg_port_devops: 5432
 pg_port_cyber: 5432
-pg_user_ia:     "wikijs"
+pg_user_ia: "wikijs"
 pg_user_devops: "wikijs"
-pg_user_cyber:  "wikijs"
-pg_pass_ia:     "{{ lookup('env','DB_PASSWORD') | mandatory }}"
+pg_user_cyber: "wikijs"
+pg_pass_ia: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
 pg_pass_devops: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
-pg_pass_cyber:  "{{ lookup('env','DB_PASSWORD') | mandatory }}"
-pg_db_ia:       "wiki_ia"
-pg_db_devops:   "wiki_devops"
-pg_db_cyber:    "wiki_cyber"
+pg_pass_cyber: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
+pg_db_ia: "wiki_ia"
+pg_db_devops: "wiki_devops"
+pg_db_cyber: "wiki_cyber"
 
 ############################################
 # Wiki.js instances (boucle avec "item")
@@ -57,7 +71,7 @@ wikis:
     pg_host: "{{ pg_host_ia }}"
     pg_user: "{{ pg_user_ia }}"
     pg_pass: "{{ pg_pass_ia }}"
-    pg_db:   "{{ pg_db_ia }}"
+    pg_db: "{{ pg_db_ia }}"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
 
@@ -65,7 +79,7 @@ wikis:
     pg_host: "{{ pg_host_devops }}"
     pg_user: "{{ pg_user_devops }}"
     pg_pass: "{{ pg_pass_devops }}"
-    pg_db:   "{{ pg_db_devops }}"
+    pg_db: "{{ pg_db_devops }}"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
 
@@ -73,22 +87,25 @@ wikis:
     pg_host: "{{ pg_host_cyber }}"
     pg_user: "{{ pg_user_cyber }}"
     pg_pass: "{{ pg_pass_cyber }}"
-    pg_db:   "{{ pg_db_cyber }}"
+    pg_db: "{{ pg_db_cyber }}"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_CYBER') | mandatory }}"
 
 ############################################
 # Cloudflare R2
 ############################################
-s3_bucket:      "{{ r2_bucket_name }}"
-s3_endpoint:    "{{ r2_bucket_endpoint }}"
-s3_access_key:  "{{ lookup('env','R2_ACCESS_KEY') | mandatory }}"
-s3_secret_key:  "{{ lookup('env','R2_SECRET_KEY') | mandatory }}"
-cloudflare_api_token_r2: "{{ lookup('env','CLOUDFLARE_API_TOKEN_R2') | mandatory }}"
+s3_bucket: "{{ r2_bucket_name }}"
+s3_endpoint: "{{ r2_bucket_endpoint }}"
+s3_access_key: "{{ lookup('env','R2_ACCESS_KEY') | mandatory }}"
+s3_secret_key: "{{ lookup('env','R2_SECRET_KEY') | mandatory }}"
+cloudflare_api_token_r2: >-
+  {{ lookup('env', 'CLOUDFLARE_API_TOKEN_R2')
+     | mandatory }}
 ############################################
 # Cloudflare API (pour Traefik DNS-01)
 ############################################
-cloudflare_dns_api_token: "{{ lookup('env','CLOUDFLARE_API_TOKEN') | mandatory }}"
+cloudflare_dns_api_token: >-
+  {{ lookup('env','CLOUDFLARE_API_TOKEN') | mandatory }}
 ############################################
 # SSH / Connexion
 ############################################
@@ -96,7 +113,9 @@ ec2_user_ssh_keys: []
 ############################################
 # Dérivés
 ############################################
-wiki_media_base_url: "https://{{ r2_bucket_name }}.{{ r2_account_id }}.r2.cloudflarestorage.com"
+wiki_media_base_url: >-
+  https://{{ r2_bucket_name }}.{{ r2_account_id
+  }}.r2.cloudflarestorage.com
 traefik_dashboard_host: "traefik.{{ base_domain }}"
 ############################################
 # Keycloak Admin Password
