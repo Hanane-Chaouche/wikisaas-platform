@@ -1,7 +1,14 @@
 ---
 # roles/keycloak/tasks/main.yml
+- name: Créer /opt/keycloak
+  file:
+    path: /opt/keycloak
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
-- name: Créer le répertoire Keycloak
+- name: Créer /opt/keycloak/data
   file:
     path: /opt/keycloak/data
     state: directory
@@ -29,12 +36,6 @@
     dest: /opt/keycloak/keycloak-init.sh
     mode: '0755'
   notify: Restart Keycloak
-
-- name: Créer le répertoire pour Keycloak data
-  file:
-    path: /opt/keycloak/data
-    state: directory
-    mode: '0755'
 
 - name: Lancer Keycloak avec Docker Compose
   community.docker.docker_compose_v2:

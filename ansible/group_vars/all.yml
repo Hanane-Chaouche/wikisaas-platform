@@ -121,5 +121,5 @@ traefik_dashboard_host: "traefik.{{ base_domain }}"
 # Keycloak Admin Password
 ############################################
 kc_admin: admin
-kc_admin_password: "{{ lookup('env','KC_ADMIN_PASS') | mandatory }}"
+kc_admin_password: "{{ lookup('env','KEYCLOAK_ADMIN_PASS') | mandatory }}"
 kc_realm: "saas"
