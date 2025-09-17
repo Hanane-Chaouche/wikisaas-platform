@@ -1,18 +1,17 @@
 ---
-version: "3.9"
-
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.7
     container_name: keycloak
     restart: always
     # Démarrage dev; pour importer: start-dev --import-realm
-    command: ["start-dev"]
+    command: ["start-dev", "--import-realm"]
     env_file:
       - .env
     volumes:
       - >-
         ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
+
     networks:
       - proxy
     labels:
@@ -28,4 +27,4 @@ networks:
   proxy:
     # Réseau proxy externe créé par Traefik
     external: true
-    name: proxy
+ 
