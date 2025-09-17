@@ -33,11 +33,10 @@ jobs:
           mkdir -p ~/.ssh
           printf "%s" "$VM_SSH_KEY" > ~/.ssh/newtest.pem
           chmod 600 ~/.ssh/newtest.pem
-
       # 2) Installer Ansible
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
       # 3) Exécuter Ansible
       - name: Run Ansible Playbook
-        run: ansible-playbook -i ansible/inventories/prod/hosts.yml ansible/site.yml
+        run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
