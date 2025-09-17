@@ -49,11 +49,10 @@ services:
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
       # Middleware Auth basique (login admin / mot de passe hashé)
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$apr1$/pBuvzke$LUWOGmAGGAArsVoX3Znyr1"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$/pBuvzke$$LUWOGmAGGAArsVoX3Znyr1"
 
       # Application des middlewares : Auth + Headers de sécurité
       - "traefik.http.routers.traefik.middlewares=traefik-auth,secureHeaders@docker"
-  networks:
+networks:
   proxy:
-    name: proxy
-    external: false
+    external: true
