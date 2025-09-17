@@ -1,32 +1,25 @@
----
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.7
     container_name: keycloak
     restart: always
-    # Démarrage dev; pour importer: start-dev --import-realm
     command: ["start-dev", "--import-realm"]
     env_file:
       - .env
     volumes:
-      - >-
-        ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
-
+      - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
     networks:
-      - proxy
-    ports:              
-      - "8080:8080"     # mapping VM:container pour test direct
+      proxy:              # 👈 le service utilise le réseau "proxy"
+        aliases:          # 👈 alias pour ce conteneur dans CE réseau
+          - keycloak
     labels:
       - "traefik.enable=true"
-      # Routage: https://sso.${DOMAIN} -> Keycloak
-      - >
-        traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)
+      - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+
 networks:
   proxy:
-    # Réseau proxy externe créé par Traefik
     external: true
- 
