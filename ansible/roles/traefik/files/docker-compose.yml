@@ -1,6 +1,3 @@
----
-version: "3.9"
-
 services:
   traefik:
     image: traefik:v3.0
@@ -23,12 +20,6 @@ services:
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
 
-      # Headers de sécurité
-      - "--middlewares.secureHeaders.headers.stsSeconds=31536000"
-      - "--middlewares.secureHeaders.headers.stsIncludeSubdomains=true"
-      - "--middlewares.secureHeaders.headers.frameDeny=true"
-      - "--middlewares.secureHeaders.headers.contentTypeNosniff=true"
-
     ports:
       - "80:80"
       - "443:443"
@@ -48,11 +39,18 @@ services:
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
-      # Middleware Auth basique (login admin / mot de passe hashé)
+      # Middleware Auth basique
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$/pBuvzke$$LUWOGmAGGAArsVoX3Znyr1"
 
-      # Application des middlewares : Auth + Headers de sécurité
+      # Headers de sécurité (middlewares)
+      - "traefik.http.middlewares.secureHeaders.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.secureHeaders.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secureHeaders.headers.frameDeny=true"
+      - "traefik.http.middlewares.secureHeaders.headers.contentTypeNosniff=true"
+      
+      # Application des middlewares : Auth + Headers
       - "traefik.http.routers.traefik.middlewares=traefik-auth,secureHeaders@docker"
+
 networks:
   proxy:
     external: true

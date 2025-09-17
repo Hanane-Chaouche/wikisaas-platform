@@ -1,16 +1,6 @@
 # ansible-lint.yml
 
-skip_list:
-  - experimental           # ignore toutes les règles expérimentales
-  - yaml[trailing-spaces]  # ignore les espaces de fin de ligne
-  - yaml[comments]         # ignore les erreurs de commentaires YAML
-  - fqcn-builtins          # évite d'imposer les noms FQCN (ansible.builtin.xxx)
-
-warn_list:
-  - jinja[spacing]         # juste un warning pour les espaces dans Jinja2
-
-exclude_paths:
-  - tests/                 # ignore les tests
-  - .github/               # ignore les workflows GitHub Actions
-  - roles/*/files/         # ignore les fichiers statiques copiés tels quels
-  - roles/*/templates/     # ignore les templates Jinja2
+[tool.ansible-lint]
+skip_list = ["experimental", "yaml[trailing-spaces]", "yaml[comments]", "fqcn-builtins"]
+warn_list = ["jinja[spacing]"]
+exclude_paths = ["tests/", ".github/", "roles/*/files/", "roles/*/templates/"]
