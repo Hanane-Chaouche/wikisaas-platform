@@ -30,6 +30,9 @@ services:
 
     env_file:
       - .env
+      
+    networks:
+      - proxy
 
     labels:
       # Dashboard Traefik (protégé par auth basique)

@@ -1,11 +1,6 @@
 ---
 # roles/keycloak/tasks/main.yml
 
-- name: Créer le réseau Docker proxy (si absent)
-  community.docker.docker_network:
-    name: proxy
-    state: present
-
 - name: Créer le répertoire Keycloak
   file:
     path: /opt/keycloak

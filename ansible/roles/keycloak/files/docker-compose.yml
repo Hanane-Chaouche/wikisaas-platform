@@ -8,10 +8,10 @@ services:
       - .env
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
+      - ./data:/opt/keycloak/data
+   
     networks:
-      proxy:              # 👈 le service utilise le réseau "proxy"
-        aliases:          # 👈 alias pour ce conteneur dans CE réseau
-          - keycloak
+      - proxy # Connecté au réseau Docker "proxy" pour Traefik  (à créer si absent)   
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
