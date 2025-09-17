@@ -37,6 +37,11 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
+      - name: Add SSH known_hosts
+        run: 
+          mkdir -p ~/.ssh
+          ssh-keyscan -H wikiplatform.app >> ~/.ssh/known_hosts
+
       # 3) Exécuter Ansible
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
