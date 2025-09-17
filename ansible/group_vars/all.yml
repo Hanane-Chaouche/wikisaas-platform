@@ -2,8 +2,8 @@
 ############################################
 # Domaine / ACME
 ############################################
-base_domain: "{{ lookup('env','DOMAIN') | default('wikiplatform.app') }}"
-acme_email: "{{ lookup('env','ACME_EMAIL') | default('chamer6@hotmail.com') }}"
+base_domain: "{{ lookup('env','DOMAIN') | default('wikiplatform.app', true) }}"
+acme_email: "{{ lookup('env','ACME_EMAIL') | default('chamer6@hotmail.com', true) }}"
 
 ############################################
 # Outputs Terraform (scalaires)
