@@ -23,3 +23,14 @@ resource "cloudflare_dns_record" "wildcard" {
   proxied = true
   ttl     = 1
 }
+########################
+# Domaine racine (wikiplatform.app)
+########################
+resource "cloudflare_dns_record" "root" {
+  zone_id = var.cloudflare_zone_id
+  name    = "@"
+  type    = "A"
+  content = aws_instance.wikijs.public_ip
+  proxied = false   #  important pour SSH (pas de proxy Cloudflare sur port 22)
+  ttl     = 1
+}
