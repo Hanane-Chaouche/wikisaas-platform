@@ -1,4 +1,171 @@
-# --- Fonction utilitaire pour récupérer le secret d'un client
+#!/bin/bash
+set -e
+
+KC_URL="http://localhost:8080"
+REALM={{ KEYCLOAK_REALM }}
+
+echo "Initialisation Keycloak (Realm: ${REALM})..."
+
+# Connexion avec l’admin
+$KEYCLOAK_HOME/bin/kcadm.sh config credentials \
+  --server "$KC_URL" \
+  --realm master \
+  --user "{{ KEYCLOAK_ADMIN }}" \
+  --password "{{ KEYCLOAK_ADMIN_PASSWORD }}"
+
+# Vérifier/Créer le Realm
+if ! $KEYCLOAK_HOME/bin/kcadm.sh get realms | grep -q "\"id\" : \"${REALM}\""; then
+  echo "Création du realm ${REALM}"
+  $KEYCLOAK_HOME/bin/kcadm.sh create realms -s realm=${REALM} -s enabled=true
+else
+  echo " Realm ${REALM} existe déjà"
+fi
+
+# ----------------------------
+# 1. Création des rôles (Admin par Wiki)
+# ----------------------------
+for role in ia-admin devops-admin cyber-admin; do
+  if $KEYCLOAK_HOME/bin/kcadm.sh get roles -r ${REALM} | grep -q "\"name\" : \"${role}\""; then
+    echo " Rôle ${role} existe déjà"
+  else
+    echo "Création du rôle ${role}"
+    $KEYCLOAK_HOME/bin/kcadm.sh create roles -r ${REALM} -s name=${role}
+  fi
+done
+
+# ----------------------------
+# 2. Création des groupes (Offres SaaS)
+# ----------------------------
+for group in STARTER PRO ENTERPRISE; do
+  if $KEYCLOAK_HOME/bin/kcadm.sh get groups -r ${REALM} | grep -q "\"name\" : \"${group}\""; then
+    echo "Groupe ${group} existe déjà"
+  else
+    echo "Création du groupe ${group}"
+    $KEYCLOAK_HOME/bin/kcadm.sh create groups -r ${REALM} -s name=${group}
+  fi
+done
+
+# Récupération des IDs de groupe
+STARTER_ID=$($KEYCLOAK_HOME/bin/kcadm.sh get groups -r ${REALM} | jq -r '.[] | select(.name=="STARTER") | .id')
+PRO_ID=$($KEYCLOAK_HOME/bin/kcadm.sh get groups -r ${REALM} | jq -r '.[] | select(.name=="PRO") | .id')
+ENTERPRISE_ID=$($KEYCLOAK_HOME/bin/kcadm.sh get groups -r ${REALM} | jq -r '.[] | select(.name=="ENTERPRISE") | .id')
+
+# ----------------------------
+# 3. Associer les rôles aux groupes
+# ----------------------------
+assign_role_to_group () {
+  local group_id=$1
+  local role_name=$2
+  $KEYCLOAK_HOME/bin/kcadm.sh add-roles -r ${REALM} --gid ${group_id} --rolename ${role_name} || true
+}
+
+assign_role_to_group $STARTER_ID "ia-admin"
+assign_role_to_group $PRO_ID "ia-admin"
+assign_role_to_group $PRO_ID "devops-admin"
+assign_role_to_group $ENTERPRISE_ID "ia-admin"
+assign_role_to_group $ENTERPRISE_ID "devops-admin"
+assign_role_to_group $ENTERPRISE_ID "cyber-admin"
+
+# ----------------------------
+# 4. Création des clients + mappers
+# ----------------------------
+create_client () {
+  local client_id=$1
+  local base_domain="{{ base_domain }}"
+  local redirect="https://${client_id}.${base_domain}/login/oidc/callback"
+  local origin="https://${client_id}.${base_domain}"
+
+  echo "Vérification du client ${client_id}..."
+  if $KEYCLOAK_HOME/bin/kcadm.sh get clients -r ${REALM} | grep -q "\"clientId\" : \"${client_id}\""; then
+    echo "Client ${client_id} existe déjà."
+  else
+    echo "Création du client ${client_id}..."
+    $KEYCLOAK_HOME/bin/kcadm.sh create clients -r ${REALM} -f - <<EOF
+{
+  "clientId": "${client_id}",
+  "protocol": "openid-connect",
+  "publicClient": false,
+  "standardFlowEnabled": true,
+  "redirectUris": ["${redirect}"],
+  "webOrigins": ["${origin}"],
+  "secret": "$(openssl rand -hex 16)"
+}
+EOF
+  fi
+
+  # Récupérer l’UUID du client
+  client_uuid=$($KEYCLOAK_HOME/bin/kcadm.sh get clients -r ${REALM} --fields id,clientId \
+    | jq -r ".[] | select(.clientId==\"${client_id}\") | .id")
+
+  echo "Ajout des mappers pour ${client_id}..."
+
+  # email / preferred_username / given_name / family_name / groups / roles
+  declare -A mappers=(
+    ["email"]="email:user.attribute=email"
+    ["preferred_username"]="preferred_username:user.attribute=username"
+    ["given_name"]="given_name:user.attribute=firstName"
+    ["family_name"]="family_name:user.attribute=lastName"
+  )
+
+  for mapper in "${!mappers[@]}"; do
+    IFS=":" read -r claim attr <<< "${mappers[$mapper]}"
+    $KEYCLOAK_HOME/bin/kcadm.sh create clients/${client_uuid}/protocol-mappers/models -r ${REALM} -f - <<EOF
+{
+  "name": "${mapper}",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-property-mapper",
+  "config": {
+    "claim.name": "${claim}",
+    "user.attribute": "${attr}",
+    "id.token.claim": "true",
+    "access.token.claim": "true",
+    "userinfo.token.claim": "true"
+  }
+}
+EOF
+  done
+
+  # Mapper groups
+  $KEYCLOAK_HOME/bin/kcadm.sh create clients/${client_uuid}/protocol-mappers/models -r ${REALM} -f - <<EOF
+{
+  "name": "groups",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-group-membership-mapper",
+  "config": {
+    "full.path": "false",
+    "claim.name": "groups",
+    "id.token.claim": "true",
+    "access.token.claim": "true",
+    "userinfo.token.claim": "true"
+  }
+}
+EOF
+
+  # Mapper roles
+  $KEYCLOAK_HOME/bin/kcadm.sh create clients/${client_uuid}/protocol-mappers/models -r ${REALM} -f - <<EOF
+{
+  "name": "roles",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-realm-role-mapper",
+  "config": {
+    "multivalued": "true",
+    "claim.name": "roles",
+    "jsonType.label": "String",
+    "id.token.claim": "true",
+    "access.token.claim": "true",
+    "userinfo.token.claim": "true"
+  }
+}
+EOF
+}
+
+create_client "wiki-ia"
+create_client "wiki-devops"
+create_client "wiki-cyber"
+
+# ----------------------------
+# 5. Récupérer les secrets et écrire un JSON pour Ansible
+# ----------------------------
 get_client_secret () {
   local client_id=$1
   local client_uuid
@@ -7,12 +174,10 @@ get_client_secret () {
   $KEYCLOAK_HOME/bin/kcadm.sh get clients/${client_uuid}/client-secret -r ${REALM} | jq -r .value
 }
 
-# --- Récupérer les secrets des 3 clients
 IA_SECRET=$(get_client_secret wiki-ia)
 DEVOPS_SECRET=$(get_client_secret wiki-devops)
 CYBER_SECRET=$(get_client_secret wiki-cyber)
 
-# --- Écrire un fichier JSON lisible par Ansible
 SECRETS_DIR=/opt/keycloak
 SECRETS_FILE=${SECRETS_DIR}/clients_secrets.json
 mkdir -p "${SECRETS_DIR}"
@@ -30,6 +195,6 @@ cat > "${SECRETS_FILE}" <<EOF
 EOF
 
 chmod 600 "${SECRETS_FILE}"
+echo "Secrets Keycloak écrits dans ${SECRETS_FILE}"
 
-echo " Secrets Keycloak écrits dans ${SECRETS_FILE}"
 echo "Tu peux maintenant lancer Ansible pour générer les .env des Wikis."

@@ -1,0 +1,45 @@
+---
+# roles/keycloak/tasks/main.yml
+
+- name: Créer le réseau Docker proxy (si absent)
+  community.docker.docker_network:
+    name: proxy
+    state: present
+
+- name: Créer le répertoire Keycloak
+  file:
+    path: /opt/keycloak
+    state: directory
+    mode: '0755'
+
+- name: Copier le docker-compose.yml
+  copy:
+    src: docker-compose.yml
+    dest: /opt/keycloak/docker-compose.yml
+    mode: '0644'
+  notify: Restart Keycloak
+
+- name: Générer le fichier .env depuis le template
+  template:
+    src: .env.j2
+    dest: /opt/keycloak/.env
+    mode: '0644'
+  notify: Restart Keycloak
+
+- name: Générer le script d'init Keycloak
+  template:
+    src: keycloak-init.sh.j2
+    dest: /opt/keycloak/keycloak-init.sh
+    mode: '0755'
+  notify: Restart Keycloak
+
+- name: Créer le répertoire pour Keycloak data
+  file:
+    path: /opt/keycloak/data
+    state: directory
+    mode: '0755'
+
+- name: Lancer Keycloak avec Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /opt/keycloak
+    state: present

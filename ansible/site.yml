@@ -8,5 +8,7 @@
 
   roles:
     - role: common     # installe Docker + dépendances
-    - role: docker   # installe Docker Compose  
-    - role: traefik   # installe Traefik en reverse proxy
+    - role: docker     # installe Docker + dépendances
+    - role: traefik    # déploie Traefik
+    - role: keycloak   # déploie Keycloak + init
+
