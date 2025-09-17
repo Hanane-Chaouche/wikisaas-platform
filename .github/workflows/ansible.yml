@@ -37,6 +37,10 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
+      # 2bis) Installer les collections nécessaires (dont ansible.posix)
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install ansible.posix
+
       # 3) Ajouter le host dans known_hosts (évite le "Host key verification failed")
       - name: Add SSH known_hosts
         run: |

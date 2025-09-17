@@ -65,11 +65,11 @@
 - name: Check Docker Compose version
   become: true
   ansible.builtin.command: docker compose version
-  register: compose_version
+  register: docker_compose_version
   changed_when: false
 
 - name: Debug Docker versions
   ansible.builtin.debug:
     msg:
       - "Docker: {{ docker_version.stdout }}"
-      - "Compose: {{ compose_version.stdout }}"
+      - "Compose: {{ docker_compose_version.stdout }}"
