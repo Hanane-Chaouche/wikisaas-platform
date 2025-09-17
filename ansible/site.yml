@@ -8,7 +8,4 @@
 
   roles:
     - role: common     # installe Docker + dépendances
-    - role: docker     # installe Docker + dépendances
-    - role: traefik    # déploie Traefik
-    - role: keycloak   # déploie Keycloak + init
-    - role: wiki       # déploie les Wikis (ia/devops/cyber)
+    
