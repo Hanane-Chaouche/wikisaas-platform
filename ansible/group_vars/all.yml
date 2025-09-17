@@ -104,15 +104,3 @@ traefik_dashboard_host: "traefik.{{ base_domain }}"
 kc_admin: admin
 kc_admin_password: "{{ lookup('env','KC_ADMIN_PASS') | mandatory }}"
 kc_realm: "saas"
-############################################
-# Aliases vers Vault
-############################################
-#r2_access_key: "{{ vault_r2_access_key }}"
-#r2_secret_key: "{{ vault_r2_secret_key }}"
-#ec2_user: "{{ vault_ec2_user }}"
-#db_password: "{{ vault_db_password }}"
-#vm_ssh_key: "{{ vault_vm_ssh_key }}"
-#cloudflare_api_token_r2: "{{ vault_cloudflare_api_token_r2 }}"
-#tf_api_token: "{{ vault_tf_api_token }}"
-#cloudflare_dns_api_token: "{{ vault_cloudflare_dns_api_token }}"
-############################################
