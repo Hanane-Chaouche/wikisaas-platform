@@ -22,7 +22,6 @@ jobs:
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
       VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}  # clé privée SSH pour se connecter à la VM
 
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -33,15 +32,17 @@ jobs:
           mkdir -p ~/.ssh
           printf "%s" "$VM_SSH_KEY" > ~/.ssh/newtest.pem
           chmod 600 ~/.ssh/newtest.pem
+
       # 2) Installer Ansible
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
+      # 3) Ajouter le host dans known_hosts (évite le "Host key verification failed")
       - name: Add SSH known_hosts
-        run: 
+        run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H wikiplatform.app >> ~/.ssh/known_hosts
 
-      # 3) Exécuter Ansible
+      # 4) Exécuter Ansible
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
