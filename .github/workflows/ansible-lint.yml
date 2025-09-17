@@ -16,6 +16,8 @@ jobs:
           python-version: '3.x'
       - name: Install Ansible Lint
         run: pip install ansible-lint
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install ansible.posix
       - name: Run Ansible Lint
         run: ansible-lint
         
