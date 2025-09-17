@@ -1,0 +1,33 @@
+---
+
+# roles/traefik/tasks/main.yml
+- name: Créer le répertoire Traefik
+  file:
+    path: /opt/traefik
+    state: directory
+    mode: '0755'
+
+- name: Copier le docker-compose.yml
+  copy:
+    src: docker-compose.yml
+    dest: /opt/traefik/docker-compose.yml
+    mode: '0644'
+  notify: Restart Traefik  # si le fichier change → redémarre
+
+- name: Générer le fichier .env depuis le template
+  template:
+    src: .env.j2
+    dest: /opt/traefik/.env
+    mode: '0600'
+  notify: Restart Traefik   # si le fichier change → redémarre
+
+- name: Créer le répertoire letsencrypt
+  file:
+    path: /opt/traefik/letsencrypt
+    state: directory
+    mode: '0755'
+
+- name: Lancer Traefik avec Docker Compose v2
+  community.docker.docker_compose_v2:
+    project_src: /opt/traefik
+    state: present
