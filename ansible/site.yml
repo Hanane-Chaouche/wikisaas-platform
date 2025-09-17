@@ -8,4 +8,4 @@
 
   roles:
     - role: common     # installe Docker + dépendances
-    - role: Docker   # installe Docker Compose  
+    - role: docker   # installe Docker Compose  
