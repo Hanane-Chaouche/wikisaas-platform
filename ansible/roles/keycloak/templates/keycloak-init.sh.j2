@@ -2,7 +2,7 @@
 set -e
 
 KC_URL="http://localhost:8080"
-REALM={{ KEYCLOAK_REALM }}
+REALM={{ kc_realm }}
 
 echo "Initialisation Keycloak (Realm: ${REALM})..."
 
@@ -10,8 +10,8 @@ echo "Initialisation Keycloak (Realm: ${REALM})..."
 $KEYCLOAK_HOME/bin/kcadm.sh config credentials \
   --server "$KC_URL" \
   --realm master \
-  --user "{{ KEYCLOAK_ADMIN }}" \
-  --password "{{ KEYCLOAK_ADMIN_PASSWORD }}"
+  --user "{{ kc_admin }}" \
+  --password "{{ kc_admin_password }}"
 
 # Vérifier/Créer le Realm
 if ! $KEYCLOAK_HOME/bin/kcadm.sh get realms | grep -q "\"id\" : \"${REALM}\""; then
