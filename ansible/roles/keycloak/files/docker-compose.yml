@@ -14,6 +14,8 @@ services:
 
     networks:
       - proxy
+    ports:              
+      - "8080:8080"     # mapping VM:container pour test direct
     labels:
       - "traefik.enable=true"
       # Routage: https://sso.${DOMAIN} -> Keycloak
