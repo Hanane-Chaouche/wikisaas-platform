@@ -1,164 +1,165 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# --- Charge les variables depuis /opt/keycloak/.env ---
+# --- Chargement des variables ---
 ENV_FILE="/opt/keycloak/.env"
-[ -f "$ENV_FILE" ] || { echo "ERR: $ENV_FILE introuvable"; exit 1; }
+[ -f "$ENV_FILE" ] || { echo "❌ ERR: $ENV_FILE introuvable"; exit 1; }
 set -a; source "$ENV_FILE"; set +a
 # Variables attendues : KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_REALM, DOMAIN
 
 # --- Constantes/chemins ---
-COMPOSE="/opt/keycloak/docker-compose.yml"   # sur l'hôte
-SERVICE="keycloak"                           # nom du service dans docker-compose.yml
-KCADM="/opt/keycloak/bin/kcadm.sh"           # dans le conteneur
+COMPOSE="/opt/keycloak/docker-compose.yml"
+SERVICE="keycloak"
+KCADM="/opt/keycloak/bin/kcadm.sh"
 
-# Exécuter DANS le conteneur
+# Exécuter une commande dans le conteneur Keycloak
 dc() { docker compose -f "$COMPOSE" exec -T "$SERVICE" bash -lc "$*"; }
 
-# --- Attente de disponibilité via login kcadm (pas de curl nécessaire) ---
-echo "[init] Attente + login admin (sans curl)..."
+# --- Attente de disponibilité ---
+echo "⏳ [init] Attente que Keycloak soit prêt..."
 for i in {1..60}; do
   if dc "export KCADM_CONFIG=/tmp/kcadm.config && \
          $KCADM config credentials --server http://localhost:8080 \
          --realm master --user '${KEYCLOAK_ADMIN}' --password '${KEYCLOAK_ADMIN_PASSWORD}'"; then
-    echo "[init] Login OK"
+    echo "✅ [init] Login admin OK"
     break
   fi
   sleep 2
-  [[ $i -eq 60 ]] && { echo "ERR: Keycloak pas prêt (login kcadm échoué)"; exit 1; }
+  [[ $i -eq 60 ]] && { echo "❌ ERR: Keycloak pas prêt"; exit 1; }
 done
 
 REALM="${KEYCLOAK_REALM}"
 BASE_DOMAIN="${DOMAIN}"
 
-# --- Realm (idempotent & robuste) ---
-if dc $KCADM get realms/${REALM} > /dev/null 2>&1; then
-  echo "[init] Realm ${REALM} existe déjà."
+# ============================
+# 📂 REALM
+# ============================
+echo -e "\n=== 📂 Gestion du Realm ==="
+if dc "$KCADM get realms/${REALM}" >/dev/null 2>&1; then
+  echo "ℹ️ Realm '${REALM}' existe déjà."
 else
-  echo "[init] Création realm ${REALM}..."
-  dc $KCADM create realms -s realm="${REALM}" -s enabled=true
+  echo "➕ Création du realm '${REALM}'..."
+  dc "$KCADM create realms -s realm='${REALM}' -s enabled=true"
 fi
 
-# --- Rôles (idempotent) ---
+# ============================
+# 🔑 ROLES
+# ============================
+echo -e "\n=== 🔑 Gestion des Rôles ==="
 for role in ia-admin devops-admin cyber-admin; do
-  if dc "$KCADM get roles -r '${REALM}'" | grep -q "\"name\" : \"${role}\""; then
-    echo "[init] Rôle ${role} existe déjà"
+  if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
+    echo "ℹ️ Rôle '${role}' existe déjà."
   else
-    dc "$KCADM create roles -r '${REALM}' -s name='${role}'"
+    echo "➕ Création du rôle '${role}'..."
+    dc "$KCADM create roles -r ${REALM} -s name=${role}"
   fi
 done
 
-# --- Groupes (idempotent) ---
+# ============================
+# 👥 GROUPES
+# ============================
+echo -e "\n=== 👥 Gestion des Groupes ==="
 for group in STARTER PRO ENTERPRISE; do
-  if dc "$KCADM get groups -r '${REALM}' -q search='${group}' --fields name" | grep -q "\"name\" : \"${group}\""; then
-    echo "[init] Groupe ${group} existe déjà"
+  if dc "$KCADM get groups -r ${REALM} -q search=${group} --fields name" | grep -q "\"name\" : \"${group}\""; then
+    echo "ℹ️ Groupe '${group}' existe déjà."
   else
-    dc "$KCADM create groups -r '${REALM}' -s name='${group}'"
+    echo "➕ Création du groupe '${group}'..."
+    dc "$KCADM create groups -r ${REALM} -s name=${group}"
   fi
 done
 
-# --- Helpers robustes (sans jq) ---
+# ============================
+# 🔗 ROLES → GROUPES
+# ============================
+echo -e "\n=== 🔗 Association Rôles → Groupes ==="
 get_group_id() {
-  # Utilise la recherche filtrée puis extrait l'id correspondant au nom exact
   local name="$1"
-  dc "$KCADM get 'groups?search=${name}' -r '${REALM}' --fields id,name" \
-  | awk -v pat="\"name\" : \""$name"\"" -F\" '
-      $0 ~ pat {f=1} f && /"id"/ {print $4; exit}
-    '
+  dc "$KCADM get groups -r ${REALM} -q search=${name} --fields id,name" \
+  | awk -v pat="\"name\" : \""$name"\"" -F\" '$0 ~ pat {f=1} f && /"id"/ {print $4; exit}'
 }
-
-get_client_uuid() {
-  local cid="$1"
-  # Filtre directement par clientId (évite le gros listing)
-  dc "$KCADM get clients -r '${REALM}' -q clientId='${cid}' --fields id" \
-  | awk -F\" '/"id"/{print $4; exit}'
-}
-
-# --- IDs de groupe (robuste) ---
 STARTER_ID="$(get_group_id STARTER || true)"
 PRO_ID="$(get_group_id PRO || true)"
 ENTERPRISE_ID="$(get_group_id ENTERPRISE || true)"
 
-# Vérifie que les IDs existent, sinon arrête tout de suite (évite //role-mappings/realm)
-[ -n "${STARTER_ID:-}" ] || { echo "ERR: ID groupe STARTER introuvable"; exit 1; }
-[ -n "${PRO_ID:-}" ] || { echo "ERR: ID groupe PRO introuvable"; exit 1; }
-[ -n "${ENTERPRISE_ID:-}" ] || { echo "ERR: ID groupe ENTERPRISE introuvable"; exit 1; }
+for mapping in \
+  "$STARTER_ID:ia-admin" \
+  "$PRO_ID:ia-admin" "$PRO_ID:devops-admin" \
+  "$ENTERPRISE_ID:ia-admin" "$ENTERPRISE_ID:devops-admin" "$ENTERPRISE_ID:cyber-admin"; do
+  gid="${mapping%%:*}"
+  role="${mapping##*:}"
+  if [ -n "$gid" ]; then
+    echo "➕ Association rôle '${role}' → groupe '${gid}'"
+    dc "$KCA=DM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
+  fi
+done
 
-# --- Associer rôles → groupes (best-effort idempotent) ---
-dc "$KCADM add-roles -r '${REALM}' --gid '${STARTER_ID}'    --rolename ia-admin"       || true
-dc "$KCADM add-roles -r '${REALM}' --gid '${PRO_ID}'        --rolename ia-admin"       || true
-dc "$KCADM add-roles -r '${REALM}' --gid '${PRO_ID}'        --rolename devops-admin"   || true
-dc "$KCADM add-roles -r '${REALM}' --gid '${ENTERPRISE_ID}' --rolename ia-admin"       || true
-dc "$KCADM add-roles -r '${REALM}' --gid '${ENTERPRISE_ID}' --rolename devops-admin"   || true
-dc "$KCADM add-roles -r '${REALM}' --gid '${ENTERPRISE_ID}' --rolename cyber-admin"    || true
+# ============================
+# 🌐 CLIENTS + MAPPERS
+# ============================
+echo -e "\n=== 🌐 Gestion des Clients & Mappers ==="
 
-# --- Création client + mappers ---
+get_client_uuid() {
+  local cid="$1"
+  dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" \
+  | awk -F\" '/"id"/{print $4; exit}'
+}
+
 create_client () {
   local cid="$1"
   local redirect="https://${cid}.${BASE_DOMAIN}/login/oidc/callback"
   local origin="https://${cid}.${BASE_DOMAIN}"
 
-  # Créer le client si absent (sans "secret": Keycloak en générera un automatiquement)
-  if dc "$KCADM get clients -r '${REALM}' -q clientId='${cid}' --fields clientId" | grep -q "\"clientId\" : \"${cid}\""; then
-    echo "[init] Client ${cid} existe déjà"
+  # --- Client ---
+  if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" | grep -q "\"clientId\" : \"${cid}\""; then
+    echo "ℹ️ Client '${cid}' existe déjà."
   else
-    dc "$KCADM create clients -r '${REALM}' -f - <<JSON
+    echo "➕ Création du client '${cid}'..."
+    dc "$KCADM create clients -r ${REALM} -f - <<JSON
 { \"clientId\":\"${cid}\", \"protocol\":\"openid-connect\", \"publicClient\":false,
   \"standardFlowEnabled\":true, \"redirectUris\":[\"${redirect}\"],
   \"webOrigins\":[\"${origin}\"] }
 JSON"
   fi
 
-  # Récupérer l'UUID du client
+  # --- Récupération de l'UUID ---
   local uuid
   uuid="$(get_client_uuid "${cid}")"
-  [ -n "${uuid:-}" ] || { echo "ERR: UUID client ${cid} introuvable"; exit 1; }
+  [ -n "${uuid:-}" ] || { echo "❌ ERR: UUID client ${cid} introuvable"; exit 1; }
 
-  # Ajoute un mapper "user property" si absent
-  add_prop () { local name="$1" claim="$2" attr="$3";
-    dc "$KCADM get clients/${uuid}/protocol-mappers/models -r '${REALM}' --fields name" | grep -q "\"name\" : \"${name}\"" \
-      || dc "$KCADM create clients/${uuid}/protocol-mappers/models -r '${REALM}' -f - <<JSON
-{ \"name\":\"${name}\", \"protocol\":\"openid-connect\", \"protocolMapper\":\"oidc-usermodel-property-mapper\",
-  \"config\": { \"claim.name\":\"${claim}\", \"user.attribute\":\"${attr}\",
-               \"id.token.claim\":\"true\",\"access.token.claim\":\"true\",\"userinfo.token.claim\":\"true\" } }
+  # --- Helpers pour mapper ---
+  add_mapper () {
+    local name="$1" mapper="$2" extra="$3"
+    if dc "$KCADM get clients/${uuid}/protocol-mappers/models -r ${REALM} --fields name" | grep -q "\"name\" : \"${name}\""; then
+      echo "ℹ️ Mapper '${name}' déjà présent pour ${cid}."
+    else
+      echo "➕ Ajout du mapper '${name}' pour ${cid}..."
+      dc "$KCADM create clients/${uuid}/protocol-mappers/models -r ${REALM} -f - <<JSON
+{ \"name\":\"${name}\", \"protocol\":\"openid-connect\", \"protocolMapper\":\"${mapper}\", \"config\": ${extra} }
 JSON"
+    fi
   }
 
-  add_prop email              email              email
-  add_prop preferred_username preferred_username username
-  add_prop given_name         given_name         firstName
-  add_prop family_name        family_name        lastName
+  # --- Ajout des mappers standards ---
+  add_mapper "email"              "oidc-usermodel-property-mapper" \
+    "{ \"claim.name\":\"email\", \"user.attribute\":\"email\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
-  # Mapper "groups"
-  dc "$KCADM get clients/${uuid}/protocol-mappers/models -r '${REALM}' --fields name" | grep -q '"name" : "groups"' \
-    || dc "$KCADM create clients/${uuid}/protocol-mappers/models -r '${REALM}' -f - <<JSON
-{ \"name\":\"groups\",\"protocol\":\"openid-connect\",\"protocolMapper\":\"oidc-group-membership-mapper\",
-  \"config\": { \"full.path\":\"false\",\"claim.name\":\"groups\",
-               \"id.token.claim\":\"true\",\"access.token.claim\":\"true\",\"userinfo.token.claim\":\"true\" } }
-JSON"
+  add_mapper "preferred_username" "oidc-usermodel-property-mapper" \
+    "{ \"claim.name\":\"preferred_username\", \"user.attribute\":\"username\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
-  # Mapper "roles"
-  dc "$KCADM get clients/${uuid}/protocol-mappers/models -r '${REALM}' --fields name" | grep -q '"name" : "roles"' \
-    || dc "$KCADM create clients/${uuid}/protocol-mappers/models -r '${REALM}' -f - <<JSON
-{ \"name\":\"roles\",\"protocol\":\"openid-connect\",\"protocolMapper\":\"oidc-usermodel-realm-role-mapper\",
-  \"config\": { \"multivalued\":\"true\",\"claim.name\":\"roles\",\"jsonType.label\":\"String\",
-               \"id.token.claim\":\"true\",\"access.token.claim\":\"true\",\"userinfo.token.claim\":\"true\" } }
-JSON"
+  add_mapper "given_name"         "oidc-usermodel-property-mapper" \
+    "{ \"claim.name\":\"given_name\", \"user.attribute\":\"firstName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+
+  add_mapper "family_name"        "oidc-usermodel-property-mapper" \
+    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+
+  add_mapper "groups"             "oidc-group-membership-mapper" \
+    "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+
+  add_mapper "roles"              "oidc-usermodel-realm-role-mapper" \
+    "{ \"multivalued\":\"true\", \"claim.name\":\"roles\", \"jsonType.label\":\"String\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 }
 
 # --- Créer les clients attendus ---
 create_client "wiki-ia"
 create_client "wiki-devops"
 create_client "wiki-cyber"
-
-# --- (Optionnel) Récupérer les secrets générés automatiquement ---
-# Exemple:
-# for cid in wiki-ia wiki-devops wiki-cyber; do
-#   uuid="$(get_client_uuid "$cid")"
-#   secret="$(dc "$KCADM get clients/${uuid}/client-secret -r '${REALM}'" | awk -F\" '/"value"/{print $4; exit}')"
-#   echo "$cid : $secret"
-# done
-
-# --- Marqueur d'idempotence ---
-touch /opt/keycloak/.init_done
-echo "[init] Terminé."
