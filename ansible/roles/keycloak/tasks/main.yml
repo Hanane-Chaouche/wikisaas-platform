@@ -1,6 +1,8 @@
 ---
 # roles/keycloak/tasks/main.yml
+
 - name: Créer /opt/keycloak
+  become: true
   file:
     path: /opt/keycloak
     state: directory
@@ -8,15 +10,18 @@
     group: root
     mode: '0755'
 
+# L'image officielle Keycloak tourne en uid=1000 (user keycloak), gid=0
 - name: Créer /opt/keycloak/data
+  become: true
   file:
     path: /opt/keycloak/data
     state: directory
-    owner: 1000        # UID utilisé par l'utilisateur "keycloak" dans le conteneur
-    group: 1000
+    owner: 1000
+    group: 0
     mode: '0755'
 
 - name: Copier le docker-compose.yml
+  become: true
   copy:
     src: docker-compose.yml
     dest: /opt/keycloak/docker-compose.yml
@@ -24,20 +29,42 @@
   notify: Restart Keycloak
 
 - name: Générer le fichier .env depuis le template
+  become: true
   template:
     src: .env.j2
     dest: /opt/keycloak/.env
     mode: '0644'
   notify: Restart Keycloak
 
+# Pas de notify ici: changer le script ne nécessite pas de restart du conteneur
 - name: Générer le script d'init Keycloak
+  become: true
   template:
-    src: keycloak-init.sh.j2
+    src: keycloak-init.sh.j2    # Option A (vars Ansible) ou Option B (lit .env) — selon ce que tu as choisi
     dest: /opt/keycloak/keycloak-init.sh
     mode: '0755'
-  notify: Restart Keycloak
 
-- name: Lancer Keycloak avec Docker Compose
+# Démarrer/mettre à jour Keycloak
+- name: Lancer Keycloak avec Docker Compose v2
+  become: true
   community.docker.docker_compose_v2:
     project_src: /opt/keycloak
     state: present
+
+- name: Attendre readiness (dans le conteneur)
+  become: true
+  community.docker.docker_container_exec:
+    container: keycloak
+    command: bash -lc "for i in {1..60}; do curl -sf http://localhost:8080/health/ready && exit 0; sleep 2; done; exit 1"
+  register: kc_ready
+  retries: 1
+  delay: 0
+  until: kc_ready.rc == 0
+
+- name: Init Keycloak (une seule fois)
+  become: true
+  command:
+    cmd: bash /opt/keycloak/keycloak-init.sh
+    chdir: /opt/keycloak
+  args:
+    creates: /opt/keycloak/.init_done
