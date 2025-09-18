@@ -31,8 +31,8 @@ done
 REALM="${KEYCLOAK_REALM}"
 BASE_DOMAIN="${DOMAIN}"
 
-# --- Realm (idempotent) ---
-if dc "$KCADM get realms" | grep -q "\"realm\" : \"${REALM}\""; then
+# --- Realm (idempotent & robuste) ---
+if dc "$KCADM get realms/${REALM} > /dev/null 2>&1"; then
   echo "[init] Realm ${REALM} existe déjà."
 else
   echo "[init] Création realm ${REALM}..."
