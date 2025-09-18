@@ -199,3 +199,48 @@ create_client "wiki-devops"
 create_client "wiki-cyber"
 
 echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
+
+#############################################
+# Export des secrets des clients OIDC
+#############################################
+echo -e "\n=== Export des secrets des clients OIDC ==="
+
+# On définit le fichier de sortie qui contiendra les secrets
+OUTPUT="/opt/keycloak/clients.json"
+
+# On commence un JSON
+echo "{" > $OUTPUT
+first=true  # variable pour gérer la virgule entre les entrées JSON
+
+# On boucle sur tes 3 clients Wiki.js
+for cid in wiki-ia wiki-devops wiki-cyber; do
+  # 1. Récupérer l'UUID (ID interne Keycloak) du client via kcadm
+  uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" \
+         | grep '"id"' | head -n1 | cut -d '"' -f4)
+
+  # 2. Récupérer le secret associé à cet UUID
+  secret=$(dc "$KCADM get clients/$uuid/client-secret -r ${REALM}" \
+           | grep '"value"' | cut -d '"' -f4)
+
+  # 3. Écrire le résultat dans le fichier JSON
+  #    - Si c’est le premier client, pas de virgule
+  #    - Sinon, ajouter une virgule pour séparer les objets
+  if [ "$first" = true ]; then
+    first=false
+  else
+    echo "," >> $OUTPUT
+  fi
+
+  # 4. Ajouter la ligne "clientId": "secret"
+  echo "  \"$cid\": \"$secret\"" >> $OUTPUT
+
+  # 5. Afficher dans la console pour debug
+  echo "  → $cid : $secret"
+done
+
+# On ferme le JSON
+echo "}" >> $OUTPUT
+
+echo "[export] Fichier généré : $OUTPUT"
+echo "[export] Contenu :"
+cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)     

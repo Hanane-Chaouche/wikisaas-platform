@@ -1,0 +1,42 @@
+---
+- name: Créer le dossier Wiki.js
+  become: true
+  file:
+    path: /opt/wiki
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Créer le dossier des fichiers .env pour Wiki.js
+  become: true
+  file:
+    path: /opt/wiki/envs
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copier le docker-compose.yml de Wiki.js
+  become: true
+  copy:
+    src: docker-compose.yml        # ton fichier compose (dans roles/wiki/files/)
+    dest: /opt/wiki/docker-compose.yml
+    mode: '0644'
+  notify: Restart Wiki.js
+
+- name: Générer les fichiers .env pour chaque instance Wiki.js
+  become: true
+  template:
+    src: env.j2                    # ton template (dans roles/wiki/templates/)
+    dest: "/opt/wiki/envs/wiki-{{ item.name }}.env"
+    mode: '0644'
+  loop: "{{ wikis }}"              # défini dans group_vars/all.yml
+  notify: Restart Wiki.js
+
+- name: Déployer Wiki.js avec Docker Compose v2
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /opt/wiki
+    state: present
+  notify: Restart Wiki.js

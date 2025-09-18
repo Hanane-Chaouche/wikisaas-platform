@@ -20,9 +20,12 @@ services:
       - ./envs/wiki-ia.env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.wiki-ia.rule=Host(`ia.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.wiki-ia.rule=Host(`ia.${DOMAIN}`)"
       - "traefik.http.routers.wiki-ia.entrypoints=websecure"
       - "traefik.http.routers.wiki-ia.tls.certresolver=myresolver"
+    volumes:
+      - ./logs/wiki-ia:/logs # Pour les logs  de Wiki.js
+        
     networks:
       - proxy
       - wikinet-ia
@@ -36,9 +39,11 @@ services:
       - ./envs/wiki-devops.env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.wiki-devops.rule=Host(`devops.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.wiki-devops.rule=Host(`devops.${DOMAIN}`)"
       - "traefik.http.routers.wiki-devops.entrypoints=websecure"
       - "traefik.http.routers.wiki-devops.tls.certresolver=myresolver"
+    volumes:
+      - ./logs/wiki-devops:/logs # Pour les logs  de Wiki.js
     networks:
       - proxy
       - wikinet-devops
@@ -52,9 +57,11 @@ services:
       - ./envs/wiki-cyber.env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.wiki-cyber.rule=Host(`cyber.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.wiki-cyber.rule=Host(`cyber.${DOMAIN}`)"
       - "traefik.http.routers.wiki-cyber.entrypoints=websecure"
       - "traefik.http.routers.wiki-cyber.tls.certresolver=myresolver"
+    volumes:
+      - ./logs/wiki-cyber:/logs # Pour les logs  de Wiki.js
     networks:
       - proxy
       - wikinet-cyber
