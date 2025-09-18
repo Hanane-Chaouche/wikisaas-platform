@@ -1,4 +1,4 @@
-#  WikiSaaS Platform – Infrastructure as Code avec Terraform
+#   WikiSaaS Platform – Infrastructure as Code avec Terraform
 
 Ce dépôt contient l’infrastructure **WikiSaaS Platform** déployée avec **Terraform Cloud** et orchestrée via **GitHub Actions**.  
 Il permet de provisionner automatiquement :

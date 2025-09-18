@@ -123,3 +123,5 @@ traefik_dashboard_host: "traefik.{{ base_domain }}"
 kc_admin: admin
 kc_admin_password: "{{ lookup('env','KEYCLOAK_ADMIN_PASS') | mandatory }}"
 kc_realm: "saas"
+postgres_user: "keycloak_wiki"
+postgres_password: "{{ lookup('env','KEYCLOAK_DB_PASSWORD') | mandatory }}"

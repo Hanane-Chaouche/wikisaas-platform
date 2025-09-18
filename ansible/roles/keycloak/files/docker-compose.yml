@@ -1,17 +1,37 @@
 services:
+  postgres:
+    image: postgres:15
+    container_name: keycloak-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    secrets:
+      - db_password
+    networks:
+      - proxy
+
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.7
     container_name: keycloak
     restart: always
-    command: ["start-dev", "--import-realm"]
-    env_file:
-      - .env
-    volumes:
-      - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
-      - ./data:/opt/keycloak/data
-   
+    command: ["start", "--optimized", "--import-realm"]
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: keycloak-db
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     networks:
-      - proxy # Connecté au réseau Docker "proxy" pour Traefik  (à créer si absent)   
+      - proxy
+    depends_on:
+      - postgres
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
@@ -19,6 +39,10 @@ services:
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
 
 networks:
   proxy:

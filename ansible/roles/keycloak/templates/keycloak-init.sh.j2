@@ -1,119 +1,146 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# --- Chargement des variables ---
+#############################################
+# Chargement des variables d'environnement
+#############################################
+
 ENV_FILE="/opt/keycloak/.env"
-[ -f "$ENV_FILE" ] || { echo "❌ ERR: $ENV_FILE introuvable"; exit 1; }
+[ -f "$ENV_FILE" ] || { echo "ERR: $ENV_FILE introuvable"; exit 1; }
+
+# On exporte toutes les variables du .env (KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_REALM, DOMAIN)
 set -a; source "$ENV_FILE"; set +a
-# Variables attendues : KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_REALM, DOMAIN
 
-# --- Constantes/chemins ---
-COMPOSE="/opt/keycloak/docker-compose.yml"
-SERVICE="keycloak"
-KCADM="/opt/keycloak/bin/kcadm.sh"
+echo "=== Variables récupérées du fichier .env ==="
 
-# Exécuter une commande dans le conteneur Keycloak
-dc() { docker compose -f "$COMPOSE" exec -T "$SERVICE" bash -lc "$*"; }
+#############################################
+# Constantes / chemins
+#############################################
+COMPOSE="/opt/keycloak/docker-compose.yml"   # chemin vers ton docker-compose
+SERVICE="keycloak"                           # nom du service Keycloak dans le docker-compose
+KCADM="/opt/keycloak/bin/kcadm.sh"           # chemin vers kcadm.sh
 
-# --- Attente de disponibilité ---
-echo "⏳ [init] Attente que Keycloak soit prêt..."
+# Fonction utilitaire : exécuter une commande dans le conteneur Keycloak
+dc() { docker compose -f "$COMPOSE" exec -T "$SERVICE" sh -lc "$*"; }
+
+#############################################
+# Attente de disponibilité de Keycloak
+#############################################
+echo " [init] Attente que Keycloak soit prêt..."
 for i in {1..60}; do
   if dc "export KCADM_CONFIG=/tmp/kcadm.config && \
-         $KCADM config credentials --server http://localhost:8080 \
-         --realm master --user '${KEYCLOAK_ADMIN}' --password '${KEYCLOAK_ADMIN_PASSWORD}'"; then
-    echo "✅ [init] Login admin OK"
+         $KCADM config credentials \
+         --server http://localhost:8080 \
+         --realm master \
+         --user '${KEYCLOAK_ADMIN}' \
+         --password '${KEYCLOAK_ADMIN_PASSWORD}'"; then
+    echo "[init]  Login admin OK"
     break
   fi
   sleep 2
-  [[ $i -eq 60 ]] && { echo "❌ ERR: Keycloak pas prêt"; exit 1; }
+  [[ $i -eq 60 ]] && { echo " ERR: Keycloak pas prêt après 2 min"; exit 1; }
 done
 
 REALM="${KEYCLOAK_REALM}"
 BASE_DOMAIN="${DOMAIN}"
 
-# ============================
-# 📂 REALM
-# ============================
-echo -e "\n=== 📂 Gestion du Realm ==="
+echo "REALM: ${REALM}"
+echo "BASE_DOMAIN: ${BASE_DOMAIN}"
+
+#############################################
+#  Création du Realm
+#############################################
+echo -e "\n=== Création du Realm ==="
 if dc "$KCADM get realms/${REALM}" >/dev/null 2>&1; then
-  echo "ℹ️ Realm '${REALM}' existe déjà."
+  echo " Realm '${REALM}' existe déjà."
 else
-  echo "➕ Création du realm '${REALM}'..."
+  echo "Création du realm '${REALM}'..."
   dc "$KCADM create realms -s realm='${REALM}' -s enabled=true"
 fi
 
-# ============================
-# 🔑 ROLES
-# ============================
-echo -e "\n=== 🔑 Gestion des Rôles ==="
+#############################################
+#  Création des Rôles
+#############################################
+echo -e "\n=== Création des Rôles ==="
 for role in ia-admin devops-admin cyber-admin; do
   if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
-    echo "ℹ️ Rôle '${role}' existe déjà."
+    echo " Rôle '${role}' existe déjà."
   else
-    echo "➕ Création du rôle '${role}'..."
+    echo " Création du rôle '${role}'..."
     dc "$KCADM create roles -r ${REALM} -s name=${role}"
   fi
 done
 
-# ============================
-# 👥 GROUPES
-# ============================
-echo -e "\n=== 👥 Gestion des Groupes ==="
+#############################################
+#  Création des Groupes
+#############################################
+echo -e "\n=== Création des Groupes ==="
 for group in STARTER PRO ENTERPRISE; do
-  if dc "$KCADM get groups -r ${REALM} -q search=${group} --fields name" | grep -q "\"name\" : \"${group}\""; then
-    echo "ℹ️ Groupe '${group}' existe déjà."
+  if dc "$KCADM get groups -r ${REALM} -q search=${group} --fields name" \
+     | grep -q "\"name\" : \"${group}\""; then
+    echo " Groupe '${group}' existe déjà."
   else
-    echo "➕ Création du groupe '${group}'..."
+    echo " Création du groupe '${group}'..."
     dc "$KCADM create groups -r ${REALM} -s name=${group}"
   fi
 done
 
-# ============================
-# 🔗 ROLES → GROUPES
-# ============================
-echo -e "\n=== 🔗 Association Rôles → Groupes ==="
+#############################################
+#  Association Rôles → Groupes
+#############################################
+echo -e "\n=== Association Rôles → Groupes ==="
+
+# Fonction : récupérer l'ID d'un groupe par son nom
 get_group_id() {
   local name="$1"
   dc "$KCADM get groups -r ${REALM} -q search=${name} --fields id,name" \
-  | awk -v pat="\"name\" : \""$name"\"" -F\" '$0 ~ pat {f=1} f && /"id"/ {print $4; exit}'
+  | grep '"id"' | head -n1 | cut -d '"' -f4
 }
+
+# Récupération des IDs
 STARTER_ID="$(get_group_id STARTER || true)"
 PRO_ID="$(get_group_id PRO || true)"
 ENTERPRISE_ID="$(get_group_id ENTERPRISE || true)"
 
+# Mappage des rôles vers les groupes
 for mapping in \
   "$STARTER_ID:ia-admin" \
   "$PRO_ID:ia-admin" "$PRO_ID:devops-admin" \
   "$ENTERPRISE_ID:ia-admin" "$ENTERPRISE_ID:devops-admin" "$ENTERPRISE_ID:cyber-admin"; do
-  gid="${mapping%%:*}"
-  role="${mapping##*:}"
+
+  gid="${mapping%%:*}"   # partie avant ":", c’est l’ID du groupe
+  role="${mapping##*:}"  # partie après ":", c’est le rôle
+
   if [ -n "$gid" ]; then
-    echo "➕ Association rôle '${role}' → groupe '${gid}'"
-    dc "$KCA=DM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
+    echo " Association rôle '${role}' → groupe '${gid}'"
+    dc "$KCADM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
   fi
 done
 
-# ============================
-# 🌐 CLIENTS + MAPPERS
-# ============================
-echo -e "\n=== 🌐 Gestion des Clients & Mappers ==="
+#############################################
+# Clients + Mappers OIDC
+#############################################
+echo -e "\n===  Gestion des Clients & Mappers ==="
 
+# Fonction : récupérer l’UUID d’un client
 get_client_uuid() {
   local cid="$1"
   dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" \
-  | awk -F\" '/"id"/{print $4; exit}'
+  | grep '"id"' | head -n1 | cut -d '"' -f4
 }
 
+# Fonction : création d’un client avec ses mappers
 create_client () {
   local cid="$1"
   local redirect="https://${cid}.${BASE_DOMAIN}/login/oidc/callback"
   local origin="https://${cid}.${BASE_DOMAIN}"
 
   # --- Client ---
-  if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" | grep -q "\"clientId\" : \"${cid}\""; then
-    echo "ℹ️ Client '${cid}' existe déjà."
+  if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" \
+     | grep -q "\"clientId\" : \"${cid}\""; then
+    echo " Client '${cid}' existe déjà."
   else
-    echo "➕ Création du client '${cid}'..."
+    echo " Création du client '${cid}'..."
     dc "$KCADM create clients -r ${REALM} -f - <<JSON
 { \"clientId\":\"${cid}\", \"protocol\":\"openid-connect\", \"publicClient\":false,
   \"standardFlowEnabled\":true, \"redirectUris\":[\"${redirect}\"],
@@ -121,18 +148,19 @@ create_client () {
 JSON"
   fi
 
-  # --- Récupération de l'UUID ---
+  # --- UUID du client ---
   local uuid
   uuid="$(get_client_uuid "${cid}")"
-  [ -n "${uuid:-}" ] || { echo "❌ ERR: UUID client ${cid} introuvable"; exit 1; }
+  [ -n "${uuid:-}" ] || { echo " ERR: UUID client ${cid} introuvable"; exit 1; }
 
-  # --- Helpers pour mapper ---
+  # --- Fonction helper pour ajouter un mapper ---
   add_mapper () {
     local name="$1" mapper="$2" extra="$3"
-    if dc "$KCADM get clients/${uuid}/protocol-mappers/models -r ${REALM} --fields name" | grep -q "\"name\" : \"${name}\""; then
-      echo "ℹ️ Mapper '${name}' déjà présent pour ${cid}."
+    if dc "$KCADM get clients/${uuid}/protocol-mappers/models -r ${REALM} --fields name" \
+       | grep -q "\"name\" : \"${name}\""; then
+      echo " Mapper '${name}' déjà présent pour ${cid}."
     else
-      echo "➕ Ajout du mapper '${name}' pour ${cid}..."
+      echo " Ajout du mapper '${name}' pour ${cid}..."
       dc "$KCADM create clients/${uuid}/protocol-mappers/models -r ${REALM} -f - <<JSON
 { \"name\":\"${name}\", \"protocol\":\"openid-connect\", \"protocolMapper\":\"${mapper}\", \"config\": ${extra} }
 JSON"
@@ -159,7 +187,9 @@ JSON"
     "{ \"multivalued\":\"true\", \"claim.name\":\"roles\", \"jsonType.label\":\"String\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 }
 
-# --- Créer les clients attendus ---
+# --- Création des clients attendus ---
 create_client "wiki-ia"
 create_client "wiki-devops"
 create_client "wiki-cyber"
+
+echo -e " Script terminé avec succès"
