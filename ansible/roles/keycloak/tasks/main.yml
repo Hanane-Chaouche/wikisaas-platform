@@ -40,7 +40,7 @@
 - name: Générer le script d'init Keycloak
   become: true
   template:
-    src: keycloak-init.sh.j2    # Option A (vars Ansible) ou Option B (lit .env) — selon ce que tu as choisi
+    src: keycloak-init.sh.j2
     dest: /opt/keycloak/keycloak-init.sh
     mode: '0755'
 
@@ -51,7 +51,6 @@
     project_src: /opt/keycloak
     state: present
 
-
 - name: Init Keycloak (une seule fois)
   become: true
   command:
@@ -59,8 +58,10 @@
     chdir: /opt/keycloak
   args:
     creates: /opt/keycloak/.init_done
+  register: init_result
+  ignore_errors: true
 
 - name: Afficher les logs Keycloak si échec
   become: true
   command: docker compose -f /opt/keycloak/docker-compose.yml logs keycloak
-  when: result is failed
+  when: init_result is failed

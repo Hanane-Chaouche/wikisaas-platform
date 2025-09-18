@@ -1,16 +1,16 @@
+version: "3.9"
+
 services:
   postgres:
     image: postgres:15
     container_name: keycloak-db
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
-    secrets:
-      - db_password
     networks:
       - proxy
 
@@ -19,15 +19,18 @@ services:
     container_name: keycloak
     restart: always
     command: ["start", "--optimized", "--import-realm"]
+    env_file:
+      - .env
     environment:
       DB_VENDOR: postgres
       DB_ADDR: keycloak-db
       DB_PORT: 5432
       DB_DATABASE: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD_FILE: /run/secrets/db_password
-    secrets:
-      - db_password
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
+      - ./data:/opt/keycloak/data
     networks:
       - proxy
     depends_on:
@@ -39,10 +42,6 @@ services:
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
-
-secrets:
-  db_password:
-    file: ./secrets/db_password.txt
 
 networks:
   proxy:
