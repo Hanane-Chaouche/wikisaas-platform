@@ -183,9 +183,13 @@ JSON"
        \"userinfo.token.claim\":\"true\" }"
 
   add_mapper "groups" "oidc-group-membership-mapper" \
-    "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \
-       \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \
-       \"userinfo.token.claim\":\"true\" }"
+  "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \
+     \"jsonType.label\":\"String\", \
+     \"multivalued\":\"true\", \
+     \"id.token.claim\":\"true\", \
+     \"access.token.claim\":\"true\", \
+     \"userinfo.token.claim\":\"true\" }"
+
   
 }
 
