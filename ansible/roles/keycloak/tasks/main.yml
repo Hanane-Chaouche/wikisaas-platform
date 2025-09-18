@@ -51,15 +51,6 @@
     project_src: /opt/keycloak
     state: present
 
-- name: Attendre readiness (dans le conteneur)
-  become: true
-  community.docker.docker_container_exec:
-    container: keycloak
-    command: bash -lc "for i in {1..60}; do curl -sf http://localhost:8080/health/ready && exit 0; sleep 2; done; exit 1"
-  register: kc_ready
-  retries: 1
-  delay: 0
-  until: kc_ready.rc == 0
 
 - name: Init Keycloak (une seule fois)
   become: true
