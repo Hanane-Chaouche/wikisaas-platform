@@ -32,11 +32,11 @@ REALM="${KEYCLOAK_REALM}"
 BASE_DOMAIN="${DOMAIN}"
 
 # --- Realm (idempotent & robuste) ---
-if dc "$KCADM get realms/${REALM} > /dev/null 2>&1"; then
+if dc $KCADM get realms/${REALM} > /dev/null 2>&1; then
   echo "[init] Realm ${REALM} existe déjà."
 else
   echo "[init] Création realm ${REALM}..."
-  dc "$KCADM create realms -s realm='${REALM}' -s enabled=true"
+  dc $KCADM create realms -s realm="${REALM}" -s enabled=true
 fi
 
 # --- Rôles (idempotent) ---
