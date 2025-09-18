@@ -40,7 +40,7 @@
 - name: Générer le script d'init Keycloak
   become: true
   template:
-    src: keycloak-init.sh.j2
+    src: keycloak-init.sh.j2    # Option A (vars Ansible) ou Option B (lit .env) — selon ce que tu as choisi
     dest: /opt/keycloak/keycloak-init.sh
     mode: '0755'
 
@@ -51,17 +51,39 @@
     project_src: /opt/keycloak
     state: present
 
-- name: Init Keycloak (une seule fois)
+- name: Init Keycloak (première exécution)
   become: true
-  command:
-    cmd: bash /opt/keycloak/keycloak-init.sh
-    chdir: /opt/keycloak
+  command: bash /opt/keycloak/keycloak-init.sh | tee /opt/keycloak/init.log
   args:
+    chdir: /opt/keycloak
     creates: /opt/keycloak/.init_done
-  register: init_result
+  register: keycloak_init_result
+  changed_when: keycloak_init_result.rc == 0
   ignore_errors: true
 
-- name: Afficher les logs Keycloak si échec
+- name: Message succès première exécution
+  debug:
+    msg: "Première exécution : script d'init Keycloak exécuté."
+  when: keycloak_init_result.changed
+
+- name: Debug sortie première exécution
+  debug:
+    var: keycloak_init_result.stdout_lines
+  when: keycloak_init_result.changed and keycloak_init_result.stdout != ""
+
+- name: Message deuxième exécution
+  debug:
+    msg: "Deuxième exécution (ou plus) : init déjà fait, affichage des logs sauvegardés."
+  when: not keycloak_init_result.changed
+
+- name: Afficher sortie précédente
   become: true
-  command: docker compose -f /opt/keycloak/docker-compose.yml logs keycloak
-  when: init_result is failed
+  command: cat /opt/keycloak/init.log
+  register: old_init_log
+  changed_when: false
+  when: not keycloak_init_result.changed
+
+- name: Debug sortie précédente
+  debug:
+    var: old_init_log.stdout_lines
+  when: old_init_log is defined

@@ -177,14 +177,16 @@ JSON"
   add_mapper "given_name"         "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"given_name\", \"user.attribute\":\"firstName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
-  add_mapper "family_name"        "oidc-usermodel-property-mapper" \
-    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+  add_mapper "family_name" "oidc-usermodel-property-mapper" \
+    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \
+       \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \
+       \"userinfo.token.claim\":\"true\" }"
 
-  add_mapper "groups"             "oidc-group-membership-mapper" \
-    "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
-
-  add_mapper "roles"              "oidc-usermodel-realm-role-mapper" \
-    "{ \"multivalued\":\"true\", \"claim.name\":\"roles\", \"jsonType.label\":\"String\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+  add_mapper "groups" "oidc-group-membership-mapper" \
+    "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \
+       \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \
+       \"userinfo.token.claim\":\"true\" }"
+  
 }
 
 # --- Création des clients attendus ---
@@ -192,4 +194,4 @@ create_client "wiki-ia"
 create_client "wiki-devops"
 create_client "wiki-cyber"
 
-echo -e " Script terminé avec succès"
+echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
