@@ -60,7 +60,7 @@
   args:
     creates: /opt/keycloak/.init_done
 
-  - name: Afficher les logs Keycloak si échec
+- name: Afficher les logs Keycloak si échec
   become: true
   command: docker compose -f /opt/keycloak/docker-compose.yml logs keycloak
   when: result is failed
