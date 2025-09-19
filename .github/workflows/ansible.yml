@@ -42,13 +42,16 @@ jobs:
       - name: Install Ansible collections
         run: ansible-galaxy collection install ansible.posix
         
+       3) Setup Terraform avec token
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
           cli_config_credentials_hostname: app.terraform.io
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }} # 
           terraform_wrapper: true
 
+      # 4) Init Terraform
       - name: Terraform Init
         run: terraform -chdir=./terraform init
 
