@@ -37,57 +37,30 @@ first_dns_name: >-
   {{ (dns_records.keys() | list | first | default('')) }}
 
 ############################################
-# PostgreSQL
-############################################
-pg_host_ia: >-
-  {{ (db_endpoints.ia | default(''))
-     | regex_replace(':.*', '') }}
-
-pg_host_devops: >-
-  {{ (db_endpoints.devops | default(''))
-     | regex_replace(':.*', '') }}
-
-pg_host_cyber: >-
-  {{ (db_endpoints.cyber | default(''))
-     | regex_replace(':.*', '') }}
-pg_port_ia: 5432
-pg_port_devops: 5432
-pg_port_cyber: 5432
-pg_user_ia: "wikijs"
-pg_user_devops: "wikijs"
-pg_user_cyber: "wikijs"
-pg_pass_ia: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
-pg_pass_devops: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
-pg_pass_cyber: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
-pg_db_ia: "wiki_ia"
-pg_db_devops: "wiki_devops"
-pg_db_cyber: "wiki_cyber"
-
-############################################
-# Wiki.js instances (boucle avec "item")
+# Wiki.js instances (boucle avec "item") postresql
 ############################################
 wikis:
   - name: ia
-    pg_host: "{{ pg_host_ia }}"
-    pg_user: "{{ pg_user_ia }}"
-    pg_pass: "{{ pg_pass_ia }}"
-    pg_db: "{{ pg_db_ia }}"
+    pg_host: {{ (db_endpoints.ia | default(''))| regex_replace(':.*', '')| default('5432') }}
+    pg_user: "wikijs"
+    pg_pass: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
+    pg_db: "wiki_ia"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
 
   - name: devops
-    pg_host: "{{ pg_host_devops }}"
-    pg_user: "{{ pg_user_devops }}"
-    pg_pass: "{{ pg_pass_devops }}"
-    pg_db: "{{ pg_db_devops }}"
+    pg_host: {{ (db_endpoints.devops | default('')) | regex_replace(':.*', '')| default('5432') }}
+    pg_user: "wikijs"
+    pg_pass: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
+    pg_db: "wiki_devops"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
 
   - name: cyber
-    pg_host: "{{ pg_host_cyber }}"
-    pg_user: "{{ pg_user_cyber }}"
-    pg_pass: "{{ pg_pass_cyber }}"
-    pg_db: "{{ pg_db_cyber }}"
+    pg_host: {{ (db_endpoints.cyber | default('')) | regex_replace(':.*', '')| default('5432')}}
+    pg_user: "wikijs"
+    pg_pass: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
+    pg_db: "wiki_cyber"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_CYBER') | mandatory }}"
 
