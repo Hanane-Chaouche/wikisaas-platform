@@ -1,4 +1,4 @@
-# ⛔️ Plus besoin de "version: 3.9", obsolète avec Docker Compose v2
+---
 
 services:
   postgres:
@@ -29,8 +29,8 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_HOSTNAME: sso.${DOMAIN}
-      KC_HTTP_ENABLED: "true"     # ✅ Active HTTP interne
-      KC_PROXY: "edge"            # ✅ Indique qu'il est derrière un reverse proxy TLS (Traefik)
+      KC_HTTP_ENABLED: "true"     #  Active HTTP interne
+      KC_PROXY: "edge"            # Indique qu'il est derrière un reverse proxy TLS (Traefik)
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
       - ./data:/opt/keycloak/data

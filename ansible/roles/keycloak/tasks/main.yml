@@ -53,7 +53,7 @@
 
 - name: Init Keycloak (première exécution)
   become: true
-  command: bash /opt/keycloak/keycloak-init.sh | tee /opt/keycloak/init.log
+  command: bash /opt/keycloak/keycloak-init.sh > /opt/keycloak/init.log 2>&1  # redirige stdout+stderr vers un fichier
   args:
     chdir: /opt/keycloak
     creates: /opt/keycloak/.init_done
