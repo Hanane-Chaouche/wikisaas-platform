@@ -41,10 +41,16 @@ jobs:
       # 2bis) Installer les collections nécessaires (dont ansible.posix)
       - name: Install Ansible collections
         run: ansible-galaxy collection install ansible.posix
+        
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.5   # ou la version que tu utilises
+          terraform_version: 1.7.5
+          cli_config_credentials_hostname: app.terraform.io
+          terraform_wrapper: true
+
+      - name: Terraform Init
+        run: terraform -chdir=./terraform init
 
       - name: Export Terraform outputs
         run: |
