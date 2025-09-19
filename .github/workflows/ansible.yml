@@ -75,7 +75,7 @@ jobs:
           echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_ENV
 
 
-      # 3) Ajouter le host dans known_hosts (évite le "Host key verification failed")
+      # 3) Ajouter le host dans known_hosts (évite le "Host key verification failed*")
       - name: Add SSH known_hosts
         run: |
           mkdir -p ~/.ssh
