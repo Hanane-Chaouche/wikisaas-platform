@@ -102,3 +102,6 @@ jobs:
           echo "RDS_SUBNET_GROUP=$(echo "$O" | jq -r .rds_subnet_group.value)" >> $GITHUB_ENV
           echo "EC2_SECURITY_GROUP_ID=$(echo "$O" | jq -r .ec2_security_group_id.value)" >> $GITHUB_ENV
           echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_ENV
+      - name: Debug DB_ENDPOINTS
+        run: |
+          echo "$DB_ENDPOINTS"
