@@ -76,6 +76,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_wrapper: false   # indispensable pour terraform output , le petit changement
 
       - name: Terraform Init (pointe vers TFC via le bloc cloud)
         run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} init -input=false
