@@ -42,6 +42,26 @@ jobs:
       - name: Install Ansible collections
         run: ansible-galaxy collection install ansible.posix
 
+      - name: Export Terraform outputs
+        run: |
+          set -euo pipefail
+          O=$(terraform -chdir=./terraform output -json)
+
+          echo "EC2_PUBLIC_IP=$(echo "$O" | jq -r .ec2_public_ip.value)" >> $GITHUB_ENV
+          echo "EC2_PUBLIC_DNS=$(echo "$O" | jq -r .ec2_public_dns.value)" >> $GITHUB_ENV
+          echo "DB_ENDPOINTS=$(echo "$O" | jq -c .db_endpoints.value)" >> $GITHUB_ENV
+          echo "DNS_RECORDS=$(echo "$O" | jq -c .dns_records.value)" >> $GITHUB_ENV
+          echo "R2_BUCKET_NAME=$(echo "$O" | jq -r .r2_bucket_name.value)" >> $GITHUB_ENV
+          echo "R2_ACCOUNT_ID=$(echo "$O" | jq -r .r2_account_id.value)" >> $GITHUB_ENV
+          echo "R2_LOCATION=$(echo "$O" | jq -r .r2_location.value)" >> $GITHUB_ENV
+          echo "R2_BUCKET_ENDPOINT=$(echo "$O" | jq -r .r2_bucket_endpoint.value)" >> $GITHUB_ENV
+          echo "VPC_ID=$(echo "$O" | jq -r .vpc_id.value)" >> $GITHUB_ENV
+          echo "PUBLIC_SUBNET_ID=$(echo "$O" | jq -r .public_subnet_id.value)" >> $GITHUB_ENV
+          echo "RDS_SUBNET_GROUP=$(echo "$O" | jq -r .rds_subnet_group.value)" >> $GITHUB_ENV
+          echo "EC2_SECURITY_GROUP_ID=$(echo "$O" | jq -r .ec2_security_group_id.value)" >> $GITHUB_ENV
+          echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_ENV
+
+          
       # 3) Ajouter le host dans known_hosts (évite le "Host key verification failed")
       - name: Add SSH known_hosts
         run: |
