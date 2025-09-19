@@ -58,7 +58,9 @@
     chdir: /opt/keycloak
     creates: /opt/keycloak/.init_done
   register: keycloak_init_result
-  changed_when: keycloak_init_result.rc == 0
+  retries: 6          # va réessayer jusqu'à 6 fois
+  delay: 20           # attend 20s entre chaque essai
+  until: keycloak_init_result.rc == 0
   ignore_errors: true
 
 - name: Message succès première exécution

@@ -8,7 +8,7 @@ acme_email: "{{ lookup('env','ACME_EMAIL') | default('chamer6@hotmail.com', true
 ############################################
 # Outputs Terraform (scalaires)
 ############################################
-ec2_public_ip: "{{ lookup('env','EC2_PUBLIC_IP') | default('') }}"
+ec2_public_ip: "{{ lookup('env','EC2_PUBLIC_IP') | default('') }}" # variable par defaut vide si non définie  
 ec2_public_dns: "{{ lookup('env','EC2_PUBLIC_DNS') | default('') }}"
 vpc_id: "{{ lookup('env','VPC_ID') | default('') }}"
 public_subnet_id: "{{ lookup('env','PUBLIC_SUBNET_ID') | default('') }}"

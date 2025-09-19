@@ -11,5 +11,4 @@
     - role: docker     # installe Docker + dépendances
     - role: traefik    # déploie Traefik
     - role: keycloak   # déploie Keycloak + init
-    - role: wiki       # déploie Wiki.js + init
-
+    
