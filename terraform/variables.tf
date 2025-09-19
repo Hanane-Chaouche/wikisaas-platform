@@ -41,7 +41,7 @@ variable "db_password" {
 # vm.tf
 variable "ec2_instance_type" {
   description = "Type de machine EC2"
-  default     = "t3.micro" # Free Tier
+  default     = "m7i-flex.large" # Free Tier
 }
 
 # vm.tf
