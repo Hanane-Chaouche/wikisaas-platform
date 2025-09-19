@@ -48,6 +48,6 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H wikiplatform.app >> ~/.ssh/known_hosts
 
-      # 4) Exécuter Ansible
+      # 4) Exécuter Ansible **
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
