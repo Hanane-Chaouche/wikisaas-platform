@@ -1,7 +1,13 @@
 
-    
+    # install: community.postgresql
+    - name: Installer la librairie psycopg2 pour PostgreSQL
+      become: true
+      ansible.builtin.apt:
+        name: python3-psycopg2
+        state: present
+        update_cache: yes
+       
     # Étape 1 : Créer les bases de données si elles n'existent pas
-
     - name: Créer les bases pour chaque Wiki.js
       community.postgresql.postgresql_db:    # Module Ansible qui gère les bases PostgreSQL
         name: "{{ item.pg_db }}"             # Nom de la base à créer (ex: wiki_ia, wiki_devops, wiki_cyber)
@@ -13,7 +19,6 @@
       loop: "{{ wikis }}"                    # On boucle sur la liste "wikis" définie dans group_vars/all.yml
 
     # Étape 2 : Créer les utilisateurs applicatifs (wikijs)
-   
     - name: Créer l’utilisateur applicatif pour chaque Wiki.js
       community.postgresql.postgresql_user:  # Module qui gère les utilisateurs PostgreSQL
         name: "{{ item.pg_user }}"           # Nom de l’utilisateur à créer (toujours wikijs dans ton cas)
@@ -26,7 +31,6 @@
       loop: "{{ wikis }}"                    # Boucle sur toutes les instances Wiki.js
 
     # Étape 3 : Donner les droits à l’utilisateur wikijs sur chaque base
-
     - name: Donner les droits à l’utilisateur sur chaque base
       community.postgresql.postgresql_privs:  # Module qui gère les privilèges PostgreSQL
         db: "{{ item.pg_db }}"               # Base sur laquelle appliquer les privilèges
