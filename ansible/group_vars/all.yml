@@ -42,8 +42,8 @@ first_dns_name: >-
 wikis:
   - name: ia
     pg_host: "wiki-ia-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
-    pg_user:  "wikijs"
-    pg_pass: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') | mandatory }}"
+    pg_user: "wikijs"
+    pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_ia"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
@@ -51,7 +51,7 @@ wikis:
   - name: devops
     pg_host: "wiki-devops-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
     pg_user: "wikijs"
-    pg_pass: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') | mandatory }}"
+    pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_devops"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
@@ -59,7 +59,7 @@ wikis:
   - name: cyber
     pg_host: "wiki-cyber-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
     pg_user: "wikijs"
-    pg_pass: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') | mandatory }}"
+    pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_cyber"
     admin_email: "chamer6@hotmail.com"
     admin_password: "{{ lookup('env','ADMIN_PASS_CYBER') | mandatory }}"

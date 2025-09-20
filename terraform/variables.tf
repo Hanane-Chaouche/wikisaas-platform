@@ -31,7 +31,7 @@ variable "domain" {
 # postgres.tf
 variable "db_username" {
   description = "Nom d'utilisateur PostgreSQL"
-  default     = "wikijs"
+  default     = "postgres"
 }
 # postgres.tf
 variable "db_password" {
