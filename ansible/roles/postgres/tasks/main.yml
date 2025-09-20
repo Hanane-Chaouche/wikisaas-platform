@@ -8,7 +8,7 @@
         login_host: "{{ item.pg_host }}"     # Endpoint RDS où se trouve la base
         login_user: "{{ postgres_admin_user }}"   # Utilisateur admin (postgres)
         login_password: "{{ postgres_admin_password }}"  # Mot de passe de l’admin
-        login_db: "{{ postgres_admin_db }}"  # Base de connexion par défaut (postgres)
+        maintenance_db: "{{ postgres_admin_db }}"  # Base de connexion par défaut (postgres)
         state: present                       # S’assurer que la base existe (créée si absente)
       loop: "{{ wikis }}"                    # On boucle sur la liste "wikis" définie dans group_vars/all.yml
 
@@ -21,7 +21,7 @@
         login_host: "{{ item.pg_host }}"     # Endpoint RDS
         login_user: "{{ postgres_admin_user }}"   # Admin qui exécute la commande
         login_password: "{{ postgres_admin_password }}"  # Mot de passe admin
-        login_db: "{{ postgres_admin_db }}"  # Base par défaut pour exécuter la commande
+        maintenance_db: "{{ postgres_admin_db }}"  # Base par défaut pour exécuter la commande
         state: present                       # S’assurer que l’utilisateur existe (créé si absent)
       loop: "{{ wikis }}"                    # Boucle sur toutes les instances Wiki.js
 
@@ -36,6 +36,6 @@
         login_host: "{{ item.pg_host }}"     # Endpoint RDS
         login_user: "{{ postgres_admin_user }}"   # Admin RDS
         login_password: "{{ postgres_admin_password }}"  # Mot de passe admin
-        login_db: "{{ postgres_admin_db }}"  # Base par défaut pour se connecter
+        maintenance_db: "{{ postgres_admin_db }}"  # Base par défaut pour se connecter
         state: present                       # S’assurer que les privilèges sont accordés
       loop: "{{ wikis }}"                    # Boucle sur toutes les bases définies
