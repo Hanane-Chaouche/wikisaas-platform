@@ -25,6 +25,22 @@
     mode: '0644'
   notify: Restart Wiki.js
 
+  # -------------------------------------------------------------------
+# Étape 1 : Lire le fichier clients.json sur la VM
+# -------------------------------------------------------------------
+- name: Lire clients.json sur la VM
+  slurp:
+    src: /opt/keycloak/clients.json
+  register: kc_clients_raw
+
+# -------------------------------------------------------------------
+# Étape 2 : Transformer le contenu en variable JSON utilisable
+# -------------------------------------------------------------------
+- name: Convertir clients.json en dictionnaire
+  set_fact:
+    kc_clients: "{{ kc_clients_raw.content | b64decode | from_json }}"
+
+
 - name: Générer les fichiers .env pour chaque instance Wiki.js
   become: true
   template:
