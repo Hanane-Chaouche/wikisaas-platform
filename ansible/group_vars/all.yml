@@ -49,7 +49,7 @@ wikis:
     admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
 
   - name: devops
-    pg_host: ""wiki-devops-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
+    pg_host: "wiki-devops-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
     pg_db: "wiki_devops"
@@ -57,7 +57,7 @@ wikis:
     admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
 
   - name: cyber
-    pg_host: ""wiki-cyber-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
+    pg_host: "wiki-cyber-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','DB_PASSWORD') | mandatory }}"
     pg_db: "wiki_cyber"
