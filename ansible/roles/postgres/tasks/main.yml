@@ -1,13 +1,7 @@
----
 
-- name: Préparer les bases et l'utilisateur pour Wiki.js
-  hosts: wikiplatform.app       # Hôte cible défini dans ton inventaire Ansible
-  become: false                 # Pas besoin de sudo car on se connecte directement au RDS PostgreSQL
-
-  tasks:
-    # ----------------------------------------------------
+    
     # Étape 1 : Créer les bases de données si elles n'existent pas
-    # ----------------------------------------------------
+
     - name: Créer les bases pour chaque Wiki.js
       community.postgresql.postgresql_db:    # Module Ansible qui gère les bases PostgreSQL
         name: "{{ item.pg_db }}"             # Nom de la base à créer (ex: wiki_ia, wiki_devops, wiki_cyber)
@@ -18,9 +12,8 @@
         state: present                       # S’assurer que la base existe (créée si absente)
       loop: "{{ wikis }}"                    # On boucle sur la liste "wikis" définie dans group_vars/all.yml
 
-    # ----------------------------------------------------
     # Étape 2 : Créer les utilisateurs applicatifs (wikijs)
-    # ----------------------------------------------------
+   
     - name: Créer l’utilisateur applicatif pour chaque Wiki.js
       community.postgresql.postgresql_user:  # Module qui gère les utilisateurs PostgreSQL
         name: "{{ item.pg_user }}"           # Nom de l’utilisateur à créer (toujours wikijs dans ton cas)
@@ -32,9 +25,8 @@
         state: present                       # S’assurer que l’utilisateur existe (créé si absent)
       loop: "{{ wikis }}"                    # Boucle sur toutes les instances Wiki.js
 
-    # ----------------------------------------------------
     # Étape 3 : Donner les droits à l’utilisateur wikijs sur chaque base
-    # ----------------------------------------------------
+
     - name: Donner les droits à l’utilisateur sur chaque base
       community.postgresql.postgresql_privs:  # Module qui gère les privilèges PostgreSQL
         db: "{{ item.pg_db }}"               # Base sur laquelle appliquer les privilèges
