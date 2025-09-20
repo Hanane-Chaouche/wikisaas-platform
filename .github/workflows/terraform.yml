@@ -124,18 +124,18 @@ jobs:
     needs: [terraform]   # attend Terraform seulement si Terraform est déclenché
     if: |
       contains(github.event.head_commit.message, 'ansible') ||
-      contains(github.event.head_commit.message, 'terraform') ||
-      github.event_name == 'workflow_dispatch'
-        
+      contains(github.event.head_commit.message, 'terraform')
+    env:   
+      VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          printf "%s" "$VM_SSH_KEY" > ~/.ssh/newtest.pem
+          echo "$VM_SSH_KEY" | sed 's/\\n/\n/g' > ~/.ssh/newtest.pem
           chmod 600 ~/.ssh/newtest.pem
-
+          
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
