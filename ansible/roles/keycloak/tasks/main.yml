@@ -52,32 +52,41 @@
     state: present
 
 # -------------------------------------------------------------------
-# Attendre que Keycloak soit démarré (port 8080)
-# -------------------------------------------------------------------
-- name: Attendre que Keycloak soit prêt
-  wait_for:
-    host: "127.0.0.1"
-    port: 8080
-    delay: 10        # attendre 10s avant de commencer à checker
-    timeout: 120     # maximum 2 minutes d’attente
-  register: keycloak_ready
-
-# -------------------------------------------------------------------
-# Exécuter le script d'init seulement si .init_done n’existe pas
+# Tâche 1 : Exécuter le script d'initialisation Keycloak
 # -------------------------------------------------------------------
 - name: Init Keycloak (première exécution)
   become: true
-  command: bash /opt/keycloak/keycloak-init.sh 2>&1 | tee /opt/keycloak/init.log
+  command: bash /opt/keycloak/keycloak-init.sh > /opt/keycloak/init.log 2>&1
   args:
     chdir: /opt/keycloak
-    creates: /opt/keycloak/.init_done   # évite de relancer si déjà fait
-  register: keycloak_init_result
+    creates: /opt/keycloak/.init_done   # Si ce fichier existe, Ansible NE relance PAS le script
+  register: keycloak_init_result         # Sauvegarde le résultat de la commande (rc, stdout, etc.)
+  retries: 6                             # Réessaie jusqu'à 6 fois si échec
+  delay: 20                              # Pause de 20s entre chaque tentative
+  until: keycloak_init_result.rc == 0    # Arrête les retries seulement si rc=0 (succès)
+  ignore_errors: true                    # Continue même si la commande échoue
 
 # -------------------------------------------------------------------
-# Créer le marqueur .init_done si tout est OK
+# Tâche 2 : Message si le script a tourné pour la première fois
 # -------------------------------------------------------------------
-- name: Marquer init comme terminé
-  file:
-    path: /opt/keycloak/.init_done
-    state: touch
-  when: keycloak_init_result.rc == 0
+- name: Message succès première exécution
+  debug:
+    msg: " Script d'init Keycloak exécuté (première fois). Voir /opt/keycloak/init.log pour les détails."
+  when: keycloak_init_result.changed     # S'exécute seulement si le script a été lancé (fichier .init_done créé)
+
+# -------------------------------------------------------------------
+# Tâche 3 : Afficher la sortie du script (stdout) lors de la première exécution
+# -------------------------------------------------------------------
+- name: Debug sortie première exécution
+  debug:
+    var: keycloak_init_result.stdout_lines
+  when: keycloak_init_result.changed and keycloak_init_result.stdout != ""
+  # Condition : seulement la première fois, et seulement s'il y a du contenu à afficher
+
+# -------------------------------------------------------------------
+# Tâche 4 : Message pour les exécutions suivantes
+# -------------------------------------------------------------------
+- name: Message deuxième exécution
+  debug:
+    msg: "Script d'init déjà exécuté auparavant. Aucun nouveau log généré."
+  when: not keycloak_init_result.changed # Si le script n'a PAS été relancé (donc .init_done déjà présent)
