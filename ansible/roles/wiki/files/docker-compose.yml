@@ -1,5 +1,8 @@
 ---
-version: "3.9"
+# Docker Compose file for multiple Wiki.js instances
+# Each instance has its own .env file in ./envs/
+# and its own Docker network for database isolation.
+# Traefik is used as a reverse proxy with automatic HTTPS via Let's Encrypt.
 networks:
   proxy:
     external: true
