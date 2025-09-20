@@ -1,0 +1,53 @@
+name: Ansible Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:   # ici je transforme les secrets GitHub en variables d'environnement
+      ADMIN_PASS_CYBER: ${{ secrets.ADMIN_PASS_CYBER }}
+      ADMIN_PASS_DEVOPS: ${{ secrets.ADMIN_PASS_DEVOPS }}
+      ADMIN_PASS_IA: ${{ secrets.ADMIN_PASS_IA }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_API_TOKEN_R2: ${{ secrets.CLOUDFLARE_API_TOKEN_R2 }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      KEYCLOAK_ADMIN_PASS: ${{ secrets.KEYCLOAK_ADMIN_PASS }}
+      R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+      R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+      KEYCLOAK_DB_PASSWORD: ${{ secrets.KEYCLOAK_DB_PASSWORD }} # mot de passe de la BDD Postgres de Keycloak
+      VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}  # clé privée SSH pour se connecter à la VM
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1) Recréer la clé SSH à partir du secret GitHub
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "$VM_SSH_KEY" > ~/.ssh/newtest.pem
+          chmod 600 ~/.ssh/newtest.pem
+
+      # 2) Installer Ansible
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      # 2bis) Installer les collections nécessaires (dont ansible.posix)
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install ansible.posix
+
+      # 3) Ajouter le host dans known_hosts (évite le "Host key verification failed")
+      - name: Add SSH known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H wikiplatform.app >> ~/.ssh/known_hosts
+
+      # 4) Exécuter Ansible **
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
