@@ -99,5 +99,5 @@ kc_realm: "saas"
 postgres_user: "keycloak_wiki"
 postgres_password: "{{ lookup('env','KEYCLOAK_DB_PASSWORD') | mandatory }}"
 postgres_db: "keycloak_db"
-kc_clients: "{{ lookup('file', '/opt/keycloak/clients.json') | from_json }}"
+
 

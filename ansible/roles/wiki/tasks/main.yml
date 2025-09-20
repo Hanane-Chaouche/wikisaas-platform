@@ -30,16 +30,23 @@
 # -------------------------------------------------------------------
 - name: Lire clients.json sur la VM
   slurp:
-    src: /opt/keycloak/clients.json
-  register: kc_clients_raw
+    src: /opt/keycloak/clients.json # chemin du fichier côté machine distante (VM)
+  register: kc_clients_raw    # on stocke le contenu brut (encodé en base64) dans cette variable
 
 # -------------------------------------------------------------------
 # Étape 2 : Transformer le contenu en variable JSON utilisable
 # -------------------------------------------------------------------
 - name: Convertir clients.json en dictionnaire
   set_fact:
+    # kc_clients_raw.content = contenu du fichier en base64
+    # b64decode = décoder le base64
+    # from_json = parser le texte JSON en dictionnaire Python/Ansible
     kc_clients: "{{ kc_clients_raw.content | b64decode | from_json }}"
-
+     # Résultat final : kc_clients = dictionnaire utilisable dans les templates
+    # Exemple :
+    # kc_clients['wiki-ia']     -> secret du client wiki-ia
+    # kc_clients['wiki-devops'] -> secret du client wiki-devops
+    # kc_clients['wiki-cyber']  -> secret du client wiki-cyber
 
 - name: Générer les fichiers .env pour chaque instance Wiki.js
   become: true
