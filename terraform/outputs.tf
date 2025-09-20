@@ -15,13 +15,21 @@ output "ec2_public_dns" {
 # Outputs pour RDS (PostgreSQL)
 ####################################
 output "db_endpoints" {
-  description = "Endpoints des bases de données PostgreSQL"
+  description = "Endpoints des bases de données PostgreSQL (séparés host/port)"
   value = {
-    ia     = aws_db_instance.wiki_ia.endpoint
-    devops = aws_db_instance.wiki_devops.endpoint
-    cyber  = aws_db_instance.wiki_cyber.endpoint
+    ia = {
+      host = aws_db_instance.wiki_ia.address
+      port = aws_db_instance.wiki_ia.port
+    }
+    devops = {
+      host = aws_db_instance.wiki_devops.address
+      port = aws_db_instance.wiki_devops.port
+    }
+    cyber = {
+      host = aws_db_instance.wiki_cyber.address
+      port = aws_db_instance.wiki_cyber.port
+    }
   }
-  
 }
 
 ####################################

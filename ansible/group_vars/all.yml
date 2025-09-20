@@ -102,6 +102,6 @@ postgres_db: "keycloak_db"
 ############################################
 # postgres bdd rds
 ############################################
- postgres_admin_user: "postgres"
- postgres_admin_password: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') | mandatory }}"
- postgres_admin_db: "postgres"
+postgres_admin_user: "postgres"
+postgres_admin_password: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') | mandatory }}"
+postgres_admin_db: "postgres"
