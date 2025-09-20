@@ -1,0 +1,49 @@
+---
+
+- name: Préparer les bases et l'utilisateur pour Wiki.js
+  hosts: wikiplatform.app       # Hôte cible défini dans ton inventaire Ansible
+  become: false                 # Pas besoin de sudo car on se connecte directement au RDS PostgreSQL
+
+  tasks:
+    # ----------------------------------------------------
+    # Étape 1 : Créer les bases de données si elles n'existent pas
+    # ----------------------------------------------------
+    - name: Créer les bases pour chaque Wiki.js
+      community.postgresql.postgresql_db:    # Module Ansible qui gère les bases PostgreSQL
+        name: "{{ item.pg_db }}"             # Nom de la base à créer (ex: wiki_ia, wiki_devops, wiki_cyber)
+        login_host: "{{ item.pg_host }}"     # Endpoint RDS où se trouve la base
+        login_user: "{{ postgres_admin_user }}"   # Utilisateur admin (postgres)
+        login_password: "{{ postgres_admin_password }}"  # Mot de passe de l’admin
+        login_db: "{{ postgres_admin_db }}"  # Base de connexion par défaut (postgres)
+        state: present                       # S’assurer que la base existe (créée si absente)
+      loop: "{{ wikis }}"                    # On boucle sur la liste "wikis" définie dans group_vars/all.yml
+
+    # ----------------------------------------------------
+    # Étape 2 : Créer les utilisateurs applicatifs (wikijs)
+    # ----------------------------------------------------
+    - name: Créer l’utilisateur applicatif pour chaque Wiki.js
+      community.postgresql.postgresql_user:  # Module qui gère les utilisateurs PostgreSQL
+        name: "{{ item.pg_user }}"           # Nom de l’utilisateur à créer (toujours wikijs dans ton cas)
+        password: "{{ item.pg_pass }}"       # Mot de passe défini dans tes variables
+        login_host: "{{ item.pg_host }}"     # Endpoint RDS
+        login_user: "{{ postgres_admin_user }}"   # Admin qui exécute la commande
+        login_password: "{{ postgres_admin_password }}"  # Mot de passe admin
+        login_db: "{{ postgres_admin_db }}"  # Base par défaut pour exécuter la commande
+        state: present                       # S’assurer que l’utilisateur existe (créé si absent)
+      loop: "{{ wikis }}"                    # Boucle sur toutes les instances Wiki.js
+
+    # ----------------------------------------------------
+    # Étape 3 : Donner les droits à l’utilisateur wikijs sur chaque base
+    # ----------------------------------------------------
+    - name: Donner les droits à l’utilisateur sur chaque base
+      community.postgresql.postgresql_privs:  # Module qui gère les privilèges PostgreSQL
+        db: "{{ item.pg_db }}"               # Base sur laquelle appliquer les privilèges
+        roles: "{{ item.pg_user }}"          # Rôle (utilisateur) qui reçoit les droits
+        type: database                       # Niveau des privilèges (ici au niveau de la base)
+        privs: ALL                           # On donne tous les privilèges (GRANT ALL)
+        login_host: "{{ item.pg_host }}"     # Endpoint RDS
+        login_user: "{{ postgres_admin_user }}"   # Admin RDS
+        login_password: "{{ postgres_admin_password }}"  # Mot de passe admin
+        login_db: "{{ postgres_admin_db }}"  # Base par défaut pour se connecter
+        state: present                       # S’assurer que les privilèges sont accordés
+      loop: "{{ wikis }}"                    # Boucle sur toutes les bases définies

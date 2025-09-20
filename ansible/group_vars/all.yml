@@ -99,5 +99,9 @@ kc_realm: "saas"
 postgres_user: "keycloak_wiki"
 postgres_password: "{{ lookup('env','KEYCLOAK_DB_PASSWORD') | mandatory }}"
 postgres_db: "keycloak_db"
-
-
+############################################
+# postgres bdd rds
+############################################
+ postgres_admin_user: "postgres"
+ postgres_admin_password: "{{ lookup('env','POSTGRES_ADMIN_PASSWORD') | mandatory }}"
+ postgres_admin_db: "postgres"

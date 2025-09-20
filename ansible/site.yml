@@ -11,4 +11,5 @@
     - role: docker     # installe Docker + dépendances
     - role: traefik    # déploie Traefik
     - role: keycloak   # déploie Keycloak + init
+    - role: postgres   # prépare les bases PostgreSQL RDS pour Wiki.js  
     - role: wiki       # déploie Wiki.js + init
