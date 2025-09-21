@@ -6,10 +6,25 @@
   vars_files:
     - group_vars/all.yml
 
+  ---
+- name: Deploiement complet plateforme Wiki.js SaaS
+  hosts: wikijs_servers
+  become: true
+
+  vars_files:
+    - group_vars/all.yml
+
+---
+- name: Deploiement complet plateforme Wiki.js SaaS
+  hosts: wikijs_servers
+  become: true
+
+  vars_files:
+    - group_vars/all.yml
+
   pre_tasks:
-    # ====== Inspection (lance avec --tags inspect) ======
-    - name: "[inspect] Afficher les scalaires principaux"
-    # Ex: ansible-playbook ... --tags inspect
+    - name: Inspecter - Afficher les scalaires principaux
+    # ansible-playbook ... --tags inspect
       tags: [inspect]
       debug:
         msg:
@@ -25,15 +40,14 @@
           - "r2_location           = {{ r2_location }}"
           - "r2_bucket_endpoint    = {{ r2_bucket_endpoint }}"
 
-    - name: "[inspect] Type des objets reçus"
+    - name: Inspecter - Type des objets recus
       tags: [inspect]
       debug:
         msg:
           - "type(db_endpoints) = {{ db_endpoints | type_debug }}"
           - "type(dns_records)  = {{ dns_records  | type_debug }}"
 
-    # ====== Normalisation JSON -> dict (sécurisé si déjà dict) ======
-    - name: Normaliser db_endpoints / dns_records
+    - name: Normaliser db_endpoints et dns_records
       set_fact:
         db_eps: >-
           {{ db_endpoints if db_endpoints is mapping
@@ -42,50 +56,46 @@
           {{ dns_records if dns_records is mapping
              else (dns_records  | default('{}') | from_json) }}
 
-    - name:"[inspect] db_endpoints formaté"
+    - name: Inspecter - db_endpoints formate
       tags: [inspect]
       debug:
         msg: "{{ db_eps | to_nice_json }}"
 
-    - name: [inspect] dns_records formaté
+    - name: Inspecter - dns_records formate
       tags: [inspect]
       debug:
         msg: "{{ dns_recs | to_nice_json }}"
 
-    - name: "[inspect] Exemple d'accès (db host 'cyber' & premier DNS)"
+    - name: Inspecter - Acces (db host 'cyber' et premier DNS)
       tags: [inspect]
       debug:
         msg:
-          - "db host (cyber) = {{ db_eps.cyber | default('non défini') }}"
+          - "db host (cyber) = {{ db_eps.cyber | default('non defini') }}"
           - "first_dns_name = {{ first_dns_name }}"
           - "first_dns value = {{ dns_recs[first_dns_name] | default('') }}"
 
-    # ====== Construire wikis_final en injectant pg_host depuis Terraform ======
     - name: Initialiser wikis_final
       set_fact:
         wikis_final: []
 
-    - name: Remplir wikis_final avec pg_host depuis db_eps.<name>
+    - name: Construire wikis_final avec pg_host depuis db_eps
       set_fact:
-        wikis_final: "{{ wikis_final + [ wiki | combine({'pg_host': (db_eps[wiki.name] | default(wiki.pg_host | default('')) )}) ] }}"
+        wikis_final: "{{ wikis_final + [ wiki | combine({'pg_host': (db_eps[wiki.name] | default(wiki.pg_host | default('')))}) ] }}"
       loop: "{{ wikis }}"
       loop_control:
         loop_var: wiki
 
-    - name: "[inspect] Aperçu wikis_final"
+    - name: Inspecter - Apercu wikis_final
       tags: [inspect]
       debug:
         var: wikis_final
 
   roles:
-    - role: common     # installe Docker + dépendances
-    - role: docker     # installe Docker + dépendances
-    - role: traefik    # déploie Traefik
-    - role: keycloak   # déploie Keycloak + init
-    - role: postgres   # prépare les bases PostgreSQL RDS pour Wiki.js
-    - role: wiki       # déploie Wiki.js + init
+    - role: common
+    - role: docker
+    - role: traefik
+    - role: keycloak
+    - role: postgres
+    - role: wiki
       vars:
-        # On passe la liste enrichie; fallback sur "wikis" si jamais
         wikis: "{{ wikis_final | default(wikis) }}"
-  
-  
