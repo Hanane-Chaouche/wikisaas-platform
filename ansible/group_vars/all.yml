@@ -24,9 +24,12 @@ ec2_user: "ubuntu"
 ############################################
 # Outputs Terraform (objets JSON)
 ############################################
-db_endpoints: >-
-  {{ (lookup('env','DB_ENDPOINTS') | default('{}'))
-     | from_json }}
+db_db_eps: >-
+  {{
+    db_endpoints_raw if db_endpoints_raw is mapping
+    else ((db_endpoints_raw | default('', true) | trim) | length > 0)
+         | ternary((db_endpoints_raw | from_yaml), {})
+  }}
 dns_records: >-
   {{ (lookup('env','DNS_RECORDS')  | default('{}')) | from_json }}
 first_dns_name: "{{ (dns_records.keys() | list | first | default('')) }}"
@@ -36,7 +39,11 @@ first_dns_name: "{{ (dns_records.keys() | list | first | default('')) }}"
 ############################################
 wikis:
   - name: ia
-    pg_host: "{{ db_endpoints.ia     | default('') }}"
+    pg_host: >-
+    {{
+      (db_eps.ia.host if (db_eps.ia is mapping) else db_eps.ia)
+      | default('')
+    }}
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_ia"
@@ -44,7 +51,11 @@ wikis:
     admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
 
   - name: devops
-    pg_host: "{{ db_endpoints.devops | default('') }}"
+    pg_host: >-
+    {{
+      (db_eps.devops.host if (db_eps.devops is mapping) else db_eps.devops)
+      | default('')
+    }}
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_devops"
@@ -52,7 +63,11 @@ wikis:
     admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
 
   - name: cyber
-    pg_host: "{{ db_endpoints.cyber  | default('') }}"
+    pg_host: >-
+    {{
+      (db_eps.cyber.host if (db_eps.cyber is mapping) else db_eps.cyber)
+      | default('')
+    }}
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_cyber"
