@@ -33,7 +33,7 @@
     # Étape 3 : Donner les droits à l’utilisateur wikijs sur chaque base
     - name: Donner les droits à l’utilisateur sur chaque base
       community.postgresql.postgresql_privs:  # Module qui gère les privilèges PostgreSQL
-        db: "{{ item.pg_db }}"               # Base sur laquelle appliquer les privilèges
+        database: "{{ item.pg_db }}"               # Base sur laquelle appliquer les privilèges
         roles: "{{ item.pg_user }}"          # Rôle (utilisateur) qui reçoit les droits
         type: database                       # Niveau des privilèges (ici au niveau de la base)
         privs: ALL                           # On donne tous les privilèges (GRANT ALL)
