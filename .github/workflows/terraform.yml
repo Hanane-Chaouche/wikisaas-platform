@@ -18,6 +18,20 @@ jobs:
       TF_WORKSPACE: "wikisaas-platform"                 # ton workspace TFC
       CONFIG_DIRECTORY: "./terraform"                   # dossier contenant tes .tf
 
+    outputs:
+      ec2_public_ip:         ${{ steps.export_outputs.outputs.EC2_PUBLIC_IP }}
+      ec2_public_dns:        ${{ steps.export_outputs.outputs.EC2_PUBLIC_DNS }}
+      db_endpoints:          ${{ steps.export_outputs.outputs.DB_ENDPOINTS }}
+      dns_records:           ${{ steps.export_outputs.outputs.DNS_RECORDS }}
+      r2_bucket_name:        ${{ steps.export_outputs.outputs.R2_BUCKET_NAME }}
+      r2_account_id:         ${{ steps.export_outputs.outputs.R2_ACCOUNT_ID }}
+      r2_location:           ${{ steps.export_outputs.outputs.R2_LOCATION }}
+      r2_bucket_endpoint:    ${{ steps.export_outputs.outputs.R2_BUCKET_ENDPOINT }}
+      vpc_id:                ${{ steps.export_outputs.outputs.VPC_ID }}
+      public_subnet_id:      ${{ steps.export_outputs.outputs.PUBLIC_SUBNET_ID }}
+      rds_subnet_group:      ${{ steps.export_outputs.outputs.RDS_SUBNET_GROUP }}
+      ec2_security_group_id: ${{ steps.export_outputs.outputs.EC2_SECURITY_GROUP_ID }}
+      rds_security_group_id: ${{ steps.export_outputs.outputs.RDS_SECURITY_GROUP_ID }}
       
     steps:
       - uses: actions/checkout@v4
@@ -86,31 +100,30 @@ jobs:
         run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} output
 
       - name: Exporter outputs Terraform
+        id: export_outputs
         run: |
           set -euo pipefail
           O=$(terraform -chdir=${{ env.CONFIG_DIRECTORY }} output -json)
 
-          echo "EC2_PUBLIC_IP=$(echo "$O" | jq -r .ec2_public_ip.value)" >> $GITHUB_ENV
-          echo "EC2_PUBLIC_DNS=$(echo "$O" | jq -r .ec2_public_dns.value)" >> $GITHUB_ENV
-          echo "DB_ENDPOINTS=$(echo "$O" | jq -c .db_endpoints.value)" >> $GITHUB_ENV
-          echo "DNS_RECORDS=$(echo "$O" | jq -c .dns_records.value)" >> $GITHUB_ENV
-          echo "R2_BUCKET_NAME=$(echo "$O" | jq -r .r2_bucket_name.value)" >> $GITHUB_ENV
-          echo "R2_ACCOUNT_ID=$(echo "$O" | jq -r .r2_account_id.value)" >> $GITHUB_ENV
-          echo "R2_LOCATION=$(echo "$O" | jq -r .r2_location.value)" >> $GITHUB_ENV
-          echo "R2_BUCKET_ENDPOINT=$(echo "$O" | jq -r .r2_bucket_endpoint.value)" >> $GITHUB_ENV
-          echo "VPC_ID=$(echo "$O" | jq -r .vpc_id.value)" >> $GITHUB_ENV
-          echo "PUBLIC_SUBNET_ID=$(echo "$O" | jq -r .public_subnet_id.value)" >> $GITHUB_ENV
-          echo "RDS_SUBNET_GROUP=$(echo "$O" | jq -r .rds_subnet_group.value)" >> $GITHUB_ENV
-          echo "EC2_SECURITY_GROUP_ID=$(echo "$O" | jq -r .ec2_security_group_id.value)" >> $GITHUB_ENV
-          echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_ENV
- 
-  
+          echo "EC2_PUBLIC_IP=$(echo "$O" | jq -r .ec2_public_ip.value)" >> $GITHUB_OUTPUT
+          echo "EC2_PUBLIC_DNS=$(echo "$O" | jq -r .ec2_public_dns.value)" >> $GITHUB_OUTPUT
+          echo "DB_ENDPOINTS=$(echo "$O" | jq -c '.db_endpoints.value | with_entries(.value |= .host)')" >> $GITHUB_OUTPUT
+          echo "DNS_RECORDS=$(echo "$O" | jq -c .dns_records.value)" >> $GITHUB_OUTPUT
+          echo "R2_BUCKET_NAME=$(echo "$O" | jq -r .r2_bucket_name.value)" >> $GITHUB_OUTPUT
+          echo "R2_ACCOUNT_ID=$(echo "$O" | jq -r .r2_account_id.value)" >> $GITHUB_OUTPUT
+          echo "R2_LOCATION=$(echo "$O" | jq -r .r2_location.value)" >> $GITHUB_OUTPUT
+          echo "R2_BUCKET_ENDPOINT=$(echo "$O" | jq -r .r2_bucket_endpoint.value)" >> $GITHUB_OUTPUT
+          echo "VPC_ID=$(echo "$O" | jq -r .vpc_id.value)" >> $GITHUB_OUTPUT
+          echo "PUBLIC_SUBNET_ID=$(echo "$O" | jq -r .public_subnet_id.value)" >> $GITHUB_OUTPUT
+          echo "RDS_SUBNET_GROUP=$(echo "$O" | jq -r .rds_subnet_group.value)" >> $GITHUB_OUTPUT
+          echo "EC2_SECURITY_GROUP_ID=$(echo "$O" | jq -r .ec2_security_group_id.value)" >> $GITHUB_OUTPUT
+          echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_OUTPUT
+
+
   ansible:
     runs-on: ubuntu-latest
     needs: [terraform]   # attend Terraform seulement si Terraform est déclenché
-    if: |
-      contains(github.event.head_commit.message, 'ansible') ||
-      contains(github.event.head_commit.message, 'terraform')
+  
     env: 
        # Secrets GitHub
       ADMIN_PASS_CYBER: ${{ secrets.ADMIN_PASS_CYBER }}
@@ -147,4 +160,21 @@ jobs:
           ssh-keyscan -H wikiplatform.app >> ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
-        run: ansible-playbook -i ansible/inventories/prod/hosts.ini ansible/site.yml
+        run: |
+          ansible-playbook \
+            -i ansible/inventories/prod/hosts.ini \
+            ansible/site.yml \
+            --extra-vars "ec2_public_ip=${{ needs.terraform.outputs.ec2_public_ip }} \
+                          ec2_public_dns=${{ needs.terraform.outputs.ec2_public_dns }} \
+                          db_endpoints='${{ needs.terraform.outputs.db_endpoints }}' \
+                          dns_records='${{ needs.terraform.outputs.dns_records }}' \
+                          r2_bucket_name=${{ needs.terraform.outputs.r2_bucket_name }} \
+                          r2_account_id=${{ needs.terraform.outputs.r2_account_id }} \
+                          r2_location=${{ needs.terraform.outputs.r2_location }} \
+                          r2_bucket_endpoint=${{ needs.terraform.outputs.r2_bucket_endpoint }} \
+                          vpc_id=${{ needs.terraform.outputs.vpc_id }} \
+                          public_subnet_id=${{ needs.terraform.outputs.public_subnet_id }} \
+                          rds_subnet_group=${{ needs.terraform.outputs.rds_subnet_group }} \
+                          ec2_security_group_id=${{ needs.terraform.outputs.ec2_security_group_id }} \
+                          rds_security_group_id=${{ needs.terraform.outputs.rds_security_group_id }}"
+

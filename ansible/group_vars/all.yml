@@ -8,22 +8,17 @@ acme_email: "{{ lookup('env','ACME_EMAIL') | default('chamer6@hotmail.com', true
 ############################################
 # Outputs Terraform (scalaires)
 ############################################
-ec2_public_ip: "{{ lookup('env','EC2_PUBLIC_IP') | default('') }}" # variable par defaut vide si non définie  
-ec2_public_dns: "{{ lookup('env','EC2_PUBLIC_DNS') | default('') }}"
-vpc_id: "{{ lookup('env','VPC_ID') | default('') }}"
-public_subnet_id: "{{ lookup('env','PUBLIC_SUBNET_ID') | default('') }}"
-rds_subnet_group: "{{ lookup('env','RDS_SUBNET_GROUP') | default('') }}"
-ec2_security_group_id: >-
-  {{ lookup('env','EC2_SECURITY_GROUP_ID')
-     | default('') }}
-rds_security_group_id: >-
-  {{ lookup('env','RDS_SECURITY_GROUP_ID')
-     | default('') }}
-r2_bucket_name: "{{ lookup('env','R2_BUCKET_NAME') | default('') }}"
-r2_account_id: "{{ lookup('env','R2_ACCOUNT_ID') | default('') }}"
-r2_location: "{{ lookup('env','R2_LOCATION') | default('') }}"
-r2_bucket_endpoint: "{{ lookup('env','R2_BUCKET_ENDPOINT') | default('') }}"
-
+ec2_public_ip:  "{{ ec2_public_ip | default(lookup('env','EC2_PUBLIC_IP'), true) }}"
+ec2_public_dns: "{{ ec2_public_dns | default(lookup('env','EC2_PUBLIC_DNS'), true) }}"
+vpc_id: "{{ vpc_id | default(lookup('env','VPC_ID'), true) }}"
+public_subnet_id: "{{ public_subnet_id | default(lookup('env','PUBLIC_SUBNET_ID'), true) }}"
+rds_subnet_group: "{{ rds_subnet_group | default(lookup('env','RDS_SUBNET_GROUP'), true) }}"
+ec2_security_group_id: "{{ ec2_security_group_id | default(lookup('env','EC2_SECURITY_GROUP_ID'), true) }}"
+rds_rds_security_group_id: "{{ rds_rds_security_group_id | default(lookup('env','RDS_SECURITY_GROUP_ID'), true) | default('') }}"
+r2_bucket_name: "{{ r2_bucket_name | default(lookup('env','R2_BUCKET_NAME'), true) | default('') }}"
+r2_account_id: "{{ r2_account_id | default(lookup('env','R2_ACCOUNT_ID'), true) | default('') }}"
+r2_location: "{{ r2_location | default(lookup('env','R2_LOCATION'), true) | default('') }}"
+r2_bucket_endpoint: "{{ r2_bucket_endpoint | default(lookup('env','R2_BUCKET_ENDPOINT'), true) | default('') }}"
 ec2_user: "ubuntu"
 
 ############################################
@@ -32,16 +27,16 @@ ec2_user: "ubuntu"
 db_endpoints: >-
   {{ (lookup('env','DB_ENDPOINTS') | default('{}'))
      | from_json }}
-dns_records: "{{ (lookup('env','DNS_RECORDS')   | default('{}')) | from_json }}"
-first_dns_name: >-
-  {{ (dns_records.keys() | list | first | default('')) }}
+dns_records: >-
+  {{ (lookup('env','DNS_RECORDS')  | default('{}')) | from_json }}
+first_dns_name: "{{ (dns_records.keys() | list | first | default('')) }}"
 
 ############################################
 # Wiki.js instances (boucle avec "item") postresql
 ############################################
 wikis:
   - name: ia
-    pg_host: "wiki-ia-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
+    pg_host: "{{ db_endpoints.ia     | default('') }}"
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_ia"
@@ -49,7 +44,7 @@ wikis:
     admin_password: "{{ lookup('env','ADMIN_PASS_IA') | mandatory }}"
 
   - name: devops
-    pg_host: "wiki-devops-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
+    pg_host: "{{ db_endpoints.devops | default('') }}"
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_devops"
@@ -57,7 +52,7 @@ wikis:
     admin_password: "{{ lookup('env','ADMIN_PASS_DEVOPS') | mandatory }}"
 
   - name: cyber
-    pg_host: "wiki-cyber-db.ckjwkoo82o55.us-east-1.rds.amazonaws.com"
+    pg_host: "{{ db_endpoints.cyber  | default('') }}"
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_cyber"
