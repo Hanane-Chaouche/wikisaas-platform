@@ -17,6 +17,23 @@
     group: root
     mode: '0755'
 
+- name: Créer le dossier des certificats RDS
+  become: true
+  file:
+    path: /opt/wiki/certs
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Télécharger le certificat SSL RDS global
+  become: true
+  get_url:
+    url: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+    dest: /opt/wiki/certs/rds-ca-bundle.pem
+    mode: '0644'
+
+
 - name: Copier le docker-compose.yml de Wiki.js
   become: true
   copy:
