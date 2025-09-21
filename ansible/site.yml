@@ -6,33 +6,6 @@
   vars_files:
     - group_vars/all.yml
 
-      pre_tasks:
-    - name: [inspect] Bruts reçus (-e ou ENV)
-      debug:
-        msg:
-          - "type(db_endpoints)   = {{ (db_endpoints | default(omit)) is not none | ternary(db_endpoints | type_debug, 'undefined') }}"
-          - "db_endpoints (brut)  = {{ db_endpoints | default('(undefined)') }}"
-          - "ENV.DB_ENDPOINTS     = {{ lookup('env','DB_ENDPOINTS') | default('(undefined)') }}"
-
-    - name: [inspect] Normalisation
-      set_fact:
-        db_endpoints_raw: "{{ db_endpoints | default(lookup('env','DB_ENDPOINTS'), true) | default('') }}"
-        db_eps: >-
-          {{
-            db_endpoints_raw if db_endpoints_raw is mapping
-            else ((db_endpoints_raw | default('', true) | trim) | length > 0)
-                | ternary((db_endpoints_raw | from_yaml), {})
-          }}
-
-    - name: [inspect] Après normalisation
-      debug:
-        msg:
-          - "type(db_endpoints_raw) = {{ db_endpoints_raw | type_debug }}"
-          - "db_endpoints_raw = {{ db_endpoints_raw }}"
-          - "type(db_eps) = {{ db_eps | type_debug }}"
-          - "db_eps = {{ db_eps | to_nice_json }}"
-
-
   roles:
     - role: common
     - role: docker

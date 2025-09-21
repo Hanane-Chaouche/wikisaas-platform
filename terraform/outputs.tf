@@ -12,15 +12,18 @@ output "ec2_public_dns" {
 }
 
 ####################################
-# Outputs pour RDS (PostgreSQL)
+# Outputs RDS (un par valeur)
 ####################################
-output "db_endpoints" {
-  description = "Hosts RDS (seulement l'adresse)"
-  value = {
-    ia     = aws_db_instance.wiki_ia.address
-    devops = aws_db_instance.wiki_devops.address
-    cyber  = aws_db_instance.wiki_cyber.address
-  }
+output "db_host_ia" {
+  value = aws_db_instance.wiki_ia.address
+}
+
+output "db_host_devops" {
+  value = aws_db_instance.wiki_devops.address
+}
+
+output "db_host_cyber" {
+  value = aws_db_instance.wiki_cyber.address
 }
 
 ####################################

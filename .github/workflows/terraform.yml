@@ -21,7 +21,6 @@ jobs:
     outputs:
       ec2_public_ip:         ${{ steps.export_outputs.outputs.EC2_PUBLIC_IP }}
       ec2_public_dns:        ${{ steps.export_outputs.outputs.EC2_PUBLIC_DNS }}
-      db_endpoints:          ${{ steps.export_outputs.outputs.DB_ENDPOINTS }}
       dns_records:           ${{ steps.export_outputs.outputs.DNS_RECORDS }}
       r2_bucket_name:        ${{ steps.export_outputs.outputs.R2_BUCKET_NAME }}
       r2_account_id:         ${{ steps.export_outputs.outputs.R2_ACCOUNT_ID }}
@@ -32,7 +31,10 @@ jobs:
       rds_subnet_group:      ${{ steps.export_outputs.outputs.RDS_SUBNET_GROUP }}
       ec2_security_group_id: ${{ steps.export_outputs.outputs.EC2_SECURITY_GROUP_ID }}
       rds_security_group_id: ${{ steps.export_outputs.outputs.RDS_SECURITY_GROUP_ID }}
-      
+      db_host_ia: ${{ steps.export_outputs.outputs.DB_HOST_IA }}
+      db_host_devops: ${{ steps.export_outputs.outputs.DB_HOST_DEVOPS }}
+      db_host_cyber: ${{ steps.export_outputs.outputs.DB_HOST_CYBER }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -107,7 +109,6 @@ jobs:
 
           echo "EC2_PUBLIC_IP=$(echo "$O" | jq -r .ec2_public_ip.value)" >> $GITHUB_OUTPUT
           echo "EC2_PUBLIC_DNS=$(echo "$O" | jq -r .ec2_public_dns.value)" >> $GITHUB_OUTPUT
-          echo "DB_ENDPOINTS=$(echo "$O" | jq -c '.db_endpoints.value | with_entries(.value |= .host)')" >> $GITHUB_OUTPUT
           echo "DNS_RECORDS=$(echo "$O" | jq -c .dns_records.value)" >> $GITHUB_OUTPUT
           echo "R2_BUCKET_NAME=$(echo "$O" | jq -r .r2_bucket_name.value)" >> $GITHUB_OUTPUT
           echo "R2_ACCOUNT_ID=$(echo "$O" | jq -r .r2_account_id.value)" >> $GITHUB_OUTPUT
@@ -118,7 +119,9 @@ jobs:
           echo "RDS_SUBNET_GROUP=$(echo "$O" | jq -r .rds_subnet_group.value)" >> $GITHUB_OUTPUT
           echo "EC2_SECURITY_GROUP_ID=$(echo "$O" | jq -r .ec2_security_group_id.value)" >> $GITHUB_OUTPUT
           echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_OUTPUT
-
+          echo "DB_HOST_IA=$(echo "$O" | jq -r .db_host_ia.value)"         >> $GITHUB_OUTPUT
+          echo "DB_HOST_DEVOPS=$(echo "$O" | jq -r .db_host_devops.value)" >> $GITHUB_OUTPUT
+          echo "DB_HOST_CYBER=$(echo "$O" | jq -r .db_host_cyber.value)"   >> $GITHUB_OUTPUT
 
   ansible:
     runs-on: ubuntu-latest
@@ -175,5 +178,7 @@ jobs:
               -e rds_subnet_group='${{ needs.terraform.outputs.rds_subnet_group }}' \
               -e ec2_security_group_id='${{ needs.terraform.outputs.ec2_security_group_id }}' \
               -e rds_security_group_id='${{ needs.terraform.outputs.rds_security_group_id }}' \
-              -e db_endpoints='${{ needs.terraform.outputs.db_endpoints }}' \
-              -e dns_records='${{ needs.terraform.outputs.dns_records }}'
+              -e dns_records='${{ needs.terraform.outputs.dns_records }}' \
+              -e db_host_ia='${{ needs.terraform.outputs.db_host_ia  }}' \
+              -e db_host_devops='${{ needs.terraform.outputs.db_host_devops }}' \
+              -e db_host_cyber='${{ needs.terraform.outputs.db_host_cyber }}'
