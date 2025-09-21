@@ -8,7 +8,7 @@
 
   pre_tasks:
     # ====== Inspection (lance avec --tags inspect) ======
-    - name: [inspect] Afficher les scalaires principaux
+    - name: "[inspect] Afficher les scalaires principaux"
     # Ex: ansible-playbook ... --tags inspect
       tags: [inspect]
       debug:
@@ -25,7 +25,7 @@
           - "r2_location           = {{ r2_location }}"
           - "r2_bucket_endpoint    = {{ r2_bucket_endpoint }}"
 
-    - name: [inspect] Type des objets reçus
+    - name:" [inspect] Type des objets reçus"
       tags: [inspect]
       debug:
         msg:
@@ -42,7 +42,7 @@
           {{ dns_records if dns_records is mapping
              else (dns_records  | default('{}') | from_json) }}
 
-    - name: [inspect] db_endpoints formaté
+    - name:"[inspect] db_endpoints formaté"
       tags: [inspect]
       debug:
         msg: "{{ db_eps | to_nice_json }}"
@@ -52,7 +52,7 @@
       debug:
         msg: "{{ dns_recs | to_nice_json }}"
 
-    - name: [inspect] Exemple d'accès (db host 'cyber' & premier DNS)
+    - name: "[inspect] Exemple d'accès (db host 'cyber' & premier DNS)"
       tags: [inspect]
       debug:
         msg:
@@ -72,7 +72,7 @@
       loop_control:
         loop_var: wiki
 
-    - name: [inspect] Aperçu wikis_final
+    - name:"[inspect] Aperçu wikis_final"
       tags: [inspect]
       debug:
         var: wikis_final

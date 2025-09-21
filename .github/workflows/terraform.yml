@@ -162,19 +162,18 @@ jobs:
       - name: Run Ansible Playbook
         run: |
           ansible-playbook \
-            -i ansible/inventories/prod/hosts.ini \
-            ansible/site.yml \
-            --extra-vars "ec2_public_ip=${{ needs.terraform.outputs.ec2_public_ip }} \
-                          ec2_public_dns=${{ needs.terraform.outputs.ec2_public_dns }} \
-                          db_endpoints='${{ needs.terraform.outputs.db_endpoints }}' \
-                          dns_records='${{ needs.terraform.outputs.dns_records }}' \
-                          r2_bucket_name=${{ needs.terraform.outputs.r2_bucket_name }} \
-                          r2_account_id=${{ needs.terraform.outputs.r2_account_id }} \
-                          r2_location=${{ needs.terraform.outputs.r2_location }} \
-                          r2_bucket_endpoint=${{ needs.terraform.outputs.r2_bucket_endpoint }} \
-                          vpc_id=${{ needs.terraform.outputs.vpc_id }} \
-                          public_subnet_id=${{ needs.terraform.outputs.public_subnet_id }} \
-                          rds_subnet_group=${{ needs.terraform.outputs.rds_subnet_group }} \
-                          ec2_security_group_id=${{ needs.terraform.outputs.ec2_security_group_id }} \
-                          rds_security_group_id=${{ needs.terraform.outputs.rds_security_group_id }}"
-
+              -i ansible/inventories/prod/hosts.ini \
+              ansible/site.yml \
+              -e ec2_public_ip='${{ needs.terraform.outputs.ec2_public_ip }}' \
+              -e ec2_public_dns='${{ needs.terraform.outputs.ec2_public_dns }}' \
+              -e r2_bucket_name='${{ needs.terraform.outputs.r2_bucket_name }}' \
+              -e r2_account_id='${{ needs.terraform.outputs.r2_account_id }}' \
+              -e r2_location='${{ needs.terraform.outputs.r2_location }}' \
+              -e r2_bucket_endpoint='${{ needs.terraform.outputs.r2_bucket_endpoint }}' \
+              -e vpc_id='${{ needs.terraform.outputs.vpc_id }}' \
+              -e public_subnet_id='${{ needs.terraform.outputs.public_subnet_id }}' \
+              -e rds_subnet_group='${{ needs.terraform.outputs.rds_subnet_group }}' \
+              -e ec2_security_group_id='${{ needs.terraform.outputs.ec2_security_group_id }}' \
+              -e rds_security_group_id='${{ needs.terraform.outputs.rds_security_group_id }}' \
+              -e db_endpoints='${{ needs.terraform.outputs.db_endpoints }}' \
+              -e dns_records='${{ needs.terraform.outputs.dns_records }}'
