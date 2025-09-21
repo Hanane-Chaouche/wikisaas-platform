@@ -30,6 +30,7 @@
           - "type(db_endpoints) = {{ db_endpoints | type_debug }}"
           - "type(dns_records)  = {{ dns_records  | type_debug }}"
 
+    # Normaliser pour garantir des dicts
     - name: Normaliser db_endpoints et dns_records
       ansible.builtin.set_fact:
         db_eps: >-
@@ -49,6 +50,10 @@
       ansible.builtin.debug:
         msg: "{{ dns_recs | to_nice_json }}"
 
+    - name: Deriver first_dns_name apres normalisation
+      ansible.builtin.set_fact:
+        first_dns_name: "{{ (dns_recs.keys() | list | first | default('')) }}"
+
     - name: Inspecter - Acces (db host 'cyber' et premier DNS)
       tags: [inspect]
       ansible.builtin.debug:
@@ -57,6 +62,7 @@
           - "first_dns_name = {{ first_dns_name }}"
           - "first_dns value = {{ dns_recs[first_dns_name] | default('') }}"
 
+    # Construire wikis_final en injectant pg_host depuis db_eps.<name>
     - name: Initialiser wikis_final
       ansible.builtin.set_fact:
         wikis_final: []
@@ -81,4 +87,9 @@
     - role: postgres
     - role: wiki
       vars:
+        # Liste enrichie (pg_host injecte depuis Terraform)
         wikis: "{{ wikis_final | default(wikis) }}"
+        # Objets normalises disponibles dans la role
+        db_endpoints: "{{ db_eps }}"
+        dns_records: "{{ dns_recs }}"
+        first_dns_name: "{{ first_dns_name }}"
