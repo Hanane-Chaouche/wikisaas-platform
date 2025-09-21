@@ -22,28 +22,37 @@ r2_bucket_endpoint: "{{ r2_bucket_endpoint | default(lookup('env','R2_BUCKET_END
 ec2_user: "ubuntu"
 
 ############################################
-# Outputs Terraform (objets JSON)
+# Outputs Terraform (objets JSON) — normalisation
 ############################################
-db_db_eps: >-
+# bruts : viennent des -e extra-vars ou de l'ENV si pas fournis
+db_endpoints_raw: "{{ db_endpoints | default(lookup('env','DB_ENDPOINTS'), true) | default('') }}"
+dns_records_raw:  "{{ dns_records  | default(lookup('env','DNS_RECORDS'),  true) | default('') }}"
+
+# normalisés : toujours des dicts (from_yaml accepte JSON/YAML)
+db_eps: >-
   {{
     db_endpoints_raw if db_endpoints_raw is mapping
     else ((db_endpoints_raw | default('', true) | trim) | length > 0)
          | ternary((db_endpoints_raw | from_yaml), {})
   }}
-dns_records: >-
-  {{ (lookup('env','DNS_RECORDS')  | default('{}')) | from_json }}
-first_dns_name: "{{ (dns_records.keys() | list | first | default('')) }}"
+dns_recs: >-
+  {{
+    dns_records_raw if dns_records_raw is mapping
+    else ((dns_records_raw | default('', true) | trim) | length > 0)
+         | ternary((dns_records_raw | from_yaml), {})
+  }}
 
+first_dns_name: "{{ (dns_recs.keys() | list | first | default('')) }}"
 ############################################
 # Wiki.js instances (boucle avec "item") postresql
 ############################################
 wikis:
   - name: ia
     pg_host: >-
-    {{
-      (db_eps.ia.host if (db_eps.ia is mapping) else db_eps.ia)
-      | default('')
-    }}
+      {{
+        (db_eps.ia.host if (db_eps.ia is mapping) else db_eps.ia)
+        | default('')
+      }}
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_ia"
@@ -52,10 +61,10 @@ wikis:
 
   - name: devops
     pg_host: >-
-    {{
-      (db_eps.devops.host if (db_eps.devops is mapping) else db_eps.devops)
-      | default('')
-    }}
+      {{
+        (db_eps.devops.host if (db_eps.devops is mapping) else db_eps.devops)
+        | default('')
+      }}
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_devops"
@@ -64,10 +73,10 @@ wikis:
 
   - name: cyber
     pg_host: >-
-    {{
-      (db_eps.cyber.host if (db_eps.cyber is mapping) else db_eps.cyber)
-      | default('')
-    }}
+      {{
+        (db_eps.cyber.host if (db_eps.cyber is mapping) else db_eps.cyber)
+        | default('')
+      }}
     pg_user: "wikijs"
     pg_pass: "{{ lookup('env','BDD_PASSWORD') | mandatory }}"
     pg_db: "wiki_cyber"
