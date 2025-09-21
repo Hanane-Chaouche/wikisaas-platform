@@ -5,24 +5,36 @@ services:
     restart: always
     command:
       # Découverte Docker
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
 
-      # Entrypoints HTTP + HTTPS avec redirection automatique
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
+      # Entrypoints HTTP/HTTPS + redirection HTTP -> HTTPS
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.websecure.address=:443
 
-      # ACME Let's Encrypt via DNS challenge (wildcard)
-      - "--certificatesresolvers.le.acme.dnschallenge=true"
-      - "--certificatesresolvers.le.acme.dnschallenge.provider=cloudflare"
-      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      # ACME Let's Encrypt via DNS-01 (Cloudflare)
+      - --certificatesresolvers.le.acme.dnschallenge=true
+      - --certificatesresolvers.le.acme.dnschallenge.provider=cloudflare
+      # (optionnel mais utile si ta résolution DNS locale est capricieuse)
+      # - --certificatesresolvers.le.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+
+      # ⚙️ STAGING pour éviter les limites pendant les tests (à commenter/supprimer en prod)
+      - --certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+
+      # 🔑 Demander UN SEUL certificat: domaine racine + wildcard (*.domaine)
+      #    -> évite de redemander 3 certs séparés (ia/devops/cyber) et de taper le rate limit
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.certresolver=le
+      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}
 
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -30,29 +42,32 @@ services:
 
     env_file:
       - .env
-      
+    environment:
+      # Mappe ta variable existante vers le nom attendu par Traefik/lego
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+
     networks:
       - proxy
 
     labels:
-      # Dashboard Traefik (protégé par auth basique)
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      # Dashboard Traefik (protégé)
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)
+      - traefik.http.routers.traefik.entrypoints=websecure
+      # TLS est déjà activé sur l’entrypoint websecure, pas besoin de remettre certresolver ici
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
 
-      # Middleware Auth basique
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$/pBuvzke$$LUWOGmAGGAArsVoX3Znyr1"
+      # Basic auth (exemple)
+      - traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$/pBuvzke$$LUWOGmAGGAArsVoX3Znyr1
 
-      # Headers de sécurité (middlewares)
-      - "traefik.http.middlewares.secureHeaders.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.secureHeaders.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.secureHeaders.headers.frameDeny=true"
-      - "traefik.http.middlewares.secureHeaders.headers.contentTypeNosniff=true"
-      
-      # Application des middlewares : Auth + Headers
-      - "traefik.http.routers.traefik.middlewares=traefik-auth,secureHeaders@docker"
+      # Headers sécurité
+      - traefik.http.middlewares.secureHeaders.headers.stsSeconds=31536000
+      - traefik.http.middlewares.secureHeaders.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.secureHeaders.headers.frameDeny=true
+      - traefik.http.middlewares.secureHeaders.headers.contentTypeNosniff=true
+
+      # Appliquer middlewares
+      - traefik.http.routers.traefik.middlewares=traefik-auth,secureHeaders@docker
 
 networks:
   proxy:
