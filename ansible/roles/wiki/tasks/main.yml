@@ -17,6 +17,12 @@
     group: root
     mode: '0755'
 
+- name: Supprimer les anciens fichiers .env
+  file:
+    path: "/opt/wiki/envs/wiki-{{ item.name }}.env"
+    state: absent
+  loop: "{{ wikis }}"
+
 - name: Créer le dossier des certificats RDS
   become: true
   file:
