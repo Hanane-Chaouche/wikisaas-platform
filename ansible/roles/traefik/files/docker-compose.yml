@@ -42,10 +42,7 @@ services:
 
     env_file:
       - .env
-    environment:
-      # Mappe ta variable existante vers le nom attendu par Traefik/lego
-      - CF_DNS_API_TOKEN=${CLOUDFLARE_API_TOKEN}
-
+   
     networks:
       - proxy
 
