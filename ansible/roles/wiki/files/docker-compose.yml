@@ -22,10 +22,15 @@ services:
     env_file:
       - ./envs/wiki-ia.env
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wiki-ia.rule=Host(`ia.wikiplatform.app`)"
-      - "traefik.http.routers.wiki-ia.entrypoints=websecure"
-      - "traefik.http.routers.wiki-ia.tls.certresolver=myresolver"
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.wiki-ia.loadbalancer.server.port=3000
+      - traefik.http.routers.wiki-ia.rule=Host(`ia.wikiplatform.app`)
+      - traefik.http.routers.wiki-ia.entrypoints=websecure
+      - traefik.http.routers.wiki-ia.tls=true
+      - traefik.http.routers.wiki-ia.tls.certresolver=le
+
+
     volumes:
       - ./logs/wiki-ia:/logs # Pour les logs  de Wiki.js
       - /opt/wiki/certs:/certs:ro    # Montage du répertoire des certificats (lecture seule)
@@ -42,10 +47,14 @@ services:
     env_file:
       - ./envs/wiki-devops.env
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wiki-devops.rule=Host(`devops.wikiplatform.app`)"
-      - "traefik.http.routers.wiki-devops.entrypoints=websecure"
-      - "traefik.http.routers.wiki-devops.tls.certresolver=myresolver"
+    - traefik.enable=true
+    - traefik.docker.network=proxy
+    - traefik.http.services.wiki-devops.loadbalancer.server.port=3000
+    - traefik.http.routers.wiki-devops.rule=Host(`devops.wikiplatform.app`)
+    - traefik.http.routers.wiki-devops.entrypoints=websecure
+    - traefik.http.routers.wiki-devops.tls=true
+    - traefik.http.routers.wiki-devops.tls.certresolver=le
+
     volumes:
       - ./logs/wiki-devops:/logs # Pour les logs  de Wiki.js
       - /opt/wiki/certs:/certs:ro    
@@ -57,15 +66,19 @@ services:
   # === Wiki Cyber ===
   wiki-cyber:
     image: ghcr.io/requarks/wiki:2
-    container_name: wiki-cyber
+    c ontainer_name: wiki-cyber
     restart: unless-stopped
     env_file:
       - ./envs/wiki-cyber.env
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wiki-cyber.rule=Host(`cyber.wikiplatform.app`)"
-      - "traefik.http.routers.wiki-cyber.entrypoints=websecure"
-      - "traefik.http.routers.wiki-cyber.tls.certresolver=myresolver"
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.wiki-cyber.loadbalancer.server.port=3000
+      - traefik.http.routers.wiki-cyber.rule=Host(`cyber.wikiplatform.app`)
+      - traefik.http.routers.wiki-cyber.entrypoints=websecure
+      - traefik.http.routers.wiki-cyber.tls=true
+      - traefik.http.routers.wiki-cyber.tls.certresolver=le
+
     volumes:
       - ./logs/wiki-cyber:/logs # Pour les logs  de Wiki.js
       - /opt/wiki/certs:/certs:ro    # Montage du répertoire des certificats (lecture seule)
