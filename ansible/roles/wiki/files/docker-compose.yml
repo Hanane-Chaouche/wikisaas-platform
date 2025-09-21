@@ -32,7 +32,7 @@ services:
 
 
     volumes:
-      - ./logs/wiki-ia:/logs # Pour les logs  de Wiki.js
+      - ./logs/wiki-ia:/logs  # Pour les logs  de Wiki.js
       - /opt/wiki/certs:/certs:ro    # Montage du répertoire des certificats (lecture seule)
         
     networks:
@@ -47,16 +47,16 @@ services:
     env_file:
       - ./envs/wiki-devops.env
     labels:
-    - traefik.enable=true
-    - traefik.docker.network=proxy
-    - traefik.http.services.wiki-devops.loadbalancer.server.port=3000
-    - traefik.http.routers.wiki-devops.rule=Host(`devops.wikiplatform.app`)
-    - traefik.http.routers.wiki-devops.entrypoints=websecure
-    - traefik.http.routers.wiki-devops.tls=true
-    - traefik.http.routers.wiki-devops.tls.certresolver=le
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.wiki-devops.loadbalancer.server.port=3000
+      - traefik.http.routers.wiki-devops.rule=Host(`devops.wikiplatform.app`)
+      - traefik.http.routers.wiki-devops.entrypoints=websecure
+      - traefik.http.routers.wiki-devops.tls=true
+      - traefik.http.routers.wiki-devops.tls.certresolver=le
 
     volumes:
-      - ./logs/wiki-devops:/logs # Pour les logs  de Wiki.js
+      - ./logs/wiki-devops:/logs   # Pour les logs  de Wiki.js
       - /opt/wiki/certs:/certs:ro    
 
     networks:
@@ -66,7 +66,7 @@ services:
   # === Wiki Cyber ===
   wiki-cyber:
     image: ghcr.io/requarks/wiki:2
-    c ontainer_name: wiki-cyber
+    container_name: wiki-cyber
     restart: unless-stopped
     env_file:
       - ./envs/wiki-cyber.env
@@ -80,7 +80,7 @@ services:
       - traefik.http.routers.wiki-cyber.tls.certresolver=le
 
     volumes:
-      - ./logs/wiki-cyber:/logs # Pour les logs  de Wiki.js
+      - ./logs/wiki-cyber:/logs  # Pour les logs  de Wiki.js
       - /opt/wiki/certs:/certs:ro    # Montage du répertoire des certificats (lecture seule)
     networks:
       - proxy
