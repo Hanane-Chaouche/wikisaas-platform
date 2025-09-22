@@ -12,5 +12,6 @@
     - role: traefik
     - role: keycloak
     - role: postgres
-    - role: wiki
+    - role: wiki-essaie
+    
       
