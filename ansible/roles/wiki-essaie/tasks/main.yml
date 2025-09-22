@@ -1,0 +1,88 @@
+---
+- name: Créer le dossier Wiki.js
+  become: true
+  file:
+    path: /opt/wiki
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Créer le dossier des fichiers .env pour Wiki.js
+  become: true
+  file:
+    path: /opt/wiki/envs
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Supprimer les anciens fichiers .env
+  file:
+    path: "/opt/wiki/envs/wiki-{{ item.name }}.env"
+    state: absent
+  loop: "{{ wikis }}"
+
+- name: Créer le dossier des certificats RDS
+  become: true
+  file:
+    path: /opt/wiki/certs
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Télécharger le certificat SSL RDS global
+  become: true
+  get_url:
+    url: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+    dest: /opt/wiki/certs/rds-ca-bundle.pem
+    mode: '0644'
+
+
+- name: Copier le docker-compose.yml de Wiki.js
+  become: true
+  copy:
+    src: docker-compose.yml        # ton fichier compose (dans roles/wiki/files/)
+    dest: /opt/wiki/docker-compose.yml
+    mode: '0644'
+  notify: Restart Wiki.js
+
+  # -------------------------------------------------------------------
+# Étape 1 : Lire le fichier clients.json sur la VM
+# -------------------------------------------------------------------
+- name: Lire clients.json sur la VM
+  slurp:
+    src: /opt/keycloak/clients.json # chemin du fichier côté machine distante (VM)
+  register: kc_clients_raw    # on stocke le contenu brut (encodé en base64) dans cette variable
+
+# -------------------------------------------------------------------
+# Étape 2 : Transformer le contenu en variable JSON utilisable
+# -------------------------------------------------------------------
+- name: Convertir clients.json en dictionnaire
+  set_fact:
+    # kc_clients_raw.content = contenu du fichier en base64
+    # b64decode = décoder le base64
+    # from_json = parser le texte JSON en dictionnaire Python/Ansible
+    kc_clients: "{{ kc_clients_raw.content | b64decode | from_json }}"
+     # Résultat final : kc_clients = dictionnaire utilisable dans les templates
+    # Exemple :
+    # kc_clients['wiki-ia']     -> secret du client wiki-ia
+    # kc_clients['wiki-devops'] -> secret du client wiki-devops
+    # kc_clients['wiki-cyber']  -> secret du client wiki-cyber
+
+- name: Générer les fichiers .env pour chaque instance Wiki.js
+  become: true
+  template:
+    src: env.j2                    # ton template (dans roles/wiki/templates/)
+    dest: "/opt/wiki/envs/wiki-{{ item.name }}.env"
+    mode: '0644'
+  loop: "{{ wikis }}"              # défini dans group_vars/all.yml
+  notify: Restart Wiki.js
+
+- name: Déployer Wiki.js avec Docker Compose v2
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /opt/wiki
+    state: present
+  notify: Restart Wiki.js

@@ -17,6 +17,7 @@ services:
   # === Wiki IA ===
   wiki-ia:
     image: ghcr.io/requarks/wiki:2
+    service: wiki-ia    
     restart: unless-stopped
     env_file:
       - ./envs/wiki-ia.env
@@ -40,6 +41,7 @@ services:
   # === Wiki DevOps ===
   wiki-devops:
     image: ghcr.io/requarks/wiki:2
+    service: wiki-devops
     restart: unless-stopped
     env_file:
       - ./envs/wiki-devops.env
@@ -62,6 +64,7 @@ services:
   # === Wiki Cyber ===
   wiki-cyber:
     image: ghcr.io/requarks/wiki:2
+    service: wiki-cyber
     restart: unless-stopped
     env_file:
       - ./envs/wiki-cyber.env
