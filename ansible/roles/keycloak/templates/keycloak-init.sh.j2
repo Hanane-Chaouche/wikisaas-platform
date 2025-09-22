@@ -4,32 +4,36 @@ set -euo pipefail
 #############################################
 # Chargement des variables d'environnement
 #############################################
+
 ENV_FILE="/opt/keycloak/.env"
 [ -f "$ENV_FILE" ] || { echo "ERR: $ENV_FILE introuvable"; exit 1; }
+
+# On exporte toutes les variables du .env (KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_REALM, DOMAIN)
 set -a; source "$ENV_FILE"; set +a
+
 echo "=== Variables récupérées du fichier .env ==="
 
 #############################################
 # Constantes / chemins
 #############################################
-COMPOSE="/opt/keycloak/docker-compose.yml"
-SERVICE="keycloak"
-KCADM="/opt/keycloak/bin/kcadm.sh"
+COMPOSE="/opt/keycloak/docker-compose.yml"   # chemin vers ton docker-compose
+SERVICE="keycloak"                           # nom du service Keycloak dans le docker-compose
+KCADM="/opt/keycloak/bin/kcadm.sh"           # chemin vers kcadm.sh
 
-# IMPORTANT : tjs exporter KCADM_CONFIG dans toutes les commandes conteneur
-KCADM_ENV='export KCADM_CONFIG=/tmp/kcadm.config'
-dc() { docker compose -f "$COMPOSE" exec -T "$SERVICE" sh -lc "$KCADM_ENV; $*"; }
+# Fonction utilitaire : exécuter une commande dans le conteneur Keycloak
+dc() { docker compose -f "$COMPOSE" exec -T "$SERVICE" sh -lc "$*"; }
 
 #############################################
-# Attente de disponibilité de Keycloak (+ login admin)
+# Attente de disponibilité de Keycloak
 #############################################
 echo " [init] Attente que Keycloak soit prêt..."
 for i in {1..60}; do
-  if dc "$KCADM config credentials \
-           --server http://localhost:8080 \
-           --realm master \
-           --user '${KEYCLOAK_ADMIN}' \
-           --password '${KEYCLOAK_ADMIN_PASSWORD}'"; then
+  if dc "export KCADM_CONFIG=/tmp/kcadm.config && \
+         $KCADM config credentials \
+         --server http://localhost:8080 \
+         --realm master \
+         --user '${KEYCLOAK_ADMIN}' \
+         --password '${KEYCLOAK_ADMIN_PASSWORD}'"; then
     echo "[init]  Login admin OK"
     break
   fi
@@ -39,6 +43,7 @@ done
 
 REALM="${KEYCLOAK_REALM}"
 BASE_DOMAIN="${DOMAIN}"
+
 echo "REALM: ${REALM}"
 echo "BASE_DOMAIN: ${BASE_DOMAIN}"
 
@@ -49,7 +54,7 @@ echo -e "\n=== Création du Realm ==="
 if dc "$KCADM get realms/${REALM}" >/dev/null 2>&1; then
   echo " Realm '${REALM}' existe déjà."
 else
-  echo " Création du realm '${REALM}'..."
+  echo "Création du realm '${REALM}'..."
   dc "$KCADM create realms -s realm='${REALM}' -s enabled=true"
 fi
 
@@ -71,7 +76,8 @@ done
 #############################################
 echo -e "\n=== Création des Groupes ==="
 for group in STARTER PRO ENTERPRISE; do
-  if dc "$KCADM get groups -r ${REALM} -q search=${group} --fields name" | grep -q "\"name\" : \"${group}\""; then
+  if dc "$KCADM get groups -r ${REALM} -q search=${group} --fields name" \
+     | grep -q "\"name\" : \"${group}\""; then
     echo " Groupe '${group}' existe déjà."
   else
     echo " Création du groupe '${group}'..."
@@ -83,22 +89,29 @@ done
 #  Association Rôles → Groupes
 #############################################
 echo -e "\n=== Association Rôles → Groupes ==="
+
+# Fonction : récupérer l'ID d'un groupe par son nom
 get_group_id() {
   local name="$1"
   dc "$KCADM get groups -r ${REALM} -q search=${name} --fields id,name" \
   | grep '"id"' | head -n1 | cut -d '"' -f4
 }
+
+# Récupération des IDs
 STARTER_ID="$(get_group_id STARTER || true)"
 PRO_ID="$(get_group_id PRO || true)"
 ENTERPRISE_ID="$(get_group_id ENTERPRISE || true)"
 
+# Mappage des rôles vers les groupes
 for mapping in \
   "$STARTER_ID:ia-admin" \
   "$PRO_ID:ia-admin" "$PRO_ID:devops-admin" \
   "$ENTERPRISE_ID:ia-admin" "$ENTERPRISE_ID:devops-admin" "$ENTERPRISE_ID:cyber-admin"; do
-  gid="${mapping%%:*}"
-  role="${mapping##*:}"
-  if [ -n "${gid:-}" ]; then
+
+  gid="${mapping%%:*}"   # partie avant ":", c’est l’ID du groupe
+  role="${mapping##*:}"  # partie après ":", c’est le rôle
+
+  if [ -n "$gid" ]; then
     echo " Association rôle '${role}' → groupe '${gid}'"
     dc "$KCADM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
   fi
@@ -108,18 +121,21 @@ done
 # Clients + Mappers OIDC
 #############################################
 echo -e "\n===  Gestion des Clients & Mappers ==="
+
+# Fonction : récupérer l’UUID d’un client
 get_client_uuid() {
   local cid="$1"
   dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" \
   | grep '"id"' | head -n1 | cut -d '"' -f4
 }
 
+# Fonction : création d’un client avec ses mappers
 create_client () {
   local cid="$1"
   local redirect="https://${cid}.${BASE_DOMAIN}/login/oidc/callback"
   local origin="https://${cid}.${BASE_DOMAIN}"
 
-  # Client
+  # --- Client ---
   if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" \
      | grep -q "\"clientId\" : \"${cid}\""; then
     echo " Client '${cid}' existe déjà."
@@ -132,14 +148,16 @@ create_client () {
 JSON"
   fi
 
-  # UUID client
-  local uuid; uuid="$(get_client_uuid "${cid}")"
+  # --- UUID du client ---
+  local uuid
+  uuid="$(get_client_uuid "${cid}")"
   [ -n "${uuid:-}" ] || { echo " ERR: UUID client ${cid} introuvable"; exit 1; }
 
-  # Helper: ajouter un mapper si absent
+  # --- Fonction helper pour ajouter un mapper ---
   add_mapper () {
     local name="$1" mapper="$2" extra="$3"
-    if dc "$KCADM get clients/${uuid}/protocol-mappers/models -r ${REALM} --fields name" | grep -q "\"name\" : \"${name}\""; then
+    if dc "$KCADM get clients/${uuid}/protocol-mappers/models -r ${REALM} --fields name" \
+       | grep -q "\"name\" : \"${name}\""; then
       echo " Mapper '${name}' déjà présent pour ${cid}."
     else
       echo " Ajout du mapper '${name}' pour ${cid}..."
@@ -149,73 +167,96 @@ JSON"
     fi
   }
 
-  # Mappers standards
+  # --- Ajout des mappers standards ---
   add_mapper "email"              "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"email\", \"user.attribute\":\"email\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+
   add_mapper "preferred_username" "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"preferred_username\", \"user.attribute\":\"username\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+
   add_mapper "given_name"         "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"given_name\", \"user.attribute\":\"firstName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
-  add_mapper "family_name"        "oidc-usermodel-property-mapper" \
-    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
-  add_mapper "groups"             "oidc-group-membership-mapper" \
-    "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \"jsonType.label\":\"String\", \"multivalued\":\"true\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
+
+  add_mapper "family_name" "oidc-usermodel-property-mapper" \
+    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \
+       \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \
+       \"userinfo.token.claim\":\"true\" }"
+
+  add_mapper "groups" "oidc-group-membership-mapper" \
+  "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \
+     \"jsonType.label\":\"String\", \
+     \"multivalued\":\"true\", \
+     \"id.token.claim\":\"true\", \
+     \"access.token.claim\":\"true\", \
+     \"userinfo.token.claim\":\"true\" }"
+
+  
 }
 
-# Créer/mettre à jour les 3 clients attendus
-create_client "ia"
-create_client "devops"
-create_client "cyber"
+# --- Création des clients attendus ---
+create_client "wiki-ia"
+create_client "wiki-devops"
+create_client "wiki-cyber"
+
+echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
 
 # Vérifier que les 3 clients existent avant export
 echo "[check] Vérification de la présence des clients..."
-for cid in ia devops cyber; do
-  ok=false
+for cid in wiki-ia wiki-devops wiki-cyber; do
   for i in {1..10}; do
     if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" | grep -q '"id"'; then
       echo "  → $cid trouvé"
-      ok=true; break
+      break
     else
       echo "  → $cid pas encore prêt, attente..."
       sleep 5
     fi
+    [[ $i -eq 10 ]] && echo "  ERR: $cid introuvable après 50s"
   done
-  $ok || { echo "ERR: $cid introuvable après 50s"; exit 1; }
 done
 
+
 #############################################
-# Export des secrets des clients OIDC (écriture atomique)
+# Export des secrets des clients OIDC
 #############################################
 echo -e "\n=== Export des secrets des clients OIDC ==="
-mkdir -p /opt/keycloak
+
+# On définit le fichier de sortie qui contiendra les secrets
 OUTPUT="/opt/keycloak/clients.json"
-TMP="$(mktemp /opt/keycloak/clients.json.XXXXXX)"
 
-echo "{" > "$TMP"
-first=true
+# On commence un JSON
+echo "{" > $OUTPUT
+first=true  # variable pour gérer la virgule entre les entrées JSON
 
-for cid in ia devops cyber; do
-  uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" | grep '"id"' | head -n1 | cut -d '"' -f4)
-  [ -n "${uuid:-}" ] || { echo "ERR: UUID manquant pour $cid"; exit 1; }
+# On boucle sur tes 3 clients Wiki.js
+for cid in wiki-ia wiki-devops wiki-cyber; do
+  # 1. Récupérer l'UUID (ID interne Keycloak) du client via kcadm
+  uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" \
+         | grep '"id"' | head -n1 | cut -d '"' -f4)
 
-  secret=$(dc "$KCADM get clients/$uuid/client-secret -r ${REALM}" | grep '"value"' | cut -d '"' -f4)
-  [ -n "${secret:-}" ] || { echo "ERR: secret manquant pour $cid"; exit 1; }
+  # 2. Récupérer le secret associé à cet UUID
+  secret=$(dc "$KCADM get clients/$uuid/client-secret -r ${REALM}" \
+           | grep '"value"' | cut -d '"' -f4)
 
-  $first || echo "," >> "$TMP"; first=false
-  echo "  \"$cid\": \"$secret\"" >> "$TMP"
+  # 3. Écrire le résultat dans le fichier JSON
+  #    - Si c’est le premier client, pas de virgule
+  #    - Sinon, ajouter une virgule pour séparer les objets
+  if [ "$first" = true ]; then
+    first=false
+  else
+    echo "," >> $OUTPUT
+  fi
+
+  # 4. Ajouter la ligne "clientId": "secret"
+  echo "  \"$cid\": \"$secret\"" >> $OUTPUT
+
+  # 5. Afficher dans la console pour debug
   echo "  → $cid : $secret"
 done
 
-echo "}" >> "$TMP"
-mv -f "$TMP" "$OUTPUT"
+# On ferme le JSON
+echo "}" >> $OUTPUT
+
 echo "[export] Fichier généré : $OUTPUT"
 echo "[export] Contenu :"
-cat "$OUTPUT"
-
-# NE marquer réussi qu'après avoir effectivement généré le JSON
-if [ -s "$OUTPUT" ]; then
-  echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
-else
-  echo "ERR: $OUTPUT non généré — init inachevé"; exit 1
-fi
-echo "=== Fin du script d'init Keycloak ==="
+cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)     
