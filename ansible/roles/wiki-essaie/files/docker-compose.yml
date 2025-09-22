@@ -14,6 +14,7 @@ services:
   # === DB IA ===
   db-ia:
     image: postgres:15
+    container_name: name_db_ia  
     restart: unless-stopped
     environment:
       POSTGRES_DB: wiki_ia
@@ -27,6 +28,7 @@ services:
   # === Wiki IA ===
   wiki-ia:
     image: ghcr.io/requarks/wiki:2
+    container_name: name_wiki_ia
     restart: unless-stopped
     env_file:
       - ./envs/wiki-ia.env
@@ -47,6 +49,7 @@ services:
   # === DB DevOps ===
   db-devops:
     image: postgres:15
+    container_name: name_db_devops
     restart: unless-stopped
     environment:
       POSTGRES_DB: wiki_devops
@@ -60,6 +63,7 @@ services:
   # === Wiki DevOps ===
   wiki-devops:
     image: ghcr.io/requarks/wiki:2
+    container_name: name_wiki_devops  
     restart: unless-stopped
     env_file:
       - ./envs/wiki-devops.env
@@ -80,6 +84,7 @@ services:
   # === DB Cyber ===
   db-cyber:
     image: postgres:15
+    container_name: name_db_cyber
     restart: unless-stopped
     environment:
       POSTGRES_DB: wiki_cyber
@@ -93,6 +98,7 @@ services:
   # === Wiki Cyber ===
   wiki-cyber:
     image: ghcr.io/requarks/wiki:2
+    container_name: name_wiki_cyber 
     restart: unless-stopped
     env_file:
       - ./envs/wiki-cyber.env
