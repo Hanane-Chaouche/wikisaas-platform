@@ -60,6 +60,7 @@ services:
       - wikinet-devops
 
   # === Wiki Cyber ===
+  wiki-cyber:
     image: ghcr.io/requarks/wiki:2
     restart: unless-stopped
     env_file:
