@@ -31,6 +31,9 @@ services:
       KC_HOSTNAME: sso.${DOMAIN}
       KC_HTTP_ENABLED: "true"     #  Active HTTP interne
       KC_PROXY: "edge"            # Indique qu'il est derrière un reverse proxy TLS (Traefik)
+
+        # ⚠️ Hack uniquement si tu restes en Let's Encrypt STAGING a enlever en pro
+      JAVA_OPTS_APPEND: "-Dcom.sun.net.ssl.checkRevocation=false -Djdk.tls.client.protocols=TLSv1.3 -Djavax.net.ssl.trustStoreType=JKS"
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
       - ./data:/opt/keycloak/data
