@@ -67,9 +67,9 @@
     kc_clients: "{{ kc_clients_raw.content | b64decode | from_json }}"
      # Résultat final : kc_clients = dictionnaire utilisable dans les templates
     # Exemple :
-    # kc_clients['wiki-ia']     -> secret du client wiki-ia
-    # kc_clients['wiki-devops'] -> secret du client wiki-devops
-    # kc_clients['wiki-cyber']  -> secret du client wiki-cyber
+    # kc_clients['ia']     -> secret du client wiki-ia
+    # kc_clients['devops'] -> secret du client wiki-devops
+    # kc_clients['cyber']  -> secret du client wiki-cyber
 
 - name: Générer les fichiers .env pour chaque instance Wiki.js
   become: true
