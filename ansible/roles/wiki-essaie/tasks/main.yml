@@ -112,7 +112,7 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-    
+
 - name: Activer l’extension pgcrypto dans chaque DB Docker
   command: >
     docker exec -i {{ item.pg_host }}
@@ -148,15 +148,10 @@
          'logoutUpstreamRedirectLegacy', false
        ),
        false,
-       '{}'::text[],
-       '{}'::text[]
+       '[]'::json,
+       '[]'::json
      )
-     ON CONFLICT (\"strategyKey\") DO UPDATE
-       SET \"isEnabled\" = EXCLUDED.\"isEnabled\",
-           \"order\" = EXCLUDED.\"order\",
-           \"displayName\" = EXCLUDED.\"displayName\",
-           \"config\" = EXCLUDED.\"config\";"
+     ON CONFLICT DO NOTHING;"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
