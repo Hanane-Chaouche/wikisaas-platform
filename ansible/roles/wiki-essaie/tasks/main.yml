@@ -80,6 +80,12 @@
   loop: "{{ wikis }}"              # défini dans group_vars/all.yml
   notify: Restart Wiki.js
 
+- name: Copier le Dockerfile Postgres custom
+  copy:
+    src: Dockerfile.postgres     # placé dans roles/wiki-essaie/files/
+    dest: /opt/wiki/Dockerfile.postgres
+    mode: '0644'
+
 - name: Construire l’image Postgres custom avec Python
   community.docker.docker_image:
     name: postgres-python
