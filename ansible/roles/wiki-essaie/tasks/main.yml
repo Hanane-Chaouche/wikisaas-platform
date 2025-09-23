@@ -100,7 +100,7 @@
     login_user: wikijs
     login_password: wikijs_pass
     login_host: "name_db_{{ item.name }}"
-    register: db_ping
+  register: db_ping
   retries: 10
   delay: 5
   until: db_ping is succeeded
