@@ -99,8 +99,8 @@
     db: "wiki_{{ item.name }}"
     login_user: wikijs
     login_password: wikijs_pass
-    login_host: "{{ item.pg_host | default('localhost') }}"
-  register: db_ping
+    login_host: "name_db_{{ item.name }}"
+    register: db_ping
   retries: 10
   delay: 5
   until: db_ping is not failed
@@ -113,6 +113,7 @@
     db: "wiki_{{ item.name }}"
     login_user: wikijs
     login_password: wikijs_pass
+    login_host: "name_db_{{ item.name }}"
     query: |
       UPDATE authentication
       SET "isEnabled" = true,
@@ -134,4 +135,4 @@
   loop: "{{ wikis }}"
   loop_control:
     label: "{{ item.name }}"
-  delegate_to: "db-{{ item.name }}"
+  
