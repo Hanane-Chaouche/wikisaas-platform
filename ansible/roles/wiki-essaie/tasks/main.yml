@@ -94,13 +94,22 @@
     state: present
   notify: Restart Wiki.js
 
-- name: Configurer provider Keycloak dans les DB Docker Wiki.js
+- - name: Attendre l’ouverture du port DB (simple et fiable)
+  wait_for:
+    host: "{{ item.pg_host }}"
+    port: 5434
+    delay: 0
+    timeout: 60
+  loop: "{{ wikis_docker }}"
+  loop_control: { label: "{{ item.name }}" }
+
+- name: Pousser la conf Keycloak dans la table authentication
   community.postgresql.postgresql_query:
     db: "{{ item.pg_db }}"
+    login_host: "{{ item.pg_host }}"
+    login_port: 5434
     login_user: "{{ item.pg_user }}"
     login_password: "{{ item.pg_pass }}"
-    login_host: "{{ item.pg_host }}"
-    login_port: 5432
     query: |
       UPDATE authentication
       SET "isEnabled" = true,
@@ -112,15 +121,15 @@
               'clientId', '{{ item.name }}',
               'clientSecret', '{{ kc_clients[item.name] }}',
               'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-              'tokenURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-              'userInfoURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-              'logoutURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+              'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+              'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+              'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
               'logoutUpstream', false,
               'logoutUpstreamRedirectLegacy', false
           )
       WHERE "strategyKey" = 'keycloak';
   loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
+  loop_control: { label: "{{ item.name }}" }
+
 
   
