@@ -97,7 +97,7 @@
 - name: Attendre l’ouverture du port DB (simple et fiable)
   wait_for:
     host: "{{ item.pg_host }}"
-    port: 5434
+    port: 5432
     delay: 0
     timeout: 60
   loop: "{{ wikis_docker }}"
@@ -107,7 +107,7 @@
   community.postgresql.postgresql_query:
     db: "{{ item.pg_db }}"
     login_host: "{{ item.pg_host }}"
-    login_port: 5434
+    login_port: 5432
     login_user: "{{ item.pg_user }}"
     login_password: "{{ item.pg_pass }}"
     query: |
