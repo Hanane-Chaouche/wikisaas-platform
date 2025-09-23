@@ -112,6 +112,16 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+    
+- name: Activer l’extension pgcrypto dans chaque DB Docker
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }}
+    -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
+
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
     docker exec -i {{ item.pg_host }}

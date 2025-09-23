@@ -67,6 +67,7 @@ services:
     volumes:
       - ./data/db-devops:/var/lib/postgresql/data
       - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh
+      - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - wikinet-devops
 
