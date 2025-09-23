@@ -94,19 +94,20 @@
     state: present
   notify: Restart Wiki.js
 
-# Attendre que la DB Wiki.js soit prête
 - name: Attendre que PostgreSQL accepte les connexions
   community.postgresql.postgresql_ping:
     db: "wiki_{{ item.name }}"
     login_user: wikijs
     login_password: wikijs_pass
-    register: db_ping
+    login_host: "{{ item.pg_host | default('localhost') }}"
+  register: db_ping
   retries: 10
   delay: 5
-  until: db_ping is succeeded
+  until: db_ping is not failed
   loop: "{{ wikis }}"
+  loop_control:
+    label: "{{ item.name }}"
 
-# Configurer le provider Keycloak dans chaque base Wiki.js
 - name: Configurer provider Keycloak dans la DB Wiki.js
   community.postgresql.postgresql_query:
     db: "wiki_{{ item.name }}"
@@ -131,3 +132,6 @@
           )
       WHERE "strategyKey" = 'keycloak';
   loop: "{{ wikis }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: "db-{{ item.name }}"
