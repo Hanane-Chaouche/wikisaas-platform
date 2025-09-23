@@ -119,7 +119,7 @@
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
     "UPDATE authentication
      SET \"isEnabled\" = true,
-         \"order\" = 0,
+         \"order\" = 1,
          \"displayName\" = 'Keycloak',
          config = jsonb_build_object(
              'host', 'https://sso.{{ base_domain }}',
