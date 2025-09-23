@@ -80,12 +80,15 @@
   loop: "{{ wikis }}"              # défini dans group_vars/all.yml
   notify: Restart Wiki.js
 
-- name: Déployer Wiki.js avec Docker Compose v2
-  become: true
-  community.docker.docker_compose_v2:
-    project_src: /opt/wiki
+- name: Construire l’image Postgres custom avec Python
+  community.docker.docker_image:
+    name: postgres-python
+    tag: "15"
+    build:
+      path: /opt/wiki     # ou le chemin où tu as mis ton Dockerfile.postgres
+      dockerfile: Dockerfile.postgres
+    source: build
     state: present
-  notify: Restart Wiki.js
 
 - name: Déployer Wiki.js avec Docker Compose v2
   become: true
@@ -94,7 +97,7 @@
     state: present
   notify: Restart Wiki.js
 
-- name: Attendre que les conteneurs DB soient prêts
+- name: Attendre que les DB Docker soient prêtes
   command: docker exec {{ item.pg_host }} pg_isready -U {{ item.pg_user }} -d {{ item.pg_db }}
   register: pg_ready
   retries: 10
@@ -104,9 +107,10 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Configurer Keycloak dans la table authentication
+- name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
-    psql -U wikijs -d wiki_{{ item.name }} -c
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
     "UPDATE authentication
      SET \"isEnabled\" = true,
          \"order\" = 0,
@@ -117,9 +121,9 @@
              'clientId', '{{ item.name }}',
              'clientSecret', '{{ kc_clients[item.name] }}',
              'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-             'tokenURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-             'userInfoURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-             'logoutURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+             'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+             'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+             'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
              'logoutUpstream', false,
              'logoutUpstreamRedirectLegacy', false
          )

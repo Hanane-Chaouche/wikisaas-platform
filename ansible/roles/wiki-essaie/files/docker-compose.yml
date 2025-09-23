@@ -13,15 +13,20 @@ networks:
 services:
   # === DB IA ===
   db-ia:
-    image: postgres:15
+    image: postgres-python:15
     container_name: name_db_ia  
     restart: unless-stopped
     environment:
       POSTGRES_DB: wiki_ia
       POSTGRES_USER: wikijs
       POSTGRES_PASSWORD: wikijs_pass
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y python3 python3-psycopg2 &&
+               docker-entrypoint.sh postgres"
     volumes:
       - ./data/db-ia:/var/lib/postgresql/data
+      - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh    
     networks:
       - wikinet-ia
 
@@ -48,15 +53,20 @@ services:
 
   # === DB DevOps ===
   db-devops:
-    image: postgres:15
+    image: postgres-python:15
     container_name: name_db_devops
     restart: unless-stopped
     environment:
       POSTGRES_DB: wiki_devops
       POSTGRES_USER: wikijs
       POSTGRES_PASSWORD: wikijs_pass
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y python3 python3-psycopg2 &&
+               docker-entrypoint.sh postgres"
     volumes:
       - ./data/db-devops:/var/lib/postgresql/data
+      - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh
     networks:
       - wikinet-devops
 
@@ -83,15 +93,20 @@ services:
 
   # === DB Cyber ===
   db-cyber:
-    image: postgres:15
+    image: postgres-python:15
     container_name: name_db_cyber
     restart: unless-stopped
     environment:
       POSTGRES_DB: wiki_cyber
       POSTGRES_USER: wikijs
       POSTGRES_PASSWORD: wikijs_pass
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y python3 python3-psycopg2 &&
+               docker-entrypoint.sh postgres"
     volumes:
       - ./data/db-cyber:/var/lib/postgresql/data
+      - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh
     networks:
       - wikinet-cyber
 
