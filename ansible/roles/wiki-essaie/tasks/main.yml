@@ -94,7 +94,7 @@
     state: present
   notify: Restart Wiki.js
 
-- - name: Attendre l’ouverture du port DB (simple et fiable)
+- name: Attendre l’ouverture du port DB (simple et fiable)
   wait_for:
     host: "{{ item.pg_host }}"
     port: 5434
