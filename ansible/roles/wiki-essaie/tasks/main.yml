@@ -112,28 +112,41 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
-    "UPDATE authentication
-     SET \"isEnabled\" = true,
-         \"order\" = 1,
-         \"displayName\" = 'Keycloak',
-         config = jsonb_build_object(
-             'host', 'https://sso.{{ base_domain }}',
-             'realm', 'saas',
-             'clientId', '{{ item.name }}',
-             'clientSecret', '{{ kc_clients[item.name] }}',
-             'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-             'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-             'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-             'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-             'logoutUpstream', false,
-             'logoutUpstreamRedirectLegacy', false
-         )
-     WHERE \"strategyKey\" = 'keycloak';"
+    "INSERT INTO authentication
+     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+     VALUES (
+       gen_random_uuid(),
+       'keycloak',
+       'Keycloak',
+       true,
+       1,
+       jsonb_build_object(
+         'host', 'https://sso.{{ base_domain }}',
+         'realm', 'saas',
+         'clientId', '{{ item.name }}',
+         'clientSecret', '{{ kc_clients[item.name] }}',
+         'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
+         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+         'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+         'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+         'logoutUpstream', false,
+         'logoutUpstreamRedirectLegacy', false
+       ),
+       false,
+       '{}'::text[],
+       '{}'::text[]
+     )
+     ON CONFLICT (\"strategyKey\") DO UPDATE
+       SET \"isEnabled\" = EXCLUDED.\"isEnabled\",
+           \"order\" = EXCLUDED.\"order\",
+           \"displayName\" = EXCLUDED.\"displayName\",
+           \"config\" = EXCLUDED.\"config\";"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+
