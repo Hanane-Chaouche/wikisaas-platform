@@ -103,7 +103,7 @@
     register: db_ping
   retries: 10
   delay: 5
-  until: db_ping is not failed
+  until: db_ping is succeeded
   loop: "{{ wikis }}"
   loop_control:
     label: "{{ item.name }}"
@@ -113,7 +113,7 @@
     db: "wiki_{{ item.name }}"
     login_user: wikijs
     login_password: wikijs_pass
-    login_host: "name_db_{{ item.name }}"
+    
     query: |
       UPDATE authentication
       SET "isEnabled" = true,
