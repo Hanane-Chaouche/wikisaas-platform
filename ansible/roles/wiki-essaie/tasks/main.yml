@@ -94,20 +94,11 @@
     state: present
   notify: Restart Wiki.js
 
-- name: Attendre l’ouverture du port DB (simple et fiable)
-  wait_for:
-    host: "{{ item.pg_host }}"
-    port: 5432
-    delay: 0
-    timeout: 60
-  loop: "{{ wikis_docker }}"
-  loop_control: { label: "{{ item.name }}" }
-
 - name: Pousser la conf Keycloak dans la table authentication
   community.postgresql.postgresql_query:
     db: "{{ item.pg_db }}"
-    login_host: "{{ item.pg_host }}"
-    login_port: 5432
+    login_host: localhost     # vu qu'on est déjà DANS le conteneur
+    port: 5432
     login_user: "{{ item.pg_user }}"
     login_password: "{{ item.pg_pass }}"
     query: |
@@ -129,8 +120,10 @@
           )
       WHERE "strategyKey" = 'keycloak';
   loop: "{{ wikis_docker }}"
-  loop_control: { label: "{{ item.name }}" }
-  delegate_to: "{{ item.pg_host }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: "name_db_{{ item.name }}"
+
 
 
   
