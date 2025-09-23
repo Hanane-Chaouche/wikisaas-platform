@@ -94,14 +94,13 @@
     state: present
   notify: Restart Wiki.js
 
-- name: Configurer provider Keycloak dans la DB Wiki.js
+- name: Configurer provider Keycloak dans les DB Docker Wiki.js
   community.postgresql.postgresql_query:
-    db: "wiki_{{ item.name }}"
-    login_user: wikijs
-    login_password: wikijs_pass
-    login_host: "127.0.0.1"   # ou ton host si exposé
-    login_port: "{{ item.pg_port | default(5432) }}"
-
+    db: "{{ item.pg_db }}"
+    login_user: "{{ item.pg_user }}"
+    login_password: "{{ item.pg_pass }}"
+    login_host: "{{ item.pg_host }}"
+    login_port: 5432
     query: |
       UPDATE authentication
       SET "isEnabled" = true,
@@ -120,7 +119,8 @@
               'logoutUpstreamRedirectLegacy', false
           )
       WHERE "strategyKey" = 'keycloak';
-  loop: "{{ wikis }}"
+  loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+
   
