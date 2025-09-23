@@ -53,7 +53,7 @@
 # -------------------------------------------------------------------
 - name: Lire clients.json sur la VM
   slurp:
-    src: /opt/keycloak/clients.json # chemin du fichier côté machine distante (VM)
+    src: /opt/keycloak/clients.json  # chemin du fichier côté machine distante (VM)
   register: kc_clients_raw    # on stocke le contenu brut (encodé en base64) dans cette variable
 
 # -------------------------------------------------------------------
@@ -65,7 +65,7 @@
     # b64decode = décoder le base64
     # from_json = parser le texte JSON en dictionnaire Python/Ansible
     kc_clients: "{{ kc_clients_raw.content | b64decode | from_json }}"
-     # Résultat final : kc_clients = dictionnaire utilisable dans les templates
+    # Résultat final : kc_clients = dictionnaire utilisable dans les templates
     # Exemple :
     # kc_clients['ia']     -> secret du client wiki-ia
     # kc_clients['devops'] -> secret du client wiki-devops
@@ -86,3 +86,48 @@
     project_src: /opt/wiki
     state: present
   notify: Restart Wiki.js
+
+- name: Déployer Wiki.js avec Docker Compose v2
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /opt/wiki
+    state: present
+  notify: Restart Wiki.js
+
+# Attendre que la DB Wiki.js soit prête
+- name: Attendre que PostgreSQL accepte les connexions
+  community.postgresql.postgresql_ping:
+    db: "wiki_{{ item.name }}"
+    login_user: wikijs
+    login_password: wikijs_pass
+    register: db_ping
+  retries: 10
+  delay: 5
+  until: db_ping is succeeded
+  loop: "{{ wikis }}"
+
+# Configurer le provider Keycloak dans chaque base Wiki.js
+- name: Configurer provider Keycloak dans la DB Wiki.js
+  community.postgresql.postgresql_query:
+    db: "wiki_{{ item.name }}"
+    login_user: wikijs
+    login_password: wikijs_pass
+    query: |
+      UPDATE authentication
+      SET "isEnabled" = true,
+          "order" = 0,
+          "displayName" = 'Keycloak',
+          config = jsonb_build_object(
+              'host', 'https://sso.{{ base_domain }}',
+              'realm', 'saas',
+              'clientId', '{{ item.name }}',
+              'clientSecret', '{{ kc_clients[item.name] }}',
+              'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
+              'tokenURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+              'userInfoURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+              'logoutURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+              'logoutUpstream', false,
+              'logoutUpstreamRedirectLegacy', false
+          )
+      WHERE "strategyKey" = 'keycloak';
+  loop: "{{ wikis }}"
