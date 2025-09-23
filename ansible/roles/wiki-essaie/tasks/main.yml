@@ -130,6 +130,7 @@
       WHERE "strategyKey" = 'keycloak';
   loop: "{{ wikis_docker }}"
   loop_control: { label: "{{ item.name }}" }
+  delegate_to: "{{ item.pg_host }}"
 
 
   
