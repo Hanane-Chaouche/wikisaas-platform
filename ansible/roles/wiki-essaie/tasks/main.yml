@@ -172,10 +172,13 @@
   # Installer la librairie Python passlib avec le module bcrypt :
   # - nécessaire pour que le filtre Ansible `password_hash("bcrypt")` fonctionne
   # - utilisé pour générer et insérer des mots de passe hashés dans Wiki.js
-- name: Installer passlib (pip)
-  pip:
-    name: passlib[bcrypt]
-    executable: pip3
+- name: Installer passlib via apt (Ubuntu)
+  become: true
+  apt:
+    name: python3-passlib
+    state: present
+    update_cache: yes
+
 
         # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
