@@ -188,7 +188,7 @@
     "INSERT INTO users (
        email, name, password,
        isSystem, isActive, isVerified, mustChangePwd, tfaIsActive,
-       providerKey, createdAt, updatedAt,
+       providerKey, providerId, createdAt, updatedAt,
        localeCode, defaultEditor, timezone,
        lastLoginAt, dateFormat, appearance
      )
@@ -197,7 +197,7 @@
        'Administrator',
        '{{ item.admin_password }}',
        false, true, true, false, false,
-       'local',
+       'local', '',
        to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
        to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
        'en', 'markdown', 'America/Toronto',
@@ -208,4 +208,3 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
