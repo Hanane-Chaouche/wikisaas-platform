@@ -183,23 +183,25 @@
         # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
   command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    docker exec -i {{ item.pg_host }} \
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c \
     "INSERT INTO \"users\" (
-       \"key\", \"email\", \"name\", \"password\",
-       \"isSystem\", \"isActive\", \"isVerified\",
-       \"providerKey\", \"createdAt\", \"updatedAt\"
-     )
-     VALUES (
-       gen_random_uuid(),
-       '{{ item.admin_email }}',
-       'Administrator',
-       '{{ item.admin_password }}',
-       false, true, true,
-       'local',
-       NOW(), NOW()
-     )
-     ON CONFLICT (email) DO NOTHING;"
+      \"email\", \"name\", \"password\",
+      \"isSystem\", \"isActive\", \"isVerified\",
+      \"providerKey\", \"createdAt\", \"updatedAt\",
+      \"localeCode\", \"defaultEditor\"
+    )
+    VALUES (
+      '{{ item.admin_email }}',
+      'Administrator',
+      '{{ item.admin_password }}',
+      false, true, true,
+      'local',
+      NOW()::text, NOW()::text,
+      'en', 'markdown'
+    )
+    ON CONFLICT (email) DO NOTHING;"
+
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
