@@ -194,7 +194,7 @@
        gen_random_uuid(),
        '{{ item.admin_email }}',
        'Administrator',
-       '{{ item.admin_password | password_hash("bcrypt") }}',
+       '{{ item.admin_password }}',
        false, true, true,
        'local',
        NOW(), NOW()

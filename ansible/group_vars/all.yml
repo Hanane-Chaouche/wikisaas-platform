@@ -64,7 +64,7 @@ wikis_docker:
     pg_pass: wikijs_pass
     pg_host: name_db_ia
     admin_email: "chamer6+ia@hotmail.com"
-    admin_password: "PassIa123!"
+    admin_password: "$2b$12$6ybb0RmnCJ/gxHpsP/gpR.W.2goZHyo8uC8Za7OnyDinevD2xqQnu"
 
   - name: devops
     pg_db: wiki_devops
@@ -72,7 +72,7 @@ wikis_docker:
     pg_pass: wikijs_pass
     pg_host: name_db_devops
     admin_email: "chamer6+devops@hotmail.com"
-    admin_password: "PassDevops123!"
+    admin_password: "$2b$12$HKFt55ikyQKwwcYCngghCeoiP5vDnk.iUdlXqaseVq/cKrlLmDx1e"
 
   - name: cyber
     pg_db: wiki_cyber
@@ -80,7 +80,7 @@ wikis_docker:
     pg_pass: wikijs_pass
     pg_host: name_db_cyber
     admin_email: "chamer6+cyber@hotmail.com"
-    admin_password: "PassCyber123!"
+    admin_password: "$2b$12$jw0jOvrYOHkqBBdEm/0DMOVktwXKR3OJVcm4oBhGoDkDNO3Hvro12"
     
 ############################################
 # Cloudflare R2
