@@ -183,8 +183,6 @@
         # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
   command: >
-   - name: Créer un compte admin local dans chaque DB Docker
-  command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
     "INSERT INTO users (
