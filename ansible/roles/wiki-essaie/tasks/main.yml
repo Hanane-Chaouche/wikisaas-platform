@@ -179,6 +179,22 @@
     name: python3-passlib
     state: present
     update_cache: true
+
+- name: Ajouter la locale 'en' si absente
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+    INSERT INTO locales (code, strings, isRTL, name, nativeName, availability, createdAt, updatedAt)
+    VALUES (
+      'en', '{}'::json, false, 'English', 'English', 'production',
+      NOW(), NOW()
+    )
+    ON CONFLICT (code) DO NOTHING;"
+  changed_when: false
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
+    
 # Créer une méthode d’authentification locale dans Wiki.js (DB Docker)
 
 - name: Créer le provider local dans la table authentication
