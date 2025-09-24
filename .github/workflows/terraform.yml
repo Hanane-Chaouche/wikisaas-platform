@@ -52,7 +52,7 @@ jobs:
       # 2) Créer le run (Auto-apply dans TFC appliquera tout seul)
       - name: Create run
         id: create
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1
         with:
           token: ${{ secrets.TF_API_TOKEN }}
           workspace: ${{ env.TF_WORKSPACE }}
