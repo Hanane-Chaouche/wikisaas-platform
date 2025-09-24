@@ -187,8 +187,8 @@
     "INSERT INTO authentication
      (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
       \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
-    ) VALUES (
-      gen_random_uuid(), 'local', 'Local', true, 0, '{}'::jsonb,
+     VALUES (
+      gen_random_uuid(), 'local', 'Local', true, 0, '{}'::json,
       false, '[]'::json, '[]'::json
     )
     ON CONFLICT DO NOTHING;
