@@ -180,16 +180,25 @@
     state: present
     update_cache: true
 
-- name: Ajouter la locale 'en' si absente
+- name: Ajouter la locale 'en' si absente (compatible toutes versions)
   command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO locales (code, strings, isRTL, name, nativeName, availability, createdAt, updatedAt)
-    VALUES (
-      'en', '{}'::json, false, 'English', 'English', 'production',
-      NOW(), NOW()
-    )
-    ON CONFLICT (code) DO NOTHING;"
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='locales' AND column_name='isrtl'
+      ) THEN
+        INSERT INTO locales (code, strings, \"isRTL\", name, nativeName, availability, createdAt, updatedAt)
+        VALUES ('en', '{}'::json, false, 'English', 'English', 'production', NOW(), NOW())
+        ON CONFLICT (code) DO NOTHING;
+      ELSE
+        INSERT INTO locales (code, strings, name, nativeName, availability, createdAt, updatedAt)
+        VALUES ('en', '{}'::json, 'English', 'English', 'production', NOW(), NOW())
+        ON CONFLICT (code) DO NOTHING;
+      END IF;
+    END$$;"
   changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:
@@ -197,21 +206,32 @@
 
 # Créer une méthode d’authentification locale dans Wiki.js (DB Docker)
 
-- name: Ajouter la locale 'en' si absente
+- name: Créer le provider local dans la table authentication
   command: >
-   INSERT INTO locales
-      ("code","strings","isRTL","name","nativeName","availability","createdAt","updatedAt")
-   VALUES
-      ('en','{}'::json,false,'English','English',1,
-      to_char(NOW(),'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-      to_char(NOW(),'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
-   ON CONFLICT ("code") DO NOTHING;
-
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO authentication
+     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+     VALUES (
+      '00000000-0000-0000-0000-000000000000', 'local', 'Local', true, 0, '{}'::json,
+      false, '[]'::json, '[]'::json
+    )
+    ON CONFLICT DO NOTHING;"
+  changed_when: false
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO authentication
+     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+     VALUES (
+      '00000000-0000-0000-0000-000000000000', 'local', 'Local', true, 0, '{}'::json,
+      false, '[]'::json, '[]'::json
+    )
+    ON CONFLICT DO NOTHING;"      
+  changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
-
 
 # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
