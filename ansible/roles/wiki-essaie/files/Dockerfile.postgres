@@ -6,3 +6,4 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 # Ajouter un script d'init pour activer pgcrypto lors du premier démarrage
 COPY init-pgcrypto.sql /docker-entrypoint-initdb.d/
+

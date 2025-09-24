@@ -112,9 +112,8 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-    
-    # Wiki.js utilise `gen_random_uuid()` (fourni par pgcrypto) pour générer les identifiants uniques
-- name: Activer l’extension pgcrypto dans chaque DB Docker
+
+- name: Activer pgcrypto si non présent (sécurité)
   command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }}
@@ -122,7 +121,9 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+  when: item.pg_host is defined
 
+     # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
     docker exec -i {{ item.pg_host }}
@@ -153,6 +154,32 @@
        '[]'::json
      )
      ON CONFLICT DO NOTHING;"
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+
+
+        # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
+- name: Créer un compte admin local dans chaque DB Docker
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO \"users\" (
+       \"key\", \"email\", \"name\", \"password\",
+       \"isSystem\", \"isActive\", \"isVerified\",
+       \"providerKey\", \"createdAt\", \"updatedAt\"
+     )
+     VALUES (
+       gen_random_uuid(),
+       '{{ item.admin_email }}',
+       'Administrator',
+       '{{ item.admin_password | password_hash("bcrypt") }}',
+       false, true, true,
+       'local',
+       NOW(), NOW()
+     )
+     ON CONFLICT (email) DO NOTHING;"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
