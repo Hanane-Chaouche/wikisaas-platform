@@ -1,9 +1,10 @@
 FROM postgres:15
+# - Python3 : nécessaire pour exécuter certains scripts ou modules Ansible à l’intérieur du conteneur
+# - python3-psycopg2 : driver PostgreSQL pour Python, utilisé par Ansible pour gérer la base de données
 
 # Installer Python et psycopg2 (pour Ansible)
 RUN apt-get update && \
     apt-get install -y python3 python3-psycopg2 && \
     rm -rf /var/lib/apt/lists/*
-# Ajouter un script d'init pour activer pgcrypto lors du premier démarrage
-COPY init-pgcrypto.sql /docker-entrypoint-initdb.d/
+
 
