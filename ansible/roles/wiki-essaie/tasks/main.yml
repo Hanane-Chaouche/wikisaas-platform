@@ -112,7 +112,8 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
+    
+    # Wiki.js utilise `gen_random_uuid()` (fourni par pgcrypto) pour générer les identifiants uniques
 - name: Activer l’extension pgcrypto dans chaque DB Docker
   command: >
     docker exec -i {{ item.pg_host }}
