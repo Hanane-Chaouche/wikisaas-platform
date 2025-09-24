@@ -183,10 +183,10 @@
 - name: Créer le provider local dans la table authentication
   command: >
     docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO authentication (
-      key, strategyKey, displayName, isEnabled, \"order\", config,
-      selfRegistration, domainWhitelist, autoEnrollGroups
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO authentication
+     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
     ) VALUES (
       gen_random_uuid(), 'local', 'Local', true, 0, '{}'::jsonb,
       false, '[]'::json, '[]'::json
