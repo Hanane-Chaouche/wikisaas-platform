@@ -178,6 +178,31 @@
     name: python3-passlib
     state: present
     update_cache: true
+# Créer une méthode d’authentification locale dans Wiki.js (DB Docker)
+
+- name: Configurer Keycloak dans la table authentication (DB Docker)
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    INSERT INTO authentication (
+      "key", "strategyKey", "displayName", "isEnabled", "order",
+      "config", "selfRegistration", "domainWhitelist", "autoEnrollGroups"
+    )
+    VALUES (
+      gen_random_uuid(),
+      'local',
+      'Local',
+      true,
+      0,
+      '{}'::jsonb,
+      false,
+      '[]'::json,
+      '[]'::json
+    )
+    ON CONFLICT ("strategyKey") DO NOTHING;
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 
 # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
@@ -212,4 +237,5 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+    
 
