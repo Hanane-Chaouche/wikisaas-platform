@@ -102,7 +102,9 @@
     project_src: /opt/wiki
     state: present
   notify: Restart Wiki.js
-
+# -------------------------------------------------------------------
+# Étape 3 : Configurer les bases de données dans les conteneurs Docker 
+# ------------------------------------------------------------------- 
 - name: Attendre que les DB Docker soient prêtes
   command: docker exec {{ item.pg_host }} pg_isready -U {{ item.pg_user }} -d {{ item.pg_db }}
   register: pg_ready
@@ -112,6 +114,8 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+
+  # Installer l’extension pgcrypto (nécessaire pour certaines fonctions de sécurité dans Wiki.js)  
 
 - name: Activer pgcrypto si non présent (sécurité)
   command: >
@@ -158,7 +162,13 @@
   loop_control:
     label: "{{ item.name }}"
 
-
+  # Installer la librairie Python passlib avec le module bcrypt :
+  # - nécessaire pour que le filtre Ansible `password_hash("bcrypt")` fonctionne
+  # - utilisé pour générer et insérer des mots de passe hashés dans Wiki.js
+- name: Installer passlib (pip)
+  pip:
+    name: passlib[bcrypt]
+    executable: pip3
 
         # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
