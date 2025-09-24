@@ -183,27 +183,31 @@
         # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
   command: >
-    INSERT INTO "users" (
-    "email", "name", "password",
-    "isSystem", "isActive", "isVerified", "mustChangePwd", "tfaIsActive",
-    "providerKey", "createdAt", "updatedAt",
-    "localeCode", "defaultEditor", "timezone",
-    "lastLoginAt", "dateFormat", "appearance"
-    )
-    VALUES (
-      '{{ item.admin_email }}',
-      'Administrator',
-      '{{ item.admin_password }}',
-      false, true, true, false, false,
-      'local',
-      to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-      to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-      'en', 'markdown', 'America/Toronto',
-      to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-      'YYYY-MM-DD', 'default'
-    )
-    ON CONFLICT (email) DO NOTHING;
-
+   - name: Créer un compte admin local dans chaque DB Docker
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO users (
+       email, name, password,
+       isSystem, isActive, isVerified, mustChangePwd, tfaIsActive,
+       providerKey, createdAt, updatedAt,
+       localeCode, defaultEditor, timezone,
+       lastLoginAt, dateFormat, appearance
+     )
+     VALUES (
+       '{{ item.admin_email }}',
+       'Administrator',
+       '{{ item.admin_password }}',
+       false, true, true, false, false,
+       'local',
+       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+       'en', 'markdown', 'America/Toronto',
+       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+       'YYYY-MM-DD', 'default'
+     )
+     ON CONFLICT (email) DO NOTHING;"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+
