@@ -204,7 +204,7 @@
       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
       'YYYY-MM-DD', 'default'
     )
-    ON CONFLICT (email) DO NOTHING;"
+    ON CONFLICT ("providerKey", email) DO NOTHING;"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
