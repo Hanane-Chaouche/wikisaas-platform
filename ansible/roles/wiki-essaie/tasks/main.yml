@@ -218,16 +218,7 @@
       false, '[]'::json, '[]'::json
     )
     ON CONFLICT DO NOTHING;"
-  changed_when: false
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
-    "INSERT INTO authentication
-     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
-      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
-     VALUES (
-      '00000000-0000-0000-0000-000000000000', 'local', 'Local', true, 0, '{}'::json,
-      false, '[]'::json, '[]'::json
-    )
-    ON CONFLICT DO NOTHING;"      
+     
   changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:

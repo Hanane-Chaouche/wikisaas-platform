@@ -32,7 +32,7 @@ services:
 
   # === Wiki IA ===
   wiki-ia:
-    image: ghcr.io/requarks/wiki:22.5.170
+    image: ghcr.io/requarks/wiki:2.5.170
     container_name: name_wiki_ia
     restart: unless-stopped
     env_file:
