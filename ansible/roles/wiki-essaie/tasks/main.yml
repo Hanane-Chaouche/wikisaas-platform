@@ -184,15 +184,15 @@
 - name: Créer un compte admin local dans chaque DB Docker
   command: >
     docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
-    "INSERT INTO users (
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+    INSERT INTO users (
       email, name, password,
       \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
-      \"providerKey\", \"providerId\", \"createdAt\", \"updatedAt\",
+      \"providerKey\", \"providerId\",
+      \"createdAt\", \"updatedAt\",
       \"localeCode\", \"defaultEditor\", \"timezone\",
       \"lastLoginAt\", \"dateFormat\", \"appearance\"
-    )
-    VALUES (
+    ) VALUES (
       '{{ item.admin_email }}',
       'Administrator',
       '{{ item.admin_password }}',
