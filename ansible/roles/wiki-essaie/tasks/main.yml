@@ -158,6 +158,7 @@
        '[]'::json
      )
      ON CONFLICT DO NOTHING;"
+  changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
@@ -191,13 +192,11 @@
       gen_random_uuid(), 'local', 'Local', true, 0, '{}'::json,
       false, '[]'::json, '[]'::json
     )
-    ON CONFLICT DO NOTHING;
-    "
+    ON CONFLICT DO NOTHING;"      
+  changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
-
 
 # Créer un compte admin local dans chaque DB Docker (sera utilisé pour la 1ère connexion)
 - name: Créer un compte admin local dans chaque DB Docker
@@ -229,6 +228,7 @@
         \"updatedAt\" = EXCLUDED.\"updatedAt\",
         \"isActive\" = true,
         \"isVerified\" = true;"
+  changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
