@@ -204,7 +204,11 @@
       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
       'YYYY-MM-DD', 'default'
     )
-    ON CONFLICT ("providerKey", email) DO NOTHING;"
+    ON CONFLICT ("providerKey", email) DO UPDATE
+    SET "password" = EXCLUDED."password",
+    "updatedAt" = EXCLUDED."updatedAt",
+    "isActive" = true,
+    "isVerified" = true;
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
