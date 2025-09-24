@@ -199,15 +199,14 @@
 
 - name: Ajouter la locale 'en' si absente
   command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO locales (\"code\", \"strings\", \"isRTL\", \"name\", \"nativeName\",
-      \"availability\", \"createdAt\", \"updatedAt\")
-    VALUES (
-      'en', '{}'::json, false, 'English', 'English', 1,
-      NOW(), NOW()
-    )
-    ON CONFLICT (\"code\") DO NOTHING;"
+   INSERT INTO locales
+      ("code","strings","isRTL","name","nativeName","availability","createdAt","updatedAt")
+   VALUES
+      ('en','{}'::json,false,'English','English',1,
+      to_char(NOW(),'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+      to_char(NOW(),'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
+   ON CONFLICT ("code") DO NOTHING;
+
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
