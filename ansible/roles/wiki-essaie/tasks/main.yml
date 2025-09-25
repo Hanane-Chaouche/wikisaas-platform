@@ -179,6 +179,38 @@
     state: present
     update_cache: true
 
+- name: Configurer R2 dans la table storage (DB Docker)
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO storage (\"key\", \"isEnabled\", mode, config, \"syncInterval\", state)
+     VALUES (
+       's3generic',
+       true,
+       'push',
+       jsonb_build_object(
+         'endpoint', '{{ s3_endpoint }}',
+         'bucket', '{{ s3_bucket }}',
+         'accessKeyId', '{{ s3_access_key }}',
+         'secretAccessKey', '{{ s3_secret_key }}',
+         'sslEnabled', true,
+         's3ForcePathStyle', true,
+         's3BucketEndpoint', false
+       ),
+       '0 */12 * * *',
+       '{}'::json
+     )
+     ON CONFLICT (\"key\") DO UPDATE
+     SET \"isEnabled\"    = EXCLUDED.\"isEnabled\",
+         mode             = EXCLUDED.mode,
+         config           = EXCLUDED.config,
+         \"syncInterval\" = EXCLUDED.\"syncInterval\",
+         state            = '{}'::json;"
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+
 # -------------------------------------------------------------------
 # Ajouter la locale 'en' si elle n'existe pas déjà
 # - Vérifie la présence de la colonne isrtl (Wiki.js v2 peut avoir un schéma différent)
@@ -271,34 +303,3 @@
 #   loop: "{{ wikis_docker }}"
 #   loop_control:
 #     label: "{{ item.name }}"
-
-- name: Configurer R2 dans la table storage (DB Docker)
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
-    "INSERT INTO storage (\"key\", \"isEnabled\", mode, config, \"syncInterval\", state)
-     VALUES (
-       's3generic',
-       true,
-       'push',
-       jsonb_build_object(
-         'endpoint', '{{ s3_endpoint }}',
-         'bucket', '{{ s3_bucket }}',
-         'accessKeyId', '{{ s3_access_key }}',
-         'secretAccessKey', '{{ s3_secret_key }}',
-         'sslEnabled', true,
-         's3ForcePathStyle', true,
-         's3BucketEndpoint', false
-       ),
-       '0 */12 * * *',
-       '{}'::json
-     )
-     ON CONFLICT (\"key\") DO UPDATE
-     SET \"isEnabled\"    = EXCLUDED.\"isEnabled\",
-         mode             = EXCLUDED.mode,
-         config           = EXCLUDED.config,
-         \"syncInterval\" = EXCLUDED.\"syncInterval\",
-         state            = '{}'::json;"
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
