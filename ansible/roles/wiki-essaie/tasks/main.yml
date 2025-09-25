@@ -293,8 +293,8 @@
        ),
        '{}'::json
      )
-     ON CONFLICT (key) DO UPDATE
-     SET isEnabled = EXCLUDED.isEnabled,
+     ON CONFLICT ("key") DO UPDATE
+     SET "isEnabled" = EXCLUDED."isEnabled",
          direction = EXCLUDED.direction,
          config    = EXCLUDED.config,
          state     = '{}'::json;"
