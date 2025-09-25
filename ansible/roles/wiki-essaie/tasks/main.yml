@@ -276,8 +276,7 @@
   command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
-    "INSERT INTO storage
-     ( \"key\", \"isEnabled\", direction, config, state)
+    "INSERT INTO storage (\"key\", \"isEnabled\", mode, config, \"syncInterval\", state)
      VALUES (
        's3generic',
        true,
@@ -291,13 +290,15 @@
          's3ForcePathStyle', true,
          's3BucketEndpoint', false
        ),
+       '0 */12 * * *',
        '{}'::json
      )
-     ON CONFLICT ("key") DO UPDATE
-     SET "isEnabled" = EXCLUDED."isEnabled",
-         direction = EXCLUDED.direction,
-         config    = EXCLUDED.config,
-         state     = '{}'::json;"
+     ON CONFLICT (\"key\") DO UPDATE
+     SET \"isEnabled\"    = EXCLUDED.\"isEnabled\",
+         mode             = EXCLUDED.mode,
+         config           = EXCLUDED.config,
+         \"syncInterval\" = EXCLUDED.\"syncInterval\",
+         state            = '{}'::json;"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
