@@ -1,4 +1,4 @@
-name: Terraform Cloud
+name: Terraform CLI
 
 on:
   push:
@@ -14,9 +14,9 @@ jobs:
       github.event_name == 'workflow_dispatch'
 
     env:
-      TF_CLOUD_ORGANIZATION: "wikisaas-org"             # ton org TFC
-      TF_WORKSPACE: "wikisaas-platform"                 # ton workspace TFC
-      CONFIG_DIRECTORY: "./terraform"                   # dossier contenant tes .tf
+      TF_CLOUD_ORGANIZATION: "wikisaas-org"     # ton organisation Terraform Cloud
+      TF_WORKSPACE: "wikisaas-platform"         # ton workspace Terraform Cloud
+      CONFIG_DIRECTORY: "./terraform"           # dossier contenant tes .tf
 
     outputs:
       ec2_public_ip:         ${{ steps.export_outputs.outputs.EC2_PUBLIC_IP }}
@@ -31,77 +31,34 @@ jobs:
       rds_subnet_group:      ${{ steps.export_outputs.outputs.RDS_SUBNET_GROUP }}
       ec2_security_group_id: ${{ steps.export_outputs.outputs.EC2_SECURITY_GROUP_ID }}
       rds_security_group_id: ${{ steps.export_outputs.outputs.RDS_SECURITY_GROUP_ID }}
-      db_host_ia: ${{ steps.export_outputs.outputs.DB_HOST_IA }}
-      db_host_devops: ${{ steps.export_outputs.outputs.DB_HOST_DEVOPS }}
-      db_host_cyber: ${{ steps.export_outputs.outputs.DB_HOST_CYBER }}
+      db_host_ia:            ${{ steps.export_outputs.outputs.DB_HOST_IA }}
+      db_host_devops:        ${{ steps.export_outputs.outputs.DB_HOST_DEVOPS }}
+      db_host_cyber:         ${{ steps.export_outputs.outputs.DB_HOST_CYBER }}
 
     steps:
       - uses: actions/checkout@v4
 
-      # 1) Uploader la configuration vers Terraform Cloud
-      - name: Upload configuration
-        id: upload
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
-        with:
-          token: ${{ secrets.TF_API_TOKEN }}            # Ensure this secret exists in your GitHub repository settings
-          organization: ${{ env.TF_CLOUD_ORGANIZATION }}
-          workspace: ${{ env.TF_WORKSPACE }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
-          speculative: false
-
-      # 2) Créer le run (Auto-apply dans TFC appliquera tout seul)
-      - name: Create run
-        id: create
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
-        with:
-          token: ${{ secrets.TF_API_TOKEN }}
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
-
-      # 3) Attendre la fin du run (poll de l’API TFC jusqu’à un état final)
-      - name: Wait until run finishes
-        shell: bash
-        env:
-          TFC_TOKEN: ${{ secrets.TF_API_TOKEN }}
-          RUN_ID: ${{ steps.create.outputs.run_id }}
-        run: |
-          set -euo pipefail
-          finals=("applied" "planned_and_finished" "canceled" "errored" "discarded")
-          echo "Polling run $RUN_ID"
-          for i in {1..180}; do
-            RESP=$(curl -sS -w " HTTP_CODE:%{http_code}" \
-              -H "Authorization: Bearer $TFC_TOKEN" \
-              -H "Content-Type: application/vnd.api+json" \
-              "https://app.terraform.io/api/v2/runs/$RUN_ID") || true
-            CODE="${RESP##*HTTP_CODE:}"; BODY="${RESP% HTTP_CODE:*}"
-            [[ "$CODE" != "200" ]] && echo "HTTP $CODE, retry..." && sleep 10 && continue
-            STATUS=$(printf '%s' "$BODY" | jq -r '.data.attributes.status // ""' | tr -d '\r' | xargs)
-            echo "Run Status: '$STATUS'"
-            for f in "${finals[@]}"; do
-              if [[ "$STATUS" == "$f" ]]; then
-                echo "Final status: $STATUS"
-                [[ "$STATUS" == "applied" || "$STATUS" == "planned_and_finished" ]] && exit 0 || exit 1
-              fi
-            done
-            sleep 10
-          done
-          echo "Timeout waiting for run to finish"
-          exit 1
-
-      # 4) Lire les outputs avec le CLI Terraform (après init)
+      # Installer Terraform CLI
       - name: Setup Terraform CLI
         uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-          terraform_wrapper: false   # indispensable pour terraform output , le petit changement
+          terraform_wrapper: false
 
-      - name: Terraform Init (pointe vers TFC via le bloc cloud)
+      # Initialiser Terraform
+      - name: Terraform Init
         run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} init -input=false
 
-      - name: Terraform Output
-        run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} output
+      # Plan (optionnel pour debug)
+      - name: Terraform Plan
+        run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} plan -input=false
 
-      - name: Exporter outputs Terraform
+      # Apply (exécute directement sur le runner GitHub)
+      - name: Terraform Apply
+        run: terraform -chdir=${{ env.CONFIG_DIRECTORY }} apply -auto-approve -input=false
+
+      # Exporter les outputs Terraform
+      - name: Export outputs Terraform
         id: export_outputs
         run: |
           set -euo pipefail
@@ -119,9 +76,10 @@ jobs:
           echo "RDS_SUBNET_GROUP=$(echo "$O" | jq -r .rds_subnet_group.value)" >> $GITHUB_OUTPUT
           echo "EC2_SECURITY_GROUP_ID=$(echo "$O" | jq -r .ec2_security_group_id.value)" >> $GITHUB_OUTPUT
           echo "RDS_SECURITY_GROUP_ID=$(echo "$O" | jq -r .rds_security_group_id.value)" >> $GITHUB_OUTPUT
-          echo "DB_HOST_IA=$(echo "$O" | jq -r .db_host_ia.value)"         >> $GITHUB_OUTPUT
+          echo "DB_HOST_IA=$(echo "$O" | jq -r .db_host_ia.value)" >> $GITHUB_OUTPUT
           echo "DB_HOST_DEVOPS=$(echo "$O" | jq -r .db_host_devops.value)" >> $GITHUB_OUTPUT
-          echo "DB_HOST_CYBER=$(echo "$O" | jq -r .db_host_cyber.value)"   >> $GITHUB_OUTPUT
+          echo "DB_HOST_CYBER=$(echo "$O" | jq -r .db_host_cyber.value)" >> $GITHUB_OUTPUT
+
 
   ansible:
     runs-on: ubuntu-latest
