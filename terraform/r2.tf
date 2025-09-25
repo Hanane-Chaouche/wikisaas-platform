@@ -3,7 +3,7 @@ resource "cloudflare_r2_bucket" "r2_bucket" {
   provider = cloudflare.r2
   account_id = var.r2_account_id
   name       = var.r2_bucket_name
-  location   = "WNAM" # Amérique du Nord (Canada/USA)
+  location   = "auto" 
 }
 
 ########################
