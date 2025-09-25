@@ -71,7 +71,7 @@ output "r2_location" {
 
 output "r2_bucket_endpoint" {
   description = "Endpoint S3-compatible du bucket R2"
-  value       = "https://${cloudflare_r2_bucket.r2_bucket.name}.${cloudflare_r2_bucket.r2_bucket.account_id}.r2.cloudflarestorage.com"
+  value       = "https://${cloudflare_r2_bucket.r2_bucket.account_id}.r2.cloudflarestorage.com"
 }
 
 ####################################
