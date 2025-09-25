@@ -41,7 +41,7 @@ jobs:
       # 1) Uploader la configuration vers Terraform Cloud
       - name: Upload configuration
         id: upload
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@main
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
         with:
           token: ${{ secrets.TF_API_TOKEN }}            # Ensure this secret exists in your GitHub repository settings
           organization: ${{ env.TF_CLOUD_ORGANIZATION }}
@@ -52,7 +52,7 @@ jobs:
       # 2) Créer le run (Auto-apply dans TFC appliquera tout seul)
       - name: Create run
         id: create
-        uses: hashicorp/tfc-workflows-github/actions/create-run@main
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
         with:
           token: ${{ secrets.TF_API_TOKEN }}
           workspace: ${{ env.TF_WORKSPACE }}
