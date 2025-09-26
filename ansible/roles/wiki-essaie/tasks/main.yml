@@ -321,7 +321,7 @@
       '{{ item.admin_email }}',
       'Administrator',
       '{{ item.admin_password }}',
-      false, true, true, false, false,
+      true, true, true, false, false,
       (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
       '',
       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
