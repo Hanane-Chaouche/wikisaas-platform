@@ -289,36 +289,50 @@
 # - Sert pour la première connexion avant configuration Keycloak
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
-- name: Créer un compte admin local dans chaque DB Docker
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO users (
-      email, name, password,
-      \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
-      \"providerKey\", \"providerId\",
-      \"createdAt\", \"updatedAt\",
-      \"localeCode\", \"defaultEditor\", \"timezone\",
-      \"lastLoginAt\", \"dateFormat\", \"appearance\"
-    ) VALUES (
-      '{{ item.admin_email }}',
-      'Administrator',
-      '{{ item.admin_password }}',
-      false, false, true, false, false,
-      (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
-      '',
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      'en', 'markdown', 'America/Toronto',
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      'YYYY-MM-DD', 'default'
-    )
-    ON CONFLICT (\"providerKey\", email) DO UPDATE
-    SET \"password\" = EXCLUDED.\"password\",
-        \"updatedAt\" = EXCLUDED.\"updatedAt\",
-        \"isActive\" = true,
-        \"isVerified\" = true;"
-  changed_when: false
+- name: Créer un compte admin local dans chaque DB Docker (insert si absent)
+  shell: |
+    set -euo pipefail
+    docker exec -i {{ item.pg_host }} psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -q -t -A -c "
+      WITH auth AS (
+        SELECT \"key\" AS provider_key
+        FROM authentication
+        WHERE \"strategyKey\"='local'
+        LIMIT 1
+      ),
+      ins AS (
+        INSERT INTO users (
+          email, name, password,
+          \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
+          \"providerKey\", \"providerId\",
+          \"createdAt\", \"updatedAt\",
+          \"localeCode\", \"defaultEditor\", \"timezone\",
+          \"lastLoginAt\", \"dateFormat\", \"appearance\"
+        )
+        SELECT
+          '{{ item.admin_email }}',
+          'Administrator',
+          '{{ item.admin_password }}',   -- <- hash bcrypt ($2b$...) requis
+          false, true, true, false, false,
+          COALESCE((SELECT provider_key FROM auth), 'local'),
+          '',
+          NOW(), NOW(),
+          'en', 'markdown', 'America/Toronto',
+          NOW(), 'YYYY-MM-DD', 'default'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM users u
+          WHERE u.\"providerKey\" = COALESCE((SELECT provider_key FROM auth), 'local')
+            AND lower(u.email) = lower('{{ item.admin_email }}')
+        )
+        RETURNING 1
+      )
+      SELECT CASE WHEN EXISTS (SELECT 1 FROM ins)
+                  THEN 'INSERTED' ELSE 'SKIPPED' END;
+    "
+  args:
+    executable: /bin/bash
+  register: insert_admin
+  changed_when: "'INSERTED' in insert_admin.stdout"
+  failed_when: insert_admin.rc != 0
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
