@@ -130,44 +130,40 @@
   # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-      INSERT INTO authentication
-        (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
-         \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
-      VALUES (
-        gen_random_uuid(),
-        'keycloak',
-        'Keycloak',
-        true,
-        1,
-        json_build_object(
-          'host', 'https://sso.{{ base_domain }}',
-          'realm', 'saas',
-          'clientId', '{{ item.name }}',
-          'clientSecret', '{{ kc_clients[item.name] }}',
-          'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-          'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-          'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-          'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-          'logoutUpstream', false,
-          'logoutUpstreamRedirectLegacy', false
-        ),
-        false,
-        '[]'::json,
-        '[]'::json
-      )
-      ON CONFLICT (\"strategyKey\") DO UPDATE
-        SET config = EXCLUDED.config,
-            \"isEnabled\" = EXCLUDED.\"isEnabled\",
-            \"displayName\" = EXCLUDED.\"displayName\";
+    docker exec -i {{ item.pg_host }} psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+    INSERT INTO authentication
+      (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+       \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+    VALUES (
+      gen_random_uuid(),
+      'keycloak',
+      'Keycloak',
+      true,
+      1,
+      json_build_object(
+        'host', 'https://sso.{{ base_domain }}',
+        'realm', 'saas',
+        'clientId', '{{ item.name }}',
+        'clientSecret', '{{ kc_clients[item.name] }}',
+        'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
+        'tokenURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+        'userInfoURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+        'logoutURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+        'logoutUpstream', false,
+        'logoutUpstreamRedirectLegacy', false
+      ),
+      false,
+      '[]'::json,
+      '[]'::json
+    )
+    ON CONFLICT (\"strategyKey\") DO UPDATE
+      SET config = EXCLUDED.config,
+          \"isEnabled\" = EXCLUDED.\"isEnabled\",
+          \"displayName\" = EXCLUDED.\"displayName\";
     "
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
-
-
 
 - name: Installer pip3 (Ubuntu)
   become: true
