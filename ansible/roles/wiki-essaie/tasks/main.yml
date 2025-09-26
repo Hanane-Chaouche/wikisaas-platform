@@ -138,7 +138,7 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-  ignore_errors: yes
+  ignore_errors: true
 
 # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
@@ -178,6 +178,7 @@
   loop_control:
     label: "{{ item.name }}"
 
+# Installer pip3 (nécessaire pour installer passlib)
 - name: Installer pip3 (Ubuntu)
   become: true
   apt:
@@ -195,6 +196,7 @@
     state: present
     update_cache: true
 
+# Configurer R2 (S3 compatible) comme stockage de fichiers dans Wiki.js
 - name: Configurer R2 dans la table storage (DB Docker)
   command: >
     docker exec -i {{ item.pg_host }}
@@ -281,7 +283,7 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-  
+
 # Ajouter une contrainte UNIQUE sur providerKey + email dans users
 - name: Ajouter contrainte UNIQUE providerKey + email dans users
   command: >
@@ -294,7 +296,7 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-  ignore_errors: yes
+  ignore_errors: true
 
 # -------------------------------------------------------------------
 # Créer un compte admin local dans chaque DB Wiki.js
@@ -302,10 +304,58 @@
 # - Sert pour la première connexion avant configuration Keycloak
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
-- name: Créer un compte admin local dans chaque DB Docker
+# - name: Créer un compte admin local dans chaque DB Docker
+#   command: >
+#     docker exec -i {{ item.pg_host }}
+#     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+#     INSERT INTO users (
+#       email, name, password,
+#       \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
+#       \"providerKey\", \"providerId\",
+#       \"createdAt\", \"updatedAt\",
+#       \"localeCode\", \"defaultEditor\", \"timezone\",
+#       \"lastLoginAt\", \"dateFormat\", \"appearance\"
+#     ) VALUES (
+#       '{{ item.admin_email }}',
+#       'Administrator',
+#       '{{ item.admin_password }}',
+#       false, false, true, false, false,
+#       (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
+#       '',
+#       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#       'en', 'markdown', 'America/Toronto',
+#       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#       'YYYY-MM-DD', 'default'
+#     )
+#     ON CONFLICT (\"providerKey\", email) DO UPDATE
+#     SET \"password\" = EXCLUDED.\"password\",
+#         \"isActive\" = true,
+#         \"isVerified\" = true,
+#         \"updatedAt\" = NOW();
+#
+#   changed_when: false
+#   loop: "{{ wikis_docker }}"
+#   loop_control:
+#     label: "{{ item.name }}"  ne change rien juste commente
+                                                     
+
+# -------------------------------------------------------------------
+# Même tâche que ci-dessus, mais avec une requête SQL différente
+# - Utilise une CTE pour récupérer le providerKey (plus compatible selon versions)
+# - Insère l’admin seulement si le compte n’existe pas déjà (WHERE NOT EXISTS)
+# - Si l’admin existe déjà, ne fait rien (changed_when: false)
+# ------------------------------------------------------------------
+- name: Créer un compte admin local dans chaque DB Docker (1ère fois seulement)
   command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+    WITH auth AS (
+      SELECT \"key\" AS provider_key
+      FROM authentication
+      WHERE \"strategyKey\" = 'local'
+      LIMIT 1
+    )
     INSERT INTO users (
       email, name, password,
       \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
@@ -313,25 +363,22 @@
       \"createdAt\", \"updatedAt\",
       \"localeCode\", \"defaultEditor\", \"timezone\",
       \"lastLoginAt\", \"dateFormat\", \"appearance\"
-    ) VALUES (
+    )
+    SELECT
       '{{ item.admin_email }}',
       'Administrator',
       '{{ item.admin_password }}',
-      false, false, true, false, false,
-      (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
+      false, true, true, false, false,
+      COALESCE((SELECT provider_key FROM auth), 'local'),
       '',
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+      NOW(), NOW(),
       'en', 'markdown', 'America/Toronto',
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      'YYYY-MM-DD', 'default'
-    )
-    ON CONFLICT (\"providerKey\", email) DO UPDATE
-    SET \"password\" = EXCLUDED.\"password\",
-        \"isActive\" = true,
-        \"isVerified\" = true,
-        \"updatedAt\" = NOW();
-
+      NOW(), 'YYYY-MM-DD', 'default'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM users u
+      WHERE u.\"providerKey\" = COALESCE((SELECT provider_key FROM auth), 'local')
+        AND lower(u.email) = lower('{{ item.admin_email }}')
+    );"
   changed_when: false
   loop: "{{ wikis_docker }}"
   loop_control:
