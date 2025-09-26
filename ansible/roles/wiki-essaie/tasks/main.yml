@@ -146,8 +146,7 @@
          'realm', 'saas',
          'clientId', '{{ item.name }}',
          'clientSecret', '{{ kc_clients[item.name] }}',
-         'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+         'authorizati     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
          'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
          'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
          'logoutUpstream', false,
@@ -157,7 +156,9 @@
        '[]'::json,
        '[]'::json
      )
-     ON CONFLICT DO NOTHING;"
+     ON CONFLICT ("strategyKey") DO UPDATE
+      SET "config" = EXCLUDED."config",
+          "updatedAt" = NOW();
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
@@ -285,7 +286,7 @@
 #       '{{ item.admin_email }}',
 #       'Administrator',
 #       '{{ item.admin_password }}',
-#       false, true, true, false, false,
+#       false, false, true, false, false,
 #       (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
 #       '',
 #       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
