@@ -158,7 +158,7 @@
      )
      ON CONFLICT ("strategyKey") DO UPDATE
       SET "config" = EXCLUDED."config",
-          "updatedAt" = NOW();
+          "updatedAt" = NOW();"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
