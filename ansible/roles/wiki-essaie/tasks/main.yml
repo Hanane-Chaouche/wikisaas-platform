@@ -235,8 +235,8 @@
 # - Utile comme solution de secours (admin peut se connecter même si SSO tombe en panne)
 # - Conflit évité si déjà présent (ON CONFLICT DO NOTHING)
 # -------------------------------------------------------------------
-- name: Créer le provider local dans la table authentication
-  command: >
+#- name: Créer le provider local dans la table authentication
+  co1567890---0987654(mmand: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
     INSERT INTO authentication
@@ -255,105 +255,88 @@
     label: "{{ item.name }}"
 
 # -------------------------------------------------------------------
-- name: Upsert locale 'en' (PK sur code)
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
-    INSERT INTO locales (
-      code, strings, \"isRTL\", name, \"nativeName\",
-      availability, \"createdAt\", \"updatedAt\"
-    ) VALUES (
-      'en', '{}'::json, false, 'English', 'English',
-      0,
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')
-    )
-    ON CONFLICT (code) DO UPDATE SET
-      strings      = EXCLUDED.strings,
-      \"isRTL\"     = EXCLUDED.\"isRTL\",
-      name         = EXCLUDED.name,
-      \"nativeName\"= EXCLUDED.\"nativeName\",
-      availability = EXCLUDED.availability,
-      \"updatedAt\" = EXCLUDED.\"updatedAt\";
-    "
-  changed_when: false
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
+#- name: Upsert locale 'en' (PK sur code)
+#  command: >
+#    docker exec -i {{ item.pg_host }}
+#    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
+#    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
+#   INSERT INTO locales (
+#      code, strings, \"isRTL\", name, \"nativeName\",
+#     availability, \"createdAt\", \"updatedAt\"
+#   ) VALUES (
+#     'en', '{}'::json, false, 'English', 'English',
+#     0,
+#     to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#     to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')
+#    )
+#    ON CONFLICT (code) DO UPDATE SET
+#      strings      = EXCLUDED.strings,
+#      \"isRTL\"     = EXCLUDED.\"isRTL\",
+#      name         = EXCLUDED.name,
+#      \"nativeName\"= EXCLUDED.\"nativeName\",
+#      availability = EXCLUDED.availability,
+#      \"updatedAt\" = EXCLUDED.\"updatedAt\";
+#    "
+#  changed_when: false
+#  loop: "{{ wikis_docker }}"
+#  loop_control:
+#    label: "{{ item.name }}"
 
-- name: Seed editors (markdown / wysiwyg / code)
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
-    INSERT INTO editors (key, \"isEnabled\", config) VALUES
-      ('markdown', true, '{}'::json),
-      ('wysiwyg',  true, '{}'::json),
-      ('code',     true, '{}'::json)
-    ON CONFLICT (key) DO UPDATE
-      SET \"isEnabled\" = EXCLUDED.\"isEnabled\",
-          config        = EXCLUDED.config;
-    "
-  changed_when: false
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-
-
+#- name: Seed editors (markdown / wysiwyg / code)
+#  command: >
+#    docker exec -i {{ item.pg_host }}
+#    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
+#    INSERT INTO editors (key, \"isEnabled\", config) VALUES
+#      ('markdown', true, '{}'::json),
+#      ('wysiwyg',  true, '{}'::json),
+#      ('code',     true, '{}'::json)
+#    ON CONFLICT (key) DO UPDATE
+#      SET \"isEnabled\" = EXCLUDED.\"isEnabled\",
+#          config        = EXCLUDED.config;
+#    "
+#  changed_when: false
+#  loop: "{{ wikis_docker }}"
+#  loop_control:
+#    label: "{{ item.name }}"
+#
+#
 # -------------------------------------------------------------------
 # Créer un compte admin local dans chaque DB Wiki.js
 # - Compte administrateur initial avec email et mot de passe hashé (passlib)
 # - Sert pour la première connexion avant configuration Keycloak
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
-- name: Créer un compte admin local dans chaque DB Docker
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO users (
-      email, name, password,
-      \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
-      \"providerKey\", \"providerId\",
-      \"createdAt\", \"updatedAt\",
-      \"localeCode\", \"defaultEditor\", \"timezone\",
-      \"lastLoginAt\", \"dateFormat\", \"appearance\"
-    ) VALUES (
-      '{{ item.admin_email }}',
-      'Administrator',
-      '{{ item.admin_password }}',
-      true, true, true, false, false,
-      (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
-      '',
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-      'en', 'markdown', 'America/Toronto',
-      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-       'YYYY-MM-DD', 'default'
-    )
-    ON CONFLICT (\"providerKey\", email) DO UPDATE
-    SET \"password\" = EXCLUDED.\"password\",
-        \"isActive\" = true,
-        \"isVerified\" = true,
-         \"updatedAt\" = to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"');"
-
-  changed_when: false
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Bypass Wiki.js setup wizard (settings)
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO settings (\"key\", \"value\", \"updatedAt\") VALUES
-      ('setup',   '{\"completed\": true}'::json, NOW()),
-      ('site',    json_build_object('url','{{ item.site_url }}','title','Wiki {{ item.name | capitalize }}','telemetry',false), NOW()),
-      ('general', json_build_object('title','Wiki {{ item.name | capitalize }}','public',true), NOW())
-    ON CONFLICT (\"key\") DO UPDATE
-      SET \"value\" = EXCLUDED.\"value\",
-          \"updatedAt\" = NOW();"
-  changed_when: false
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
-
+#- name: Créer un compte admin local dans chaque DB Docker
+#  command: >
+#    docker exec -i {{ item.pg_host }}
+#    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+#    INSERT INTO users (
+#     email, name, password,
+#      \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
+#      \"providerKey\", \"providerId\",
+#      \"createdAt\", \"updatedAt\",
+#      \"localeCode\", \"defaultEditor\", \"timezone\",
+#      \"lastLoginAt\", \"dateFormat\", \"appearance\"
+#    ) VALUES (
+#      '{{ item.admin_email }}',
+#      'Administrator',
+#      '{{ item.admin_password }}',
+#      true, true, true, false, false,
+#      (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
+#      '',
+#      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#      'en', 'markdown', 'America/Toronto',
+#      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+#       'YYYY-MM-DD', 'default'
+#    )
+#    ON CONFLICT (\"providerKey\", email) DO UPDATE
+#    SET \"password\" = EXCLUDED.\"password\",
+#        \"isActive\" = true,
+#        \"isVerified\" = true,
+#        \"updatedAt\" = to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"');"
+#
+#  changed_when: false
+#  loop: "{{ wikis_docker }}"
+#  loop_control:
+#    label: "{{ item.name }}"
