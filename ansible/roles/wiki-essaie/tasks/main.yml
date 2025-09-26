@@ -235,24 +235,24 @@
 # - Utile comme solution de secours (admin peut se connecter même si SSO tombe en panne)
 # - Conflit évité si déjà présent (ON CONFLICT DO NOTHING)
 # -------------------------------------------------------------------
-#- name: Créer le provider local dans la table authentication
-  co1567890---0987654(mmand: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO authentication
-        (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
-         \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
-      VALUES (
-        gen_random_uuid(), 'local', 'Local Authentication', true, 0,
-        '{}'::json, false, '[]'::json, '[]'::json
-      )
-      ON CONFLICT (\"strategyKey\") DO NOTHING;
-    "
-  register: local_insert
-  changed_when: "'INSERT 0 1' in local_insert.stdout"
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
+# - name: Créer le provider local dans la table authentication
+#   command: >
+#     docker exec -i {{ item.pg_host }}
+#     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+#     INSERT INTO authentication
+#         (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+#          \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+#       VALUES (
+#         gen_random_uuid(), 'local', 'Local Authentication', true, 0,
+#         '{}'::json, false, '[]'::json, '[]'::json
+#       )
+#       ON CONFLICT (\"strategyKey\") DO NOTHING;"
+#   register: local_insert
+#   changed_when: "'INSERT 0 1' in local_insert.stdout"
+#   loop: "{{ wikis_docker }}"
+#   loop_control:
+#     label: "{{ item.name }}"
+
 
 # -------------------------------------------------------------------
 #- name: Upsert locale 'en' (PK sur code)
