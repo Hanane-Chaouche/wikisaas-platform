@@ -333,7 +333,7 @@
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
 - name: Créer un compte admin local dans chaque DB Docker
-   command: >
+  command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
     INSERT INTO users (
@@ -362,7 +362,7 @@
         \"isVerified\" = true,
          \"updatedAt\" = to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"');"
 
-   changed_when: false
-   loop: "{{ wikis_docker }}"
-   loop_control:
-     label: "{{ item.name }}"
+  changed_when: false
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
