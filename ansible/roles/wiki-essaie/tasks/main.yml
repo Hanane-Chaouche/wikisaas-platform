@@ -103,8 +103,8 @@
     state: present
   notify: Restart Wiki.js
 # -------------------------------------------------------------------
-# Étape 3 : Configurer les bases de données dans les conteneurs Docker 
-# ------------------------------------------------------------------- 
+# Étape 3 : Configurer les bases de données dans les conteneurs Docker
+# -------------------------------------------------------------------
 - name: Attendre que les DB Docker soient prêtes
   command: docker exec {{ item.pg_host }} pg_isready -U {{ item.pg_user }} -d {{ item.pg_db }}
   register: pg_ready
@@ -115,7 +115,7 @@
   loop_control:
     label: "{{ item.name }}"
 
-# Installer l’extension pgcrypto (nécessaire pour certaines fonctions de sécurité dans Wiki.js)  
+# Installer l’extension pgcrypto (nécessaire pour certaines fonctions de sécurité dans Wiki.js)
 
 - name: Activer pgcrypto si non présent (sécurité)
   command: >
@@ -131,37 +131,34 @@
 
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
-    docker exec -i {{ item.pg_host }} psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-    INSERT INTO authentication
-      (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
-       \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
-    VALUES (
-      gen_random_uuid(),
-      'keycloak',
-      'Keycloak',
-      true,
-      1,
-      json_build_object(
-        'host', 'https://sso.{{ base_domain }}',
-        'realm', 'saas',
-        'clientId', '{{ item.name }}',
-        'clientSecret', '{{ kc_clients[item.name] }}',
-        'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-        'tokenURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-        'userInfoURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-        'logoutURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-        'logoutUpstream', false,
-        'logoutUpstreamRedirectLegacy', false
-      ),
-      false,
-      '[]'::json,
-      '[]'::json
-    )
-    ON CONFLICT (\"strategyKey\") DO UPDATE
-      SET config = EXCLUDED.config,
-          \"isEnabled\" = EXCLUDED.\"isEnabled\",
-          \"displayName\" = EXCLUDED.\"displayName\";
-    "
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c
+    "INSERT INTO authentication
+     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+     VALUES (
+       gen_random_uuid(),
+       'keycloak',
+       'Keycloak',
+       true,
+       1,
+       jsonb_build_object(
+         'host', 'https://sso.{{ base_domain }}',
+         'realm', 'saas',
+         'clientId', '{{ item.name }}',
+         'clientSecret', '{{ kc_clients[item.name] }}',
+         'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
+         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+         'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+         'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+         'logoutUpstream', false,
+         'logoutUpstreamRedirectLegacy', false
+       ),
+       false,
+       '[]'::json,
+       '[]'::json
+     )
+     ON CONFLICT DO NOTHING;"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
