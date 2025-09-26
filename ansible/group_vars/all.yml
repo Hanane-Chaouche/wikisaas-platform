@@ -65,6 +65,8 @@ wikis_docker:
     pg_host: name_db_ia
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$6ybb0RmnCJ/gxHpsP/gpR.W.2goZHyo8uC8Za7OnyDinevD2xqQnu"
+    site_url: https://ia.wikiplatform.app
+
 
   - name: devops
     pg_db: wiki_devops
@@ -73,6 +75,8 @@ wikis_docker:
     pg_host: name_db_devops
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$HKFt55ikyQKwwcYCngghCeoiP5vDnk.iUdlXqaseVq/cKrlLmDx1e"
+    site_url: https://devops.wikiplatform.app
+
 
   - name: cyber
     pg_db: wiki_cyber
@@ -81,6 +85,8 @@ wikis_docker:
     pg_host: name_db_cyber
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$jw0jOvrYOHkqBBdEm/0DMOVktwXKR3OJVcm4oBhGoDkDNO3Hvro12"
+    site_url: https://cyber.wikiplatform.app
+
     
 ############################################
 # Cloudflare R2
