@@ -127,7 +127,8 @@
     label: "{{ item.name }}"
   when: item.pg_host is defined
 
-  # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
+# Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
+
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
     docker exec -i {{ item.pg_host }} psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
