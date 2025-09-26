@@ -340,3 +340,20 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: Bypass Wiki.js setup wizard (settings)
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+    INSERT INTO settings (\"key\", \"value\", \"updatedAt\") VALUES
+      ('setup',   '{\"completed\": true}'::json, NOW()),
+      ('site',    json_build_object('url','{{ item.site_url }}','title','Wiki {{ item.name | capitalize }}','telemetry',false), NOW()),
+      ('general', json_build_object('title','Wiki {{ item.name | capitalize }}','public',true), NOW())
+    ON CONFLICT (\"key\") DO UPDATE
+      SET \"value\" = EXCLUDED.\"value\",
+          \"updatedAt\" = NOW();"
+  changed_when: false
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
+
