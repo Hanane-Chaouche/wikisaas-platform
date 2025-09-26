@@ -311,6 +311,24 @@
   loop_control:
     label: "{{ item.name }}"
 
+- name: Seed editors (markdown / wysiwyg / code)
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
+    INSERT INTO editors (key, \"isEnabled\", config) VALUES
+      ('markdown', true, '{}'::json),
+      ('wysiwyg',  true, '{}'::json),
+      ('code',     true, '{}'::json)
+    ON CONFLICT (key) DO UPDATE
+      SET \"isEnabled\" = EXCLUDED.\"isEnabled\",
+          config        = EXCLUDED.config;
+    "
+  changed_when: false
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+
 
 # Ajouter une contrainte UNIQUE sur providerKey + email dans users
 #- name: Ajouter contrainte UNIQUE providerKey + email dans users
