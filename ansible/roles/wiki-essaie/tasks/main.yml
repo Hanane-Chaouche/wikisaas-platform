@@ -289,36 +289,36 @@
 # - Sert pour la première connexion avant configuration Keycloak
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
-# - name: Créer un compte admin local dans chaque DB Docker
-#   command: >
-#     docker exec -i {{ item.pg_host }}
-#     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-#     INSERT INTO users (
-#       email, name, password,
-#       \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
-#       \"providerKey\", \"providerId\",
-#       \"createdAt\", \"updatedAt\",
-#       \"localeCode\", \"defaultEditor\", \"timezone\",
-#       \"lastLoginAt\", \"dateFormat\", \"appearance\"
-#     ) VALUES (
-#       '{{ item.admin_email }}',
-#       'Administrator',
-#       '{{ item.admin_password }}',
-#       false, false, true, false, false,
-#       (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
-#       '',
-#       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-#       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-#       'en', 'markdown', 'America/Toronto',
-#       to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
-#       'YYYY-MM-DD', 'default'
-#     )
-#     ON CONFLICT (\"providerKey\", email) DO UPDATE
-#     SET \"password\" = EXCLUDED.\"password\",
-#         \"updatedAt\" = EXCLUDED.\"updatedAt\",
-#         \"isActive\" = true,
-#         \"isVerified\" = true;"
-#   changed_when: false
-#   loop: "{{ wikis_docker }}"
-#   loop_control:
-#     label: "{{ item.name }}"
+- name: Créer un compte admin local dans chaque DB Docker
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
+    INSERT INTO users (
+      email, name, password,
+      \"isSystem\", \"isActive\", \"isVerified\", \"mustChangePwd\", \"tfaIsActive\",
+      \"providerKey\", \"providerId\",
+      \"createdAt\", \"updatedAt\",
+      \"localeCode\", \"defaultEditor\", \"timezone\",
+      \"lastLoginAt\", \"dateFormat\", \"appearance\"
+    ) VALUES (
+      '{{ item.admin_email }}',
+      'Administrator',
+      '{{ item.admin_password }}',
+      false, false, true, false, false,
+      (SELECT \"key\" FROM authentication WHERE \"strategyKey\"='local' LIMIT 1),
+      '',
+      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+      'en', 'markdown', 'America/Toronto',
+      to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"'),
+      'YYYY-MM-DD', 'default'
+    )
+    ON CONFLICT (\"providerKey\", email) DO UPDATE
+    SET \"password\" = EXCLUDED.\"password\",
+        \"updatedAt\" = EXCLUDED.\"updatedAt\",
+        \"isActive\" = true,
+        \"isVerified\" = true;"
+  changed_when: false
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
