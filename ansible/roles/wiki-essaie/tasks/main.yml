@@ -43,7 +43,7 @@
 - name: Générer le docker-compose.yml pour chaque instance
   become: true
   template:
-    src: docker-compose.yml
+    src: docker-compose.yml.j2
     dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
     mode: '0644'
   loop: "{{ wikis_docker }}"
