@@ -2,11 +2,14 @@
 services:
   # === PostgreSQL pour {{ item.name }} ===
   db-{{ item.name }}:
-    image: postgres:15
+    image: postgres-python:15
     container_name: db-{{ item.name }}
     restart: unless-stopped
-    env_file:
-      - ./envs/wiki-{{ item.name }}.env
+    environment:
+      POSTGRES_DB: "{{ item.pg_db }}"
+      POSTGRES_USER: "{{ item.pg_user }}"
+      POSTGRES_PASSWORD: "{{ item.pg_pass }}"
+   
     command: >
       bash -c "apt-get update &&
                apt-get install -y python3 python3-psycopg2 &&
