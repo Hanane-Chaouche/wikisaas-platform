@@ -99,6 +99,27 @@
     source: build
     state: present
 
+- name: Créer dossier d'instance
+  become: true
+  file:
+    path: "/opt/wiki/{{ item.name }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ wikis_docker }}"
+  loop_control: { label: "{{ item.name }}" }
+
+# 7) Générer docker-compose.yml par instance
+- name: Générer le docker-compose.yml pour chaque instance
+  become: true
+  template:
+    src: docker-compose.yml.j2
+    dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
+    mode: '0644'
+  loop: "{{ wikis_docker }}"
+  loop_control: { label: "{{ item.name }}" }
+  notify: Restart Wiki.js
+# -------------------------------------------------------------------
+# Étape 3 : Déployer chaque Wiki.js avec Docker Compose v2
 - name: Déployer chaque Wiki.js avec Docker Compose v2
   become: true
   community.docker.docker_compose_v2:
