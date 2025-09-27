@@ -17,7 +17,8 @@
     group: root
     mode: '0755'
   loop: "{{ wikis_docker }}"
-  loop_control: { label: "{{ item.name }}" }}
+  loop_control: { label: "{{ item.name }}" }
+
 - name: Supprimer les anciens fichiers .env
   file:
     path: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
@@ -40,7 +41,7 @@
     dest: /opt/wiki/certs/rds-ca-bundle.pem
     mode: '0644'
 
-  # -------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Étape 1 : Lire le fichier clients.json sur la VM
 # -------------------------------------------------------------------
 - name: Lire clients.json sur la VM
