@@ -111,14 +111,12 @@
 # -------------------------------------------------------------------
 # Étape 3 : Déployer chaque Wiki.js avec Docker Compose v2
 - name: Déployer chaque Wiki.js avec Docker Compose v2
-  become: true
-  community.docker.docker_compose_v2:
-    project_src: "/opt/wiki/{{ item.name }}"
-    state: present
+  command: docker compose up -d
+  args:
+    chdir: "/opt/wiki/{{ item.name }}"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-  notify: Restart Wiki.js
 # -------------------------------------------------------------------
 # Étape 3 : Configurer les bases de données dans les conteneurs Docker
 # -------------------------------------------------------------------
