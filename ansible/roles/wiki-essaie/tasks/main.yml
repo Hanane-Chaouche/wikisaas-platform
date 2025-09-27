@@ -39,18 +39,6 @@
     dest: /opt/wiki/certs/rds-ca-bundle.pem
     mode: '0644'
 
-
-- name: Générer le docker-compose.yml pour chaque instance
-  become: true
-  template:
-    src: docker-compose.yml.j2
-    dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
-    mode: '0644'
-  loop: "{{ wikis_docker }}"
-  loop_control:
-    label: "{{ item.name }}"
-  notify: Restart Wiki.js
-
   # -------------------------------------------------------------------
 # Étape 1 : Lire le fichier clients.json sur la VM
 # -------------------------------------------------------------------
@@ -98,15 +86,17 @@
       dockerfile: Dockerfile.postgres
     source: build
     state: present
-
-- name: Créer dossier d'instance
+- name: Créer le dossier item.name
   become: true
   file:
-    path: "/opt/wiki/{{ item.name }}"
+    path: /opt/wiki/{{ item.name }}
     state: directory
+    owner: root
+    group: root
     mode: '0755'
   loop: "{{ wikis_docker }}"
   loop_control: { label: "{{ item.name }}" }
+
 
 # 7) Générer docker-compose.yml par instance
 - name: Générer le docker-compose.yml pour chaque instance
