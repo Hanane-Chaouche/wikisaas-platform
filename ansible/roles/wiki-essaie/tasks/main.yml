@@ -21,7 +21,7 @@
   file:
     path: "/opt/wiki/envs/wiki-{{ item.name }}.env"
     state: absent
-  loop: "{{ wikis }}"
+  loop: "{{ wikis_docker }}"
 
 - name: Créer le dossier des certificats RDS
   become: true
@@ -40,12 +40,15 @@
     mode: '0644'
 
 
-- name: Copier le docker-compose.yml de Wiki.js
+- name: Générer le docker-compose.yml pour chaque instance
   become: true
-  copy:
-    src: docker-compose.yml        # ton fichier compose (dans roles/wiki/files/)
-    dest: /opt/wiki/docker-compose.yml
+  template:
+    src: docker-compose.yml
+    dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
     mode: '0644'
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
   notify: Restart Wiki.js
 
   # -------------------------------------------------------------------
@@ -77,7 +80,7 @@
     src: env.j2                    # ton template (dans roles/wiki/templates/)
     dest: "/opt/wiki/envs/wiki-{{ item.name }}.env"
     mode: '0644'
-  loop: "{{ wikis }}"              # défini dans group_vars/all.yml
+  loop: "{{ wikis_docker }}"              # défini dans group_vars/all.yml
   notify: Restart Wiki.js
 
 - name: Copier le Dockerfile Postgres custom
@@ -96,11 +99,14 @@
     source: build
     state: present
 
-- name: Déployer Wiki.js avec Docker Compose v2
+- name: Déployer chaque Wiki.js avec Docker Compose v2
   become: true
   community.docker.docker_compose_v2:
-    project_src: /opt/wiki
+    project_src: "/opt/wiki/{{ item.name }}"
     state: present
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
   notify: Restart Wiki.js
 # -------------------------------------------------------------------
 # Étape 3 : Configurer les bases de données dans les conteneurs Docker

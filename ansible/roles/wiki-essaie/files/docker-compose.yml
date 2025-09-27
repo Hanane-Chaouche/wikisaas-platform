@@ -1,133 +1,45 @@
 ---
+services:
+  # === PostgreSQL pour {{ item.name }} ===
+  db-{{ item.name }}:
+    image: postgres:15
+    container_name: db-{{ item.name }}
+    restart: unless-stopped
+    env_file:
+      - ./envs/db-{{ item.name }}.env
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y python3 python3-psycopg2 &&
+               docker-entrypoint.sh postgres"
+    volumes:
+      - ./data/db-{{ item.name }}:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - wikinet-{{ item.name }}
+
+  # === Wiki.js pour {{ item.name }} ===
+  wiki-{{ item.name }}:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wiki-{{ item.name }}
+    restart: unless-stopped
+    env_file:
+      - ./envs/wiki-{{ item.name }}.env
+    volumes:
+      - ./logs/wiki-{{ item.name }}:/logs
+    networks:
+      - proxy
+      - wikinet-{{ item.name }}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.wiki-{{ item.name }}.rule=Host(`{{ item.name }}.{{ base_domain }}`)
+      - traefik.http.routers.wiki-{{ item.name }}.entrypoints=websecure
+      - traefik.http.services.wiki-{{ item.name }}.loadbalancer.server.port=3000
+    depends_on:
+      - db-{{ item.name }}
 
 networks:
   proxy:
     external: true
-  wikinet-ia:
+  wikinet-{{ item.name }}:
     driver: bridge
-  wikinet-devops:
-    driver: bridge
-  wikinet-cyber:
-    driver: bridge
-
-services:
-  # === DB IA ===
-  db-ia:
-    image: postgres-python:15
-    container_name: name_db_ia  
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: wiki_ia
-      POSTGRES_USER: wikijs
-      POSTGRES_PASSWORD: wikijs_pass
-    command: >
-      bash -c "apt-get update &&
-               apt-get install -y python3 python3-psycopg2 &&
-               docker-entrypoint.sh postgres"
-    volumes:
-      - ./data/db-ia:/var/lib/postgresql/data
-      - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh    
-    networks:
-      - wikinet-ia
-
-  # === Wiki IA ===
-  wiki-ia:
-    image: ghcr.io/requarks/wiki:2
-    container_name: name_wiki_ia
-    restart: unless-stopped
-    env_file:
-      - ./envs/wiki-ia.env
-    networks:
-      - proxy
-      - wikinet-ia
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.wiki-ia.rule=Host(`ia.wikiplatform.app`)
-      - traefik.http.routers.wiki-ia.entrypoints=websecure
-      - traefik.http.services.wiki-ia.loadbalancer.server.port=3000
-    depends_on:
-      - db-ia
-    volumes:
-      - ./logs/wiki-ia:/logs
-
-  # === DB DevOps ===
-  db-devops:
-    image: postgres-python:15
-    container_name: name_db_devops
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: wiki_devops
-      POSTGRES_USER: wikijs
-      POSTGRES_PASSWORD: wikijs_pass
-    command: >
-      bash -c "apt-get update &&
-               apt-get install -y python3 python3-psycopg2 &&
-               docker-entrypoint.sh postgres"
-    volumes:
-      - ./data/db-devops:/var/lib/postgresql/data
-      - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - wikinet-devops
-
-  # === Wiki DevOps ===
-  wiki-devops:
-    image: ghcr.io/requarks/wiki:2
-    container_name: name_wiki_devops  
-    restart: unless-stopped
-    env_file:
-      - ./envs/wiki-devops.env
-    networks:
-      - proxy
-      - wikinet-devops
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.wiki-devops.rule=Host(`devops.wikiplatform.app`)
-      - traefik.http.routers.wiki-devops.entrypoints=websecure
-      - traefik.http.services.wiki-devops.loadbalancer.server.port=3000
-    depends_on:
-      - db-devops
-    volumes:
-      - ./logs/wiki-devops:/logs
-
-  # === DB Cyber ===
-  db-cyber:
-    image: postgres-python:15
-    container_name: name_db_cyber
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: wiki_cyber
-      POSTGRES_USER: wikijs
-      POSTGRES_PASSWORD: wikijs_pass
-    command: >
-      bash -c "apt-get update &&
-               apt-get install -y python3 python3-psycopg2 &&
-               docker-entrypoint.sh postgres"
-    volumes:
-      - ./data/db-cyber:/var/lib/postgresql/data
-      - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh
-    networks:
-      - wikinet-cyber
-
-  # === Wiki Cyber ===
-  wiki-cyber:
-    image: ghcr.io/requarks/wiki:2
-    container_name: name_wiki_cyber 
-    restart: unless-stopped
-    env_file:
-      - ./envs/wiki-cyber.env
-    networks:
-      - proxy
-      - wikinet-cyber
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.wiki-cyber.rule=Host(`cyber.wikiplatform.app`)
-      - traefik.http.routers.wiki-cyber.entrypoints=websecure
-      - traefik.http.services.wiki-cyber.loadbalancer.server.port=3000
-    depends_on:
-      - db-cyber
-    volumes:
-      - ./logs/wiki-cyber:/logs
