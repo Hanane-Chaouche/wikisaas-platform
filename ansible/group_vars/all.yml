@@ -66,7 +66,7 @@ wikis_docker:
     admin_email: "chamer6@hotmail.com"    # Adresse e-mail du compte administrateur local de Wiki.js
     admin_password: "$2b$12$6ybb0RmnCJ/gxHpsP/gpR.W.2goZHyo8uC8Za7OnyDinevD2xqQnu"    # Mot de passe haché (bcrypt) pour l’admin Wiki.js
     site_url: https://ia.wikiplatform.app   # URL publique de cette instance (Traefik va router ce domaine vers wiki-cyber)
-
+    wiki_instance_path: /opt/wiki/ia   # Chemin local sur le serveur où se trouve cette instance Wiki.js (doit contenir docker-compose.yml)
 
   - name: devops
     pg_db: wiki_devops
@@ -76,6 +76,7 @@ wikis_docker:
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$HKFt55ikyQKwwcYCngghCeoiP5vDnk.iUdlXqaseVq/cKrlLmDx1e"
     site_url: https://devops.wikiplatform.app
+    wiki_instance_path: /opt/wiki/devops
 
 
   - name: cyber
@@ -86,8 +87,8 @@ wikis_docker:
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$jw0jOvrYOHkqBBdEm/0DMOVktwXKR3OJVcm4oBhGoDkDNO3Hvro12"
     site_url: https://cyber.wikiplatform.app
+    wiki_instance_path: /opt/wiki/cyber
 
-    
 ############################################
 # Cloudflare R2
 ############################################

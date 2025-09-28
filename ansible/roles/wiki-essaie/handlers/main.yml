@@ -1,4 +1,7 @@
 - name: Restart Wiki.js
   community.docker.docker_compose_v2:
-    project_src: "{{ wiki_instance_path }}"
+    project_src: "{{ item.wiki_instance_path }}"
     state: restarted
+  loop: "{{ wikis_docker }}"
+  loop_control:
+    label: "{{ item.name }}"
