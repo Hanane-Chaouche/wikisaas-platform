@@ -58,21 +58,21 @@ wikis:
 ############################################
 
 wikis_docker:
-  - name: ia
-    pg_db: wiki_ia
-    pg_user: wikijs
-    pg_pass: wikijs_pass
-    pg_host: db_ia
-    admin_email: "chamer6@hotmail.com"
-    admin_password: "$2b$12$6ybb0RmnCJ/gxHpsP/gpR.W.2goZHyo8uC8Za7OnyDinevD2xqQnu"
-    site_url: https://ia.wikiplatform.app
+  - name: ia    # Nom logique de ton instance (sert pour templating : wiki-cyber, db-cyber, etc.)
+    pg_db: wiki_ia   # Nom de la base PostgreSQL à créer dans le container db-ia
+    pg_user: wikijs   # Utilisateur PostgreSQL utilisé par Wiki.js
+    pg_pass: wikijs_pass    # Mot de passe PostgreSQL correspondant à pg_user
+    pg_host: db-ia          # Nom du conteneur Postgres (container_name dans docker-compose.yml)
+    admin_email: "chamer6@hotmail.com"    # Adresse e-mail du compte administrateur local de Wiki.js
+    admin_password: "$2b$12$6ybb0RmnCJ/gxHpsP/gpR.W.2goZHyo8uC8Za7OnyDinevD2xqQnu"    # Mot de passe haché (bcrypt) pour l’admin Wiki.js
+    site_url: https://ia.wikiplatform.app   # URL publique de cette instance (Traefik va router ce domaine vers wiki-cyber)
 
 
   - name: devops
     pg_db: wiki_devops
     pg_user: wikijs
     pg_pass: wikijs_pass
-    pg_host: db_devops
+    pg_host: db-devops
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$HKFt55ikyQKwwcYCngghCeoiP5vDnk.iUdlXqaseVq/cKrlLmDx1e"
     site_url: https://devops.wikiplatform.app
@@ -82,7 +82,7 @@ wikis_docker:
     pg_db: wiki_cyber
     pg_user: wikijs
     pg_pass: wikijs_pass
-    pg_host: db_cyber
+    pg_host: db-cyber
     admin_email: "chamer6@hotmail.com"
     admin_password: "$2b$12$jw0jOvrYOHkqBBdEm/0DMOVktwXKR3OJVcm4oBhGoDkDNO3Hvro12"
     site_url: https://cyber.wikiplatform.app
