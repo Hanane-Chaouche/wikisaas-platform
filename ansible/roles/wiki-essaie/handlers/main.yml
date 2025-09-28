@@ -1,4 +1,4 @@
 - name: Restart Wiki.js
   community.docker.docker_compose_v2:
-    project_src: /opt/wiki/{{ item.name }}
+    project_src: "{{ wiki_instance_path }}"
     state: restarted
