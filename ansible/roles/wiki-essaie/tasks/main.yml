@@ -110,6 +110,8 @@
   loop: "{{ wikis_docker }}"
   loop_control: { label: "{{ item.name }}" }
   notify: Restart Wiki.js
+  vars:
+    wiki_instance_path: "/opt/wiki/{{ item.name }}"
 # -------------------------------------------------------------------
 # Étape 3 : Déployer chaque Wiki.js a
 - name: Déployer chaque Wiki.js avec Docker Compose v2
