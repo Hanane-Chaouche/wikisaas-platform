@@ -21,7 +21,11 @@ id_rsa.pub
 # VS Code
 .vscode/
 
+# ==========================
+# Node.js (Provisioner API)
+# ==========================
+node_modules/
+npm-debug.log
+yarn-error.log
 
-
-
-
+# =================
