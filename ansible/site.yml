@@ -12,6 +12,5 @@
     - role: common       # Mise à jour système, firewall, utilisateurs
     - role: docker       # Installation de Docker + Compose
     - role: traefik      # Reverse proxy + certificats Let's Encrypt
-    - role: postgres     # Création des bases RDS + utilisateurs
     - role: keycloak     # Authentification SSO
     - role: wiki-essaie  # Rôle de gestion des instances Wiki.js

@@ -10,14 +10,14 @@ app.use(express.json());
 // Route GET /
 // ============================
 app.get("/", (_req, res) => {
-  res.send("Provisioner API is running 🚀");
+  res.send("Provisioner API is running ");
 });
 
 // ============================
 // Route POST /deploy-new-wiki
 // ============================
 app.post("/deploy-new-wiki", (req, res) => {
-  console.log("📥 Requête reçue sur /deploy-new-wiki");
+  console.log("Requête reçue sur /deploy-new-wiki");
 
   // Variables envoyées par n8n ou valeurs par défaut
   const payload = {
@@ -71,14 +71,14 @@ app.post("/deploy-new-wiki", (req, res) => {
   // Fin d’exécution
   child.on("close", (code) => {
     if (code !== 0) {
-      console.error(`❌ Ansible terminé avec erreurs (code ${code})`);
+      console.error(`Ansible terminé avec erreurs (code ${code})`);
       return res.status(500).json({
         error: "Deployment failed",
         code,
         logs,
       });
     }
-    console.log("✅ Déploiement terminé avec succès");
+    console.log("Déploiement terminé avec succès");
     res.json({
       message: `Deployment finished for ${payload.subdomain} 🚀`,
       code,
