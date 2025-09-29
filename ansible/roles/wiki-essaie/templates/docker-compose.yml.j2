@@ -10,12 +10,6 @@ services:
       POSTGRES_DB: "{{ pg_db | default(item.pg_db) }}"
       POSTGRES_USER: "{{ pg_user | default(item.pg_user) }}"
       POSTGRES_PASSWORD: "{{ pg_pass | default(item.pg_pass) }}"
-    container_name: db-{{ subdomain | default(item.name) }}
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: "{{ pg_db | default(item.pg_db) }}"
-      POSTGRES_USER: "{{ pg_user | default(item.pg_user) }}"
-      POSTGRES_PASSWORD: "{{ pg_pass | default(item.pg_pass) }}"
    
     command: >
       bash -c "apt-get update &&
