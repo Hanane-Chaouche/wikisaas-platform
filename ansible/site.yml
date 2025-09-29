@@ -1,17 +1,38 @@
 ---
-- name: Deploiement complet plateforme Wikijs SaaS
+- name: Déploiement complet plateforme Wikijs SaaS
   hosts: wikijs_servers
   become: true
 
+  # 🔹 On charge les variables globales et les instances fixes
   vars_files:
-    - group_vars/all.yml
+    - group_vars/all.yml   # Contient wikis_docker (ia/devops/cyber) + base_domain + kc_clients
 
+  # 🔹 Étape 1 : Installation et configuration de la plateforme commune
   roles:
-    - role: common
-    - role: docker
-    - role: traefik
-    - role: keycloak
-    - role: postgres
-    - role: wiki-essaie
-    
-      
+    - role: common       # Mise à jour système, firewall, utilisateurs
+    - role: docker       # Installation de Docker + Compose
+    - role: traefik      # Reverse proxy + certificats Let's Encrypt
+    - role: keycloak     # Authentification SSO
+    - role: postgres     # Base PostgreSQL globale (si besoin, hors Docker instances)
+
+  # 🔹 Étape 2 : Déploiement des wikis (mode manuel OU dynamique)
+  tasks:
+
+    - name: Déployer Wiki.js (manuel OU dynamique)
+      include_role:
+        name: wiki-essaie
+      loop: "{{ (wikis_docker | default([])) if subdomain is not defined else [ {} ] }}"
+      vars:
+        # Nom logique (ex: ia, devops, cyber ou clientX)
+        name: "{{ subdomain | default(item.name) }}"
+        # Variables PostgreSQL
+        pg_db: "{{ pg_db | default(item.pg_db) }}"
+        pg_user: "{{ pg_user | default(item.pg_user) }}"
+        pg_pass: "{{ pg_pass | default(item.pg_pass) }}"
+        # Compte administrateur Wiki.js
+        admin_email: "{{ admin_email | default(item.admin_email) }}"
+        admin_password: "{{ admin_password | default(item.admin_password) }}"
+        # URL publique de l’instance
+        site_url: "{{ site_url | default(item.site_url) }}"
+        # Secret Keycloak (si dispo, sinon placeholder)
+        oidc_client_secret: "{{ oidc_client_secret | default('changeme') }}"

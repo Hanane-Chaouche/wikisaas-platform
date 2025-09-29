@@ -1,4 +1,18 @@
 ---
+# Étape 0 : Construire la liste des instances (manuel ou dynamique)
+- name: Préparer la liste des instances
+  set_fact:
+    instances: >-
+      {{ wikis_docker if subdomain is not defined else
+         [ { 'name': subdomain,
+             'pg_db': pg_db,
+             'pg_user': pg_user,
+             'pg_pass': pg_pass,
+             'admin_email': admin_email,
+             'admin_password': admin_password,
+             'site_url': site_url } ] }}
+# Étape 1 : Préparer les dossiers et fichiers nécessaires
+
 - name: Créer le dossier Wiki.js
   become: true
   file:
@@ -10,20 +24,19 @@
 
 - name: Créer le dossier des fichiers .env pour Wiki.js
   become: true
-  file:
-    path: "/opt/wiki/{{ item.name }}/envs"
+  file:/{{ item.name }}/envs"
     state: directory
     owner: root
     group: root
     mode: '0755'
-  loop: "{{ wikis_docker }}"
+  loop: "{{ instances }}"
   loop_control: { label: "{{ item.name }}" }
 
 - name: Supprimer les anciens fichiers .env
   file:
     path: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
     state: absent
-  loop: "{{ wikis_docker }}"
+  loop: "{{ instances }}"
 
 - name: Créer le dossier des certificats RDS
   become: true
@@ -34,7 +47,8 @@
     group: root
     mode: '0755'
 
-- name: Télécharger le certificat SSL RDS global
+- name: Télécharger l
+    path: "/opt/wikie certificat SSL RDS global
   become: true
   get_url:
     url: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
@@ -70,7 +84,7 @@
     src: env.j2                    #  template (dans roles/wiki/templates/)
     dest: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
     mode: '0644'
-  loop: "{{ wikis_docker }}"              # défini dans group_vars/all.yml
+  loop: "{{ instances }}"              # défini dans group_vars/all.yml
   notify: Restart Wiki.js
 
 - name: Copier le Dockerfile Postgres custom
@@ -96,7 +110,7 @@
     owner: root
     group: root
     mode: '0755'
-  loop: "{{ wikis_docker }}"
+  loop: "{{ instances }}"
   loop_control: { label: "{{ item.name }}" }
 
 
@@ -107,7 +121,7 @@
     src: docker-compose.yml.j2
     dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
     mode: '0644'
-  loop: "{{ wikis_docker }}"
+  loop: "{{ instances }}"
   loop_control: { label: "{{ item.name }}" }
   notify: Restart Wiki.js
   
@@ -117,9 +131,9 @@
   command: docker compose up -d
   args:
     chdir: "/opt/wiki/{{ item.name }}"
-  loop: "{{ wikis_docker }}"
   loop_control:
-    label: "{{ item.name }}"
+   loop: "{{ instances }}"
+   label: "{{ item.name }}"
 # -------------------------------------------------------------------
 # Étape 3 : Configurer les bases de données dans les conteneurs Docker
 # -------------------------------------------------------------------

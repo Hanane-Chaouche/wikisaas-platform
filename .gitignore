@@ -21,6 +21,7 @@ id_rsa.pub
 # VS Code
 .vscode/
 
-# Autres fichiers sensibles
-*.csv
-*.log
+
+
+
+

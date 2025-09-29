@@ -1,48 +1,55 @@
 ---
+
 services:
-  # === PostgreSQL pour {{ item.name }} ===
-  db-{{ item.name }}:
+  # === PostgreSQL pour l'instance ===
+  db-{{ subdomain | default(item.name) }}:
     image: postgres-python:15
-    container_name: db-{{ item.name }}
+    container_name: db-{{ subdomain | default(item.name) }}
     restart: unless-stopped
     environment:
-      POSTGRES_DB: "{{ item.pg_db }}"
-      POSTGRES_USER: "{{ item.pg_user }}"
-      POSTGRES_PASSWORD: "{{ item.pg_pass }}"
+      POSTGRES_DB: "{{ pg_db | default(item.pg_db) }}"
+      POSTGRES_USER: "{{ pg_user | default(item.pg_user) }}"
+      POSTGRES_PASSWORD: "{{ pg_pass | default(item.pg_pass) }}"
+    container_name: db-{{ subdomain | default(item.name) }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "{{ pg_db | default(item.pg_db) }}"
+      POSTGRES_USER: "{{ pg_user | default(item.pg_user) }}"
+      POSTGRES_PASSWORD: "{{ pg_pass | default(item.pg_pass) }}"
    
     command: >
       bash -c "apt-get update &&
                apt-get install -y python3 python3-psycopg2 &&
                docker-entrypoint.sh postgres"
     volumes:
-      - ./data/db-{{ item.name }}:/var/lib/postgresql/data
+      - ./data/db-{{ subdomain | default(item.name) }}:/var/lib/postgresql/data
       - ./init-scripts/install-python.sh:/docker-entrypoint-initdb.d/install-python.sh
     networks:
-      - wikinet-{{ item.name }}
+      - wikinet-{{ subdomain | default(item.name) }}
 
-  # === Wiki.js pour {{ item.name }} ===
-  wiki-{{ item.name }}:
+  # === Wiki.js pour l'instance ===
+  wiki-{{ subdomain | default(item.name) }}:
     image: ghcr.io/requarks/wiki:2
-    container_name: wiki-{{ item.name }}
+    container_name: wiki-{{ subdomain | default(item.name) }}
     restart: unless-stopped
     env_file:
-      - ./envs/wiki-{{ item.name }}.env
+      - ./envs/wiki-{{ subdomain | default(item.name) }}.env
     volumes:
-      - ./logs/wiki-{{ item.name }}:/logs
+      - ./logs/wiki-{{ subdomain | default(item.name) }}:/logs
     networks:
       - proxy
-      - wikinet-{{ item.name }}
+      - wikinet-{{ subdomain | default(item.name) }}
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
-      - traefik.http.routers.wiki-{{ item.name }}.rule=Host(`{{ item.name }}.{{ base_domain }}`)
-      - traefik.http.routers.wiki-{{ item.name }}.entrypoints=websecure
-      - traefik.http.services.wiki-{{ item.name }}.loadbalancer.server.port=3000
+      - traefik.http.routers.wiki-{{ subdomain | default(item.name) }}.rule=Host(`{{ subdomain | default(item.name) }}.{{ base_domain }}`)
+      - traefik.http.routers.wiki-{{ subdomain | default(item.name) }}.entrypoints=websecure
+      - traefik.http.services.wiki-{{ subdomain | default(item.name) }}.loadbalancer.server.port=3000
     depends_on:
-      - db-{{ item.name }}
+      - db-{{ subdomain | default(item.name) }}
 
 networks:
   proxy:
     external: true
-  wikinet-{{ item.name }}:
+  wikinet-{{ subdomain | default(item.name) }}:
     driver: bridge
