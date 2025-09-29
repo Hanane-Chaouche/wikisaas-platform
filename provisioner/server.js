@@ -1,67 +1,88 @@
-// ============================
-// Import des modules nécessaires
-// ============================
-
 const express = require("express");
-const bodyParser = require("body-parser");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
+const path = require("path");
 
-// ============================
-// Initialisation du serveur
-// ============================
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-app.use(bodyParser.json());
+app.use(express.json());
 
 // ============================
-// Route par défaut (GET /)
+// Route GET /
 // ============================
-app.get("/", (req, res) => {
-  res.send("✅ Provisioner API is running (hardcoded mode)");
+app.get("/", (_req, res) => {
+  res.send("Provisioner API is running 🚀");
 });
 
 // ============================
-// Endpoint POST /deploy-new-wiki
+// Route POST /deploy-new-wiki
 // ============================
-// Ici on utilise des valeurs fixées en dur pour tester
 app.post("/deploy-new-wiki", (req, res) => {
-  // 🔹 Valeurs fixées (client1)
-  const subdomain = "client1";
-  const pg_db = "db_client1";   // 👈 corrigé
-  const pg_user = "wikijs";
-  const pg_pass = "Client1Pass!";
-  const admin_email = "admin@client1.wikiplatform.app";
-  const admin_password = "Client1AdminPass!";
-  const site_url = "https://client1.wikiplatform.app";
+  console.log("📥 Requête reçue sur /deploy-new-wiki");
 
-  // 🔹 Construction de la commande Ansible
-  const cmd = `ansible-playbook ../ansible/site.yml \
-    --extra-vars "subdomain='${subdomain}' \
-                  pg_db='${pg_db}' \
-                  pg_user='${pg_user}' \
-                  pg_pass='${pg_pass}' \
-                  admin_email='${admin_email}' \
-                  admin_password='${admin_password}' \
-                  site_url='${site_url}'"`;
+  // Variables envoyées par n8n ou valeurs par défaut
+  const payload = {
+    subdomain: req.body.subdomain || "client1",
+    pg_db: req.body.pg_db || "db_client1",
+    pg_user: req.body.pg_user || "wikijs",
+    pg_pass: req.body.pg_pass || "Client1Pass!",
+    admin_email: req.body.admin_email || "admin@client1.wikiplatform.app",
+    admin_password: req.body.admin_password || "Client1AdminPass!",
+    site_url: req.body.site_url || "https://client1.wikiplatform.app",
+  };
 
-  console.log(`🚀 Lancement du déploiement avec valeurs fixes pour ${subdomain}...`);
-  console.log(`📌 Commande exécutée: ${cmd}`);
+  // Chemins vers playbook et inventaire
+  const playbookPath = path.resolve(__dirname, "../ansible/site.yml");
+  const inventoryPath = path.resolve(
+    __dirname,
+    "../ansible/inventories/prod/hosts.ini"
+  );
 
-  // 🔹 Exécution
-  exec(cmd, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`❌ Erreur Ansible: ${error.message}`);
+  const extraVars = JSON.stringify(payload);
+
+  // Commande Ansible
+  const args = ["-i", inventoryPath, playbookPath, "--extra-vars", extraVars];
+  console.log(`▶️ Commande exécutée : ansible-playbook ${args.join(" ")}`);
+
+  // Désactiver la vérification de clé SSH (plus de blocage fingerprint)
+  const env = {
+    ...process.env,
+    ANSIBLE_HOST_KEY_CHECKING: "False",
+  };
+
+  // Lancer Ansible
+  const child = spawn("ansible-playbook", args, { env });
+
+  let logs = "";
+
+  // stdout
+  child.stdout.on("data", (data) => {
+    const s = data.toString();
+    process.stdout.write(s);
+    logs += s;
+  });
+
+  // stderr
+  child.stderr.on("data", (data) => {
+    const s = data.toString();
+    process.stderr.write(s);
+    logs += s;
+  });
+
+  // Fin d’exécution
+  child.on("close", (code) => {
+    if (code !== 0) {
+      console.error(`❌ Ansible terminé avec erreurs (code ${code})`);
       return res.status(500).json({
         error: "Deployment failed",
-        details: stderr || error.message,
+        code,
+        logs,
       });
     }
-
-    console.log(`✅ Ansible output:\n${stdout}`);
+    console.log("✅ Déploiement terminé avec succès");
     res.json({
-      message: `Wiki deployment for ${subdomain} started 🚀`,
-      details: stdout,
+      message: `Deployment finished for ${payload.subdomain} 🚀`,
+      code,
+      logs,
     });
   });
 });
@@ -70,5 +91,5 @@ app.post("/deploy-new-wiki", (req, res) => {
 // Lancer le serveur
 // ============================
 app.listen(PORT, () => {
-  console.log(`✅ Provisioner running at http://localhost:${PORT}`);
+  console.log(`Provisioner running at http://localhost:${PORT}`);
 });
