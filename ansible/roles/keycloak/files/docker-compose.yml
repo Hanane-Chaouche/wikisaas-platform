@@ -1,56 +1,46 @@
-version: '3.7'
+---
 
 services:
   postgres:
-    image: postgres:16.2
+    image: postgres:15
     container_name: keycloak-db
     restart: always
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
     networks:
       - proxy
 
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0.6
+    image: quay.io/keycloak/keycloak:23.0.7
     container_name: keycloak
     restart: always
-    command: ["start", "--optimized"]
+    command: ["start", "--optimized", "--import-realm"]
     env_file:
       - .env
     environment:
-      # Base de données
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${POSTGRES_DB}
-      KC_DB_USERNAME: ${POSTGRES_USER}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-
-      # Admin Keycloak
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-
-      # Réseau & proxy
+      DB_VENDOR: postgres
+      DB_ADDR: keycloak-db
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_HOSTNAME: sso.${DOMAIN}
-      KC_HTTP_ENABLED: "true"
-      KC_PROXY: edge
-      KC_HOSTNAME_STRICT_HTTPS: true
-      KC_HOSTNAME_STRICT_BACKCHANNEL: true
+      KC_HTTP_ENABLED: "true"     #  Active HTTP interne
+      KC_PROXY: "edge"            # Indique qu'il est derrière un reverse proxy TLS (Traefik)
 
-      # Hack Let's Encrypt staging (à retirer en prod)
+        # Hack uniquement si tu restes en Let's Encrypt STAGING a enlever en pro
       JAVA_OPTS_APPEND: "-Dcom.sun.net.ssl.checkRevocation=false -Djdk.tls.client.protocols=TLSv1.3 -Djavax.net.ssl.trustStoreType=JKS"
-
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
       - ./data:/opt/keycloak/data
-
     networks:
       - proxy
     depends_on:
       - postgres
-
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
@@ -58,10 +48,6 @@ services:
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
-
-volumes:
-  postgres_data:
-    driver: local
 
 networks:
   proxy:
