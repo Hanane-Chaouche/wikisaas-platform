@@ -34,7 +34,6 @@
     src: .env.j2
     dest: /opt/keycloak/.env
     mode: '0644'
-    force: yes
   notify: Restart Keycloak
 
 # Pas de notify ici: changer le script ne nécessite pas de restart du conteneur

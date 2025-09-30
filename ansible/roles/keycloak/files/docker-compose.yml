@@ -1,12 +1,14 @@
+---
+
 services:
   postgres:
     image: postgres:15
     container_name: keycloak-db
     restart: always
     environment:
-      POSTGRES_DB: keycloak_wiki
-      POSTGRES_USER: keycloak_db
-      POSTGRES_PASSWORD: pass123
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
@@ -17,18 +19,20 @@ services:
     container_name: keycloak
     restart: always
     command: ["start", "--optimized", "--import-realm"]
+    env_file:
+      - .env
     environment:
-      KC_DB: postgres
-      KC_DB_URL_HOST: keycloak-db
-      KC_DB_URL_DATABASE: keycloak_wiki
-      KC_DB_USERNAME: keycloak_db
-      KC_DB_PASSWORD: pass123
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: hanane
-      KC_HOSTNAME: sso.wikiplatform.app
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_PROXY: edge
+      DB_VENDOR: postgres
+      DB_ADDR: keycloak-db
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HOSTNAME: sso.${DOMAIN}
+      KC_HTTP_ENABLED: "true"     #  Active HTTP interne
+      KC_PROXY: "edge"            # Indique qu'il est derrière un reverse proxy TLS (Traefik)
+
+        # ⚠️ Hack uniquement si tu restes en Let's Encrypt STAGING a enlever en pro
       JAVA_OPTS_APPEND: "-Dcom.sun.net.ssl.checkRevocation=false -Djdk.tls.client.protocols=TLSv1.3 -Djavax.net.ssl.trustStoreType=JKS"
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
@@ -39,7 +43,7 @@ services:
       - postgres
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host(`sso.wikiplatform.app`)"
+      - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"

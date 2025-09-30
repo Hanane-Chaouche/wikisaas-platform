@@ -57,41 +57,25 @@ else
   echo "Création du realm '${REALM}'..."
   dc "$KCADM create realms -s realm='${REALM}' -s enabled=true"
 fi
-#############################################
-# Liste des clients à créer
-# Si une variable SUBDOMAIN est définie, on ne crée que ce client là
-# Sinon, on crée les 3 clients par défaut  
-#############################################
-echo -e "\n=== Définition des clients à créer ==="        
-
-if [ -n "${SUBDOMAIN:-}" ]; then
-  CLIENTS=("$SUBDOMAIN")
-else
-  CLIENTS=("ia" "devops" "cyber")
-fi
-
 
 #############################################
-#  Création des Rôles (reader / writer / admin par client)
+#  Création des Rôles
 #############################################
 echo -e "\n=== Création des Rôles ==="
-for cid in "${CLIENTS[@]}"; do
-  for suffix in reader writer admin; do
-    role="${cid}-${suffix}"
-    if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
-      echo " Rôle '${role}' existe déjà."
-    else
-      echo " Création du rôle '${role}'..."
-      dc "$KCADM create roles -r ${REALM} -s name=${role}"
-    fi
-  done
+for role in ia-admin devops-admin cyber-admin; do
+  if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
+    echo " Rôle '${role}' existe déjà."
+  else
+    echo " Création du rôle '${role}'..."
+    dc "$KCADM create roles -r ${REALM} -s name=${role}"
+  fi
 done
 
 #############################################
 #  Création des Groupes
 #############################################
 echo -e "\n=== Création des Groupes ==="
-for group in STARTER PRO ENTERPRISE "ENTERPRISE+"; do
+for group in STARTER PRO ENTERPRISE; do
   if dc "$KCADM get groups -r ${REALM} -q search=${group} --fields name" \
      | grep -q "\"name\" : \"${group}\""; then
     echo " Groupe '${group}' existe déjà."
@@ -113,54 +97,25 @@ get_group_id() {
   | grep '"id"' | head -n1 | cut -d '"' -f4
 }
 
-# Récupération des IDs de groupes
+# Récupération des IDs
 STARTER_ID="$(get_group_id STARTER || true)"
 PRO_ID="$(get_group_id PRO || true)"
 ENTERPRISE_ID="$(get_group_id ENTERPRISE || true)"
-ENTERPRISE_PLUS_ID="$(get_group_id 'ENTERPRISE+' || true)"
 
-#############################################
-# Cas 1 : SUBDOMAIN défini → client unique
-#############################################
-if [ -n "${SUBDOMAIN:-}" ]; then
-  for mapping in \
-    "$ENTERPRISE_PLUS_ID:${SUBDOMAIN}-admin" \
-    "$ENTERPRISE_PLUS_ID:${SUBDOMAIN}-writer" \
-    "$ENTERPRISE_PLUS_ID:${SUBDOMAIN}-reader"; do
+# Mappage des rôles vers les groupes
+for mapping in \
+  "$STARTER_ID:ia-admin" \
+  "$PRO_ID:ia-admin" "$PRO_ID:devops-admin" \
+  "$ENTERPRISE_ID:ia-admin" "$ENTERPRISE_ID:devops-admin" "$ENTERPRISE_ID:cyber-admin"; do
 
-    gid="${mapping%%:*}"   # ID du groupe
-    role="${mapping##*:}"  # rôle
+  gid="${mapping%%:*}"   # partie avant ":", c’est l’ID du groupe
+  role="${mapping##*:}"  # partie après ":", c’est le rôle
 
-    if [ -n "$gid" ]; then
-      echo " Association rôle '${role}' → groupe ENTERPRISE+ (${gid})"
-      dc "$KCADM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
-    fi
-  done
-
-#############################################
-# Cas 2 : Pas de SUBDOMAIN → ia, devops, cyber
-#############################################
-else
-  for mapping in \
-    # STARTER → accès uniquement à ia
-    "$STARTER_ID:ia-admin" "$STARTER_ID:ia-writer" "$STARTER_ID:ia-reader" \
-    # PRO → accès à ia + devops
-    "$PRO_ID:ia-admin" "$PRO_ID:ia-writer" "$PRO_ID:ia-reader" \
-    "$PRO_ID:devops-admin" "$PRO_ID:devops-writer" "$PRO_ID:devops-reader" \
-    # ENTERPRISE → accès à ia + devops + cyber
-    "$ENTERPRISE_ID:ia-admin" "$ENTERPRISE_ID:ia-writer" "$ENTERPRISE_ID:ia-reader" \
-    "$ENTERPRISE_ID:devops-admin" "$ENTERPRISE_ID:devops-writer" "$ENTERPRISE_ID:devops-reader" \
-    "$ENTERPRISE_ID:cyber-admin" "$ENTERPRISE_ID:cyber-writer" "$ENTERPRISE_ID:cyber-reader"; do
-
-    gid="${mapping%%:*}"   # ID du groupe
-    role="${mapping##*:}"  # rôle
-
-    if [ -n "$gid" ]; then
-      echo " Association rôle '${role}' → groupe (${gid})"
-      dc "$KCADM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
-    fi
-  done
-fi
+  if [ -n "$gid" ]; then
+    echo " Association rôle '${role}' → groupe '${gid}'"
+    dc "$KCADM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
+  fi
+done
 
 #############################################
 # Clients + Mappers OIDC
@@ -237,29 +192,17 @@ JSON"
 
   
 }
-# --- Création dynamique des clients ---
-if [ -n "${SUBDOMAIN:-}" ]; then
-  echo "[config] Mode dynamique : création du client ${SUBDOMAIN}"
-  create_client "${SUBDOMAIN}"
-else
-  echo "[config] Mode statique : création des clients ia, devops, cyber"
-  create_client "ia"
-  create_client "devops"
-  create_client "cyber"
-fi
+
+# --- Création des clients attendus ---
+create_client "ia"
+create_client "devops"
+create_client "cyber"
 
 echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
 
-# Vérifier que les clients existent avant export
-
+# Vérifier que les 3 clients existent avant export
 echo "[check] Vérification de la présence des clients..."
-if [ -n "${SUBDOMAIN:-}" ]; then
-  CLIENTS=("${SUBDOMAIN}")
-else
-  CLIENTS=("ia" "devops" "cyber")
-fi
-
-for cid in "${CLIENTS[@]}"; do
+for cid in ia devops cyber; do
   for i in {1..10}; do
     if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" | grep -q '"id"'; then
       echo "  → $cid trouvé"
@@ -273,7 +216,6 @@ for cid in "${CLIENTS[@]}"; do
 done
 
 
-
 #############################################
 # Export des secrets des clients OIDC
 #############################################
@@ -282,19 +224,12 @@ echo -e "\n=== Export des secrets des clients OIDC ==="
 # On définit le fichier de sortie qui contiendra les secrets
 OUTPUT="/opt/keycloak/clients.json"
 
-# On choisit la liste des clients
-if [ -n "${SUBDOMAIN:-}" ]; then
-  CLIENTS=("${SUBDOMAIN}")
-else
-  CLIENTS=("ia" "devops" "cyber")
-fi
-
 # On commence un JSON
 echo "{" > $OUTPUT
 first=true  # variable pour gérer la virgule entre les entrées JSON
 
-# On boucle sur la liste des clients
-for cid in "${CLIENTS[@]}"; do
+# On boucle sur tes 3 clients Wiki.js
+for cid in ia devops cyber; do
   # 1. Récupérer l'UUID (ID interne Keycloak) du client via kcadm
   uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" \
          | grep '"id"' | head -n1 | cut -d '"' -f4)
@@ -304,15 +239,18 @@ for cid in "${CLIENTS[@]}"; do
            | grep '"value"' | cut -d '"' -f4)
 
   # 3. Écrire le résultat dans le fichier JSON
+  #    - Si c’est le premier client, pas de virgule
+  #    - Sinon, ajouter une virgule pour séparer les objets
   if [ "$first" = true ]; then
     first=false
   else
     echo "," >> $OUTPUT
   fi
 
+  # 4. Ajouter la ligne "clientId": "secret"
   echo "  \"$cid\": \"$secret\"" >> $OUTPUT
 
-  # Debug console
+  # 5. Afficher dans la console pour debug
   echo "  → $cid : $secret"
 done
 
@@ -321,4 +259,4 @@ echo "}" >> $OUTPUT
 
 echo "[export] Fichier généré : $OUTPUT"
 echo "[export] Contenu :"
-cat $OUTPUT || true
+cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)     
