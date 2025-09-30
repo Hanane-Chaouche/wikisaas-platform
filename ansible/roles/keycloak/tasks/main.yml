@@ -44,12 +44,15 @@
     dest: /opt/keycloak/keycloak-init.sh
     mode: '0755'
 
-# Démarrer/mettre à jour Keycloak
+
 - name: Lancer Keycloak avec Docker Compose v2
   become: true
   community.docker.docker_compose_v2:
     project_src: /opt/keycloak
     state: present
+    env_files:
+      - /opt/keycloak/.env
+
 
 # -------------------------------------------------------------------
 # Tâche 1 : Exécuter le script d'initialisation Keycloak
