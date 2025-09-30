@@ -32,7 +32,7 @@
   become: true
   template:
     src: env.j2
-    dest: "/opt/keycloak/.env"
+    dest: /opt/keycloak/.env
     mode: '0644'
   notify: Restart Keycloak
 
@@ -44,18 +44,12 @@
     dest: /opt/keycloak/keycloak-init.sh
     mode: '0755'
 
-
-- name: Lancer Keycloak avec Docker Compose (via CLI)
+# Démarrer/mettre à jour Keycloak
+- name: Lancer Keycloak avec Docker Compose v2
   become: true
-  command: docker compose -f /opt/keycloak/docker-compose.yml --env-file /opt/keycloak/.env up -d
-  args:
-    chdir: /opt/keycloak
-  register: docker_compose_up_result
-  changed_when: "'(re)created' in docker_compose_up_result.stdout or '(up to date)' not in docker_compose_up_result.stdout"
-  # Si le conteneur est créé ou recréé, on considère que c'est un changement (changed=True)
-  # Si le conteneur est déjà up to date, pas de changement (changed=False)
-  # Cela permet de ne pas relancer inutilement le script d'init plus bas
-  notify: Restart Keycloak  # Si le conteneur a été (re)créé, on le redémarre après l'init  
+  community.docker.docker_compose_v2:
+    project_src: /opt/keycloak
+    state: present
 
 # -------------------------------------------------------------------
 # Tâche 1 : Exécuter le script d'initialisation Keycloak
@@ -95,4 +89,4 @@
 - name: Message deuxième exécution
   debug:
     msg: "Script d'init déjà exécuté auparavant. Aucun nouveau log généré."
-  when: not keycloak_init_result.changed  # Si le script n'a PAS été relancé (donc .init_done déjà présent)
+  when: not keycloak_init_result.changed # Si le script n'a PAS été relancé (donc .init_done déjà présent)
