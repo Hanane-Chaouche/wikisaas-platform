@@ -2,8 +2,6 @@
 ############################################
 # Domaine / ACME
 ############################################
-# Domaine / ACME
-############################################
 base_domain: "wikiplatform.app"
 acme_email: "chamer6@hotmail.com"
 
