@@ -22,7 +22,7 @@
     group: root
     mode: '0755'
 
-- name: Créer le dossier des fichiers .env pour Wiki.js
+- name: Créer le dossier des fichiers .envs pour Wiki.js
   become: true
   file:
     path: "/opt/wiki/{{ item.name }}/envs"
