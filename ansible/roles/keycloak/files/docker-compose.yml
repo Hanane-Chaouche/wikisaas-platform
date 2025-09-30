@@ -18,7 +18,8 @@ services:
     container_name: keycloak
     restart: always
     command: ["start", "--optimized", "--import-realm"]
-    
+    env_file:
+      - .env  
     environment:
       # Nouvelle syntaxe Quarkus
       KC_DB: postgres
@@ -37,7 +38,7 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_PROXY: edge
 
-      # ⚠️ Hack si tu es en Let's Encrypt STAGING (à retirer en prod)
+      # Hack si tu es en Let's Encrypt STAGING (à retirer en prod)
       JAVA_OPTS_APPEND: "-Dcom.sun.net.ssl.checkRevocation=false -Djdk.tls.client.protocols=TLSv1.3 -Djavax.net.ssl.trustStoreType=JKS"
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
