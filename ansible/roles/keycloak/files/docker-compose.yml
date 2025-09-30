@@ -6,9 +6,9 @@ services:
     container_name: keycloak-db
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: keycloak_wiki
+      POSTGRES_USER: keycloak_db
+      POSTGRES_PASSWORD: pass123
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
@@ -22,16 +22,6 @@ services:
     env_file:
       - .env
     environment:
-      DB_VENDOR: postgres
-      DB_ADDR: keycloak-db
-      DB_PORT: 5432
-      DB_DATABASE: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      KC_HOSTNAME: sso.${DOMAIN}
-      KC_HTTP_ENABLED: "true"     #  Active HTTP interne
-      KC_PROXY: "edge"            # Indique qu'il est derrière un reverse proxy TLS (Traefik)
-
         # ⚠️ Hack uniquement si tu restes en Let's Encrypt STAGING a enlever en pro
       JAVA_OPTS_APPEND: "-Dcom.sun.net.ssl.checkRevocation=false -Djdk.tls.client.protocols=TLSv1.3 -Djavax.net.ssl.trustStoreType=JKS"
     volumes:
@@ -43,7 +33,7 @@ services:
       - postgres
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
+      - "traefik.http.routers.keycloak.rule=Host(sso.wikiplatform.app)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"
