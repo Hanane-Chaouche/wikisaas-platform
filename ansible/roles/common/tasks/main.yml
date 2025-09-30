@@ -1,10 +1,16 @@
 ---
 # === MAJ système ===
-- name: Update and upgrade all packages
+- name: Update apt cache
   become: true
   ansible.builtin.apt:
     update_cache: true
+    cache_valid_time: 3600   # évite de recharger trop souvent
+
+- name: Upgrade all packages
+  become: true
+  ansible.builtin.apt:
     upgrade: dist
+
 
 # === Paquets utiles ===
 - name: Install useful packages
