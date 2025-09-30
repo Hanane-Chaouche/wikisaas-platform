@@ -27,20 +27,12 @@
     dest: /opt/keycloak/docker-compose.yml
     mode: '0644'
   notify: Restart Keycloak
-- name: Créer le dossier des fichiers env pour Wiki.js
-  become: true
-  file:
-    path: "/opt/keycloak/env"
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-  
+
 - name: Générer le fichier .env depuis le template
   become: true
   template:
     src: env.j2
-    dest: "/opt/keycloak/env/.env"
+    dest: "/opt/keycloak/.env"
     mode: '0644'
   notify: Restart Keycloak
 
