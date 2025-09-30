@@ -31,7 +31,7 @@
 - name: Générer le fichier .env depuis le template
   become: true
   template:
-    src: .env.j2
+    src: env.j2
     dest: /opt/keycloak/.env
     mode: '0644'
   notify: Restart Keycloak
@@ -89,4 +89,4 @@
 - name: Message deuxième exécution
   debug:
     msg: "Script d'init déjà exécuté auparavant. Aucun nouveau log généré."
-  when: not keycloak_init_result.changed # Si le script n'a PAS été relancé (donc .init_done déjà présent)
+  when: not keycloak_init_result.changed  # Si le script n'a PAS été relancé (donc .init_done déjà présent)
