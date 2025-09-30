@@ -45,14 +45,17 @@
     mode: '0755'
 
 
-- name: Lancer Keycloak avec Docker Compose v2
+- name: Lancer Keycloak avec Docker Compose (via CLI)
   become: true
-  community.docker.docker_compose_v2:
-    project_src: /opt/keycloak
-    state: present
-    env_files:
-      - /opt/keycloak/.env
-
+  command: docker compose -f /opt/keycloak/docker-compose.yml --env-file /opt/keycloak/.env up -d
+  args:
+    chdir: /opt/keycloak
+  register: docker_compose_up_result
+  changed_when: "'(re)created' in docker_compose_up_result.stdout or '(up to date)' not in docker_compose_up_result.stdout"
+  # Si le conteneur est créé ou recréé, on considère que c'est un changement (changed=True)
+  # Si le conteneur est déjà up to date, pas de changement (changed=False)
+  # Cela permet de ne pas relancer inutilement le script d'init plus bas
+  notify: Restart Keycloak  # Si le conteneur a été (re)créé, on le redémarre après l'init  
 
 # -------------------------------------------------------------------
 # Tâche 1 : Exécuter le script d'initialisation Keycloak
