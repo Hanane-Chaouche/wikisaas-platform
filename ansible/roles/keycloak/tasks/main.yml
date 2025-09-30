@@ -40,7 +40,7 @@
   become: true
   template:
     src: env.j2
-    dest: /opt/keycloak/env/.env
+    dest: "/opt/keycloak/env/.env"
     mode: '0644'
   notify: Restart Keycloak
 
