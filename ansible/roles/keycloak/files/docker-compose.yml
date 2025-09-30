@@ -1,5 +1,3 @@
----
-
 services:
   postgres:
     image: postgres:15
@@ -19,10 +17,18 @@ services:
     container_name: keycloak
     restart: always
     command: ["start", "--optimized", "--import-realm"]
-    env_file:
-      - .env
     environment:
-        # ⚠️ Hack uniquement si tu restes en Let's Encrypt STAGING a enlever en pro
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_DATABASE: keycloak_wiki
+      KC_DB_USERNAME: keycloak_db
+      KC_DB_PASSWORD: pass123
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: hanane
+      KC_HOSTNAME: sso.wikiplatform.app
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY: edge
       JAVA_OPTS_APPEND: "-Dcom.sun.net.ssl.checkRevocation=false -Djdk.tls.client.protocols=TLSv1.3 -Djavax.net.ssl.trustStoreType=JKS"
     volumes:
       - ./keycloak-init.sh:/opt/keycloak/init/keycloak-init.sh
@@ -33,7 +39,7 @@ services:
       - postgres
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host('sso.wikiplatform.app')"
+      - "traefik.http.routers.keycloak.rule=Host(`sso.wikiplatform.app`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=le"
