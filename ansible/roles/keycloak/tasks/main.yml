@@ -28,22 +28,13 @@
     mode: '0644'
   notify: Restart Keycloak
 
-- name: Créer le dossier des fichiers .env pour keycloak
-  become: true
-  file:
-    path: "/opt/keycloak/.env"
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-
-  loop_control: {label: "{{ item.name }}"}
 - name: Générer le fichier .env depuis le template
   become: true
   template:
     src: .env.j2
     dest: /opt/keycloak/.env
     mode: '0644'
+    force: yes
   notify: Restart Keycloak
 
 # Pas de notify ici: changer le script ne nécessite pas de restart du conteneur
