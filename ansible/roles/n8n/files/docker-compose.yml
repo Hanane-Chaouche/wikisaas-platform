@@ -4,6 +4,7 @@ services:
     image: n8nio/n8n:latest
     container_name: n8n
     restart: unless-stopped
+    user: "1000:1000"   # 👈 garantit que n8n écrit avec l’utilisateur node
     environment:
       - N8N_HOST=n8n.wikiplatform.app
       - N8N_PORT=5678
