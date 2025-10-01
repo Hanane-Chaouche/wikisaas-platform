@@ -7,7 +7,7 @@
     owner: root
     group: root
     mode: '0755'
-    
+
 - name: Créer le dossier data de n8n avec les bons droits
   become: true
   file:
@@ -15,7 +15,7 @@
     state: directory
     owner: 1000   # utilisateur node dans le conteneur
     group: 1000
-    mode: '
+    mode: '0755'
 
 - name: Copier le docker-compose.yml de n8n
   become: true
@@ -27,10 +27,8 @@
     mode: '0644'
   notify: Redémarrer n8n
 
-
 - name: Démarrer n8n avec Docker Compose v2
   become: true
   community.docker.docker_compose_v2:
     project_src: /opt/n8n
     state: present
-  
