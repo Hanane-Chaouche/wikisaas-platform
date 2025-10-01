@@ -1,0 +1,22 @@
+---
+
+services:
+  portal:
+    build: .
+    container_name: portal
+    restart: always
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portal.rule=Host(`app.{{ domain }}`)"
+      - "traefik.http.routers.portal.entrypoints=websecure"
+      - "traefik.http.routers.portal.tls=true"
+      - "traefik.http.routers.portal.tls.certresolver=le"
+      - "traefik.http.services.portal.loadbalancer.server.port=3000"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

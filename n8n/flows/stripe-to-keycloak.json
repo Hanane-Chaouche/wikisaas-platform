@@ -1,0 +1,182 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "events": ["checkout.session.completed"]
+      },
+      "id": "1",
+      "name": "Stripe Trigger",
+      "type": "n8n-nodes-base.stripeTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "credentials": {
+        "stripeApi": {
+          "id": "stripe_cred_id",
+          "name": "Stripe API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const email = $json.data.object.customer_email;\nconst plan = $json.data.object.metadata.plan || 'starter';\n\nconst urls = {\n  starter: [\"https://ia.wikiplatform.app\"],\n  pro: [\"https://ia.wikiplatform.app\", \"https://devops.wikiplatform.app\"],\n  enterprise: [\"https://ia.wikiplatform.app\", \"https://devops.wikiplatform.app\", \"https://cyber.wikiplatform.app\"]\n};\n\nreturn [{\n  email,\n  plan,\n  urls: urls[plan] || [],\n}];"
+      },
+      "id": "2",
+      "name": "Extract Plan + Email",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "url": "https://sso.wikiplatform.app/admin/realms/master/users?email={{$json[\"email\"]}}",
+        "options": {
+          "response": "json"
+        }
+      },
+      "id": "3",
+      "name": "Keycloak: Find User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [750, 200],
+      "credentials": {
+        "httpBasicAuth": "keycloak_admin_auth"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "string": [
+            {
+              "value1": "={{$json.length}}",
+              "operation": "equal",
+              "value2": "0"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "IF User Not Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [950, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "url": "https://sso.wikiplatform.app/admin/realms/master/users",
+        "method": "POST",
+        "bodyParametersJson": "={ \"username\": $json.email, \"email\": $json.email, \"enabled\": true, \"emailVerified\": true }",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Keycloak: Create User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1150, 100],
+      "credentials": {
+        "httpBasicAuth": "keycloak_admin_auth"
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "url": "https://sso.wikiplatform.app/admin/realms/master/users/{{$json[\"id\"]}}/groups/{{ $json.plan.toUpperCase() }}",
+        "method": "PUT"
+      },
+      "id": "6",
+      "name": "Keycloak: Assign Group",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1150, 300],
+      "credentials": {
+        "httpBasicAuth": "keycloak_admin_auth"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.plan}}",
+              "operation": "equal",
+              "value2": "enterprise-plus"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "IF Enterprise+",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1350, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://provisioner:3000/deploy-new-wiki",
+        "method": "POST",
+        "sendBody": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={ \"subdomain\": $json.email.split('@')[0], \"email\": $json.email }"
+      },
+      "id": "8",
+      "name": "Call Provisioner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1550, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "support@wikiplatform.app",
+        "toEmail": "={{$json.email}}",
+        "subject": "Bienvenue sur WikiPlatform 🚀",
+        "text": "Bonjour,\\n\\nVotre compte a été créé avec succès.\\n\\nVoici vos accès :\\n{{$json.urls.join('\\n')}}\\n\\nMerci,\\nL'équipe WikiPlatform"
+      },
+      "id": "9",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1750, 300],
+      "credentials": {
+        "smtp": "smtp_mail_provider"
+      }
+    }
+  ],
+  "connections": {
+    "Stripe Trigger": {
+      "main": [[{ "node": "Extract Plan + Email", "type": "main", "index": 0 }]]
+    },
+    "Extract Plan + Email": {
+      "main": [[{ "node": "Keycloak: Find User", "type": "main", "index": 0 }]]
+    },
+    "Keycloak: Find User": {
+      "main": [[{ "node": "IF User Not Found", "type": "main", "index": 0 }]]
+    },
+    "IF User Not Found": {
+      "main": [
+        [{ "node": "Keycloak: Create User", "type": "main", "index": 0 }],
+        [{ "node": "Keycloak: Assign Group", "type": "main", "index": 0 }]
+      ]
+    },
+    "Keycloak: Create User": {
+      "main": [[{ "node": "Keycloak: Assign Group", "type": "main", "index": 0 }]]
+    },
+    "Keycloak: Assign Group": {
+      "main": [[{ "node": "IF Enterprise+", "type": "main", "index": 0 }]]
+    },
+    "IF Enterprise+": {
+      "main": [
+        [{ "node": "Call Provisioner", "type": "main", "index": 0 }],
+        [{ "node": "Send Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Provisioner": {
+      "main": [[{ "node": "Send Email", "type": "main", "index": 0 }]]
+    }
+  }
+}

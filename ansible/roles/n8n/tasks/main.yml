@@ -1,0 +1,26 @@
+---
+- name: Créer le dossier n8n
+  become: true
+  file:
+    path: /opt/n8n
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copier le docker-compose.yml de n8n
+  become: true
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/n8n/docker-compose.yml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Démarrer n8n avec Docker Compose v2
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /opt/n8n
+    state: present
+    restarted: true
+    

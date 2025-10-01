@@ -1,0 +1,35 @@
+---
+- name: Créer dossier /opt/portal
+  file:
+    path: /opt/portal
+    state: directory
+    mode: "0755"
+
+- name: Déployer les fichiers applicatifs (Dockerfile, package.json, server.js, public/)
+  copy:
+    src: "{{ item.src }}"
+    dest: "/opt/portal/{{ item.dest }}"
+    mode: "0644"
+  with_items:
+    - { src: "Dockerfile",            dest: "Dockerfile" }
+    - { src: "package.json",          dest: "package.json" }
+    - { src: "server.js",             dest: "server.js" }
+    - { src: "public/index.html",     dest: "public/index.html" }
+    - { src: "public/styles.css",     dest: "public/styles.css" }
+
+- name: Générer .env de l’app portail
+  template:
+    src: "env.j2"
+    dest: "/opt/portal/.env"
+    mode: "0640"
+
+- name: Générer docker-compose.yml du portail
+  template:
+    src: "docker-compose.yml.j2"
+    dest: "/opt/portal/docker-compose.yml"
+    mode: "0644"
+
+- name: Démarrer le portail (docker compose)
+  command: docker compose up -d
+  args:
+    chdir: /opt/portal

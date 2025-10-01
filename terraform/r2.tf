@@ -33,14 +33,14 @@ resource "cloudflare_r2_bucket_lifecycle" "backup_lifecycle" {
 
     abort_multipart_uploads_transition = {
       condition = {
-        max_age = 1 # Après 1 jour → abort multipart upload
+        max_age = 86400  # Après 1 jour en secondes → abort multipart upload
         type = "Age"
       }
     }
 
     storage_class_transitions = [{
       condition = {
-        max_age = 10 # Après 10 jours → InfrequentAccess
+        max_age = 864000 # Après 10 jours en secondes→ InfrequentAccess
         type    = "Age"
       }
       storage_class = "InfrequentAccess"
@@ -48,7 +48,7 @@ resource "cloudflare_r2_bucket_lifecycle" "backup_lifecycle" {
 
     delete_objects_transition = {
       condition = {
-        max_age = 90 # Après 90 jours → suppression
+        max_age = 7776000 # Après 90 jours en secondes → suppression
         type    = "Age"
       }
     }
