@@ -10,12 +10,13 @@
 
 - name: Copier le docker-compose.yml de n8n
   become: true
-  template:
-    src: docker-compose.yml
+  copy:
+    src: docker-compose.yml     # va chercher dans roles/n8n/files/
     dest: /opt/n8n/docker-compose.yml
     owner: root
     group: root
     mode: '0644'
+
 
 - name: Démarrer n8n avec Docker Compose v2
   become: true
