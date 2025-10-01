@@ -16,6 +16,7 @@
     owner: root
     group: root
     mode: '0644'
+  notify: Redémarrer n8n
 
 
 - name: Démarrer n8n avec Docker Compose v2
@@ -23,5 +24,4 @@
   community.docker.docker_compose_v2:
     project_src: /opt/n8n
     state: present
-    restarted: true
-    
+  
