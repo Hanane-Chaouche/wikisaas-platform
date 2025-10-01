@@ -1,0 +1,117 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f8faff;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+}
+
+/* Titre */
+h1 {
+  font-size: 3.5em;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+/* Sous-titre */
+p {
+  font-size: 1.2em;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* Container des plans */
+.plans {
+  display: flex;
+  gap: 30px;
+  margin-top: 40px;
+  flex-wrap: wrap; /* permet le retour à la ligne si écran petit */
+  justify-content: center;
+}
+
+/* Carte plan */
+.plan-card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  width: 250px;
+  transition: transform 0.3s ease;
+}
+
+.plan-card:hover {
+  transform: translateY(-10px);
+}
+
+.plan-card h2 {
+  font-size: 1.8em;
+  margin-bottom: 10px;
+}
+
+.plan-card .price {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #27ae60;
+}
+
+/* Boutons */
+.plan-card button {
+  font-size: 1.1em;
+  font-weight: bold;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Starter */
+.starter button {
+  background: #e74c3c;
+  color: white;
+}
+.starter button:hover {
+  background: #c0392b;
+}
+
+/* Pro */
+.pro button {
+  background: #f39c12;
+  color: white;
+}
+.pro button:hover {
+  background: #d35400;
+}
+
+/* Enterprise */
+.enterprise button {
+  background: #3498db;
+  color: white;
+}
+.enterprise button:hover {
+  background: #2980b9;
+}
+
+/* Enterprise+ */
+.enterprise-plus button {
+  background: #8e44ad;
+  color: white;
+}
+.enterprise-plus button:hover {
+  background: #6d278d;
+}
+
+/* Footer */
+footer {
+  margin-top: 50px;
+  font-size: 0.9em;
+  color: #888;
+}

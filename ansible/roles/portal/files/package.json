@@ -1,0 +1,20 @@
+{
+  "name": "wikisaas-portal",
+  "version": "1.0.0",
+  "description": "Portail SaaS pour WikiPlatform avec Stripe, n8n et Keycloak",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:dev": "NODE_ENV=development node server.js"
+  },
+  "author": "Hanane Chaouche",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "stripe": "^16.5.0",
+    "morgan": "^1.10.0",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "axios": "^1.7.4"
+  }
+}

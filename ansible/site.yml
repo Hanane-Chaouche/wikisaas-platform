@@ -14,3 +14,4 @@
     - role: traefik      # Reverse proxy + certificats Let's Encrypt
     - role: keycloak     # Authentification SSO
     - role: wiki-essaie  # Rôle de gestion des instances Wiki.js
+    - role: n8n          # Rôle de gestion de n8n (automatisation low-code)

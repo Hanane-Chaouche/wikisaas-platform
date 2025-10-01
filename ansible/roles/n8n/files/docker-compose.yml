@@ -1,0 +1,28 @@
+version: '3.7'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=n8n.wikiplatform.app
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://n8n.wikiplatform.app/
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=Hanane
+      - GENERIC_TIMEZONE=America/Toronto
+    volumes:
+      - ./data:/home/node/.n8n
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.wikiplatform.app`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+
+networks:
+  proxy:
+    external: true
