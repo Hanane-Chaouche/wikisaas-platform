@@ -1,117 +1,131 @@
 body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: #f9f9f9;
   margin: 0;
   padding: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f8faff;
   color: #333;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #222;
+  color: #fff;
+  padding: 15px 30px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5em;
+}
+
+header .btn-login {
+  background: #007bff;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9em;
+  transition: background 0.3s;
+}
+
+header .btn-login:hover {
+  background: #0056b3;
+}
+
+main {
+  padding: 20px;
+}
+
+h1 {
+  margin-top: 20px;
+}
+
+.plans {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 40px auto;
+  flex-wrap: wrap;   /* ✅ wrap pour s’adapter aux petits écrans */
+  padding: 10px;
+}
+
+.plan-card {
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  width: 280px;
+  min-width: 250px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
   text-align: center;
-}
-
-/* Titre */
-h1 {
-  font-size: 3.5em;
-  font-weight: bold;
-  color: #2c3e50;
-  margin-bottom: 10px;
-}
-
-/* Sous-titre */
-p {
-  font-size: 1.2em;
-  color: #555;
-  margin-bottom: 20px;
-}
-
-/* Container des plans */
-.plans {
-  display: flex;
-  gap: 30px;
-  margin-top: 40px;
-  flex-wrap: wrap; /* permet le retour à la ligne si écran petit */
-  justify-content: center;
-}
-
-/* Carte plan */
-.plan-card {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  width: 250px;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .plan-card:hover {
-  transform: translateY(-10px);
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
 
 .plan-card h2 {
-  font-size: 1.8em;
   margin-bottom: 10px;
+  color: #007bff;
 }
 
-.plan-card .price {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #27ae60;
+.plan-card p {
+  margin: 5px 0;
+  font-size: 0.95em;
 }
 
-/* Boutons */
-.plan-card button {
-  font-size: 1.1em;
-  font-weight: bold;
+stripe-buy-button {
+  margin-top: 15px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Bouton violet pour Enterprise+ */
+.enterprise-plus .contact-btn {
   padding: 12px 20px;
   border: none;
   border-radius: 8px;
+  font-size: 1em;
   cursor: pointer;
-  transition: 0.3s;
+  background: #6f42c1; /* violet */
+  color: #fff;
+  transition: background 0.3s;
+  margin-top: 15px;
 }
 
-/* Starter */
-.starter button {
-  background: #e74c3c;
+.enterprise-plus .contact-btn:hover {
+  background: #5a359c;
+}
+
+/* Styles communs aux boutons (success/cancel/mon compte) */
+.btn {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 6px;
+  background: #007bff;
   color: white;
-}
-.starter button:hover {
-  background: #c0392b;
-}
-
-/* Pro */
-.pro button {
-  background: #f39c12;
-  color: white;
-}
-.pro button:hover {
-  background: #d35400;
+  text-decoration: none;
+  font-size: 1em;
+  transition: background 0.3s;
 }
 
-/* Enterprise */
-.enterprise button {
-  background: #3498db;
-  color: white;
-}
-.enterprise button:hover {
-  background: #2980b9;
+.btn:hover {
+  background: #0056b3;
 }
 
-/* Enterprise+ */
-.enterprise-plus button {
-  background: #8e44ad;
-  color: white;
-}
-.enterprise-plus button:hover {
-  background: #6d278d;
-}
-
-/* Footer */
 footer {
-  margin-top: 50px;
+  margin-top: 40px;
+  padding: 20px;
+  background: #222;
+  color: #fff;
   font-size: 0.9em;
-  color: #888;
 }

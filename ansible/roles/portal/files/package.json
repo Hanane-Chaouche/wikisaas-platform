@@ -1,7 +1,7 @@
 {
   "name": "wikisaas-portal",
   "version": "1.0.0",
-  "description": "Portail SaaS pour WikiPlatform avec Stripe, n8n et Keycloak",
+  "description": "Portail SaaS pour WikiPlatform avec Stripe Buy Button, n8n et Keycloak",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,10 +11,13 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.19.2",
-    "stripe": "^16.5.0",
     "morgan": "^1.10.0",
     "helmet": "^7.1.0",
     "cors": "^2.8.5",
-    "axios": "^1.7.4"
+    "axios": "^1.7.4",
+    "passport": "^0.7.0",
+    "openid-client": "^5.4.0",
+    "express-session": "^1.17.3",
+    "ejs": "^3.1.9"
   }
 }

@@ -4,71 +4,68 @@
   <meta charset="UTF-8">
   <title>WikiPlatform - Choisissez votre plan</title>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Stripe Buy Button script -->
+  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
 </head>
 <body>
-  <h1>WikiPlatform</h1>
-  <p>Choisissez votre plan et démarrez en quelques minutes.</p>
+  <header>
+    <h1>WikiPlatform</h1>
+    <nav>
+      <a href="/login" class="btn-login">🔑 Mon compte</a>
+    </nav>
+  </header>
 
-  <div class="plans">
-    <!-- Starter -->
-    <div class="plan-card starter">
-      <h2>Starter</h2>
-      <p class="price">29,99 € / mois</p>
-      <p>Accès au Wiki DevOps</p>
-      <button id="starter">Choisir Starter 🚀</button>
-    </div>
+  <main>
+    <p>Choisissez votre plan et démarrez en quelques minutes.</p>
 
-    <!-- Pro -->
-    <div class="plan-card pro">
-      <h2>Pro</h2>
-      <p class="price">99,00 € / mois</p>
-      <p>Accès aux Wikis IA + DevOps</p>
-      <button id="pro">Choisir Pro ⚡</button>
-    </div>
+    <div class="plans">
+      <!-- Starter -->
+      <div class="plan-card">
+        <h2>Starter</h2>
+        <p>Accès au Wiki DevOps</p>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1SDphW2zLhYvGbhABjdKi8g3"
+          publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
+        </stripe-buy-button>
+                
+      </div>
 
-    <!-- Enterprise -->
-    <div class="plan-card enterprise">
-      <h2>Enterprise</h2>
-      <p class="price">299,00 € / mois</p>
-      <p>IA + DevOps + Cyber + Support Premium</p>
-      <button id="enterprise">Choisir Enterprise 🏢</button>
-    </div>
+      <!-- Pro -->
+      <div class="plan-card">
+        <h2>Pro</h2>
+        <p>Accès aux Wikis IA + DevOps</p>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1SDpi12zLhYvGbhAzWPy6npv"
+          publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
+        </stripe-buy-button>
+      </div>
 
-    <!-- Enterprise+ -->
-    <div class="plan-card enterprise-plus">
-      <h2>Enterprise+</h2>
-      <p class="price">Sur mesure</p>
-      <p>Wiki dédié avec sous-domaine personnalisé<br>(ex: clientX.wikiplatform.app)</p>
-      <button id="enterprise-plus">Contacter pour Enterprise+ 🌐</button>
+      <!-- Enterprise -->
+      <div class="plan-card">
+        <h2>Enterprise</h2>
+        <p>IA + DevOps + Cyber + Support Premium</p>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1SDpDq2zLhYvGbhAAawk1kPZ"
+          publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
+        </stripe-buy-button>
+      </div>
+
+      <!-- Enterprise+ -->
+      <div class="plan-card enterprise-plus">
+        <h2>Enterprise+</h2>
+        <p>Sur mesure</p>
+        <p>Wiki dédié avec sous-domaine personnalisé<br>(ex: clientX.wikiplatform.app)</p>
+        <button class="contact-btn"
+          onclick="window.location.href='mailto:contact@wikiplatform.app?subject=Demande Enterprise+';">
+          Contacter pour Enterprise+ 🌐
+        </button>
+      </div>
     </div>
-  </div>
+  </main>
 
   <footer>
     © 2025 WikiPlatform
   </footer>
-
-  <script>
-    async function subscribe(plan) {
-      const response = await fetch(`/create-checkout-session?plan=${plan}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url; // Redirige vers Stripe Checkout
-      } else {
-        alert("Erreur : " + data.error);
-      }
-    }
-
-    document.getElementById("starter").onclick = () => subscribe("starter");
-    document.getElementById("pro").onclick = () => subscribe("pro");
-    document.getElementById("enterprise").onclick = () => subscribe("enterprise");
-
-    // Enterprise+ → pas Stripe, on peut faire redirection vers "Contact"
-    document.getElementById("enterprise-plus").onclick = () => {
-      window.location.href = "mailto:contact@wikiplatform.app?subject=Demande Enterprise+";
-    };
-  </script>
 </body>
 </html>

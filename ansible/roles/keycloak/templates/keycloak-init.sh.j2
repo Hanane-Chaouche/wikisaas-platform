@@ -197,12 +197,13 @@ JSON"
 create_client "ia"
 create_client "devops"
 create_client "cyber"
+create_client "portal"  
 
 echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
 
-# Vérifier que les 3 clients existent avant export
+# Vérifier que les 4 clients existent avant export
 echo "[check] Vérification de la présence des clients..."
-for cid in ia devops cyber; do
+for cid in ia devops cyber portal; do
   for i in {1..10}; do
     if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" | grep -q '"id"'; then
       echo "  → $cid trouvé"
@@ -228,8 +229,8 @@ OUTPUT="/opt/keycloak/clients.json"
 echo "{" > $OUTPUT
 first=true  # variable pour gérer la virgule entre les entrées JSON
 
-# On boucle sur tes 3 clients Wiki.js
-for cid in ia devops cyber; do
+# On boucle sur tes 4 clients Wiki.js
+for cid in ia devops cyber portal; do
   # 1. Récupérer l'UUID (ID interne Keycloak) du client via kcadm
   uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" \
          | grep '"id"' | head -n1 | cut -d '"' -f4)

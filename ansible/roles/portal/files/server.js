@@ -4,28 +4,22 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cors = require("cors");
 const path = require("path");
-const axios = require("axios");
+const session = require("express-session");
+const passport = require("passport");
+const { Issuer, Strategy } = require("openid-client");
 
 const {
   PORT = 3000,
-  DOMAIN,
-  STRIPE_PUBLIC_KEY,
-  STRIPE_SECRET_KEY,
-  STRIPE_PRICE_STARTER,
-  STRIPE_PRICE_PRO,
-  STRIPE_PRICE_ENTERPRISE,
-  N8N_WEBHOOK_URL = "",
-  PROVISIONER_URL
+  DOMAIN = "wikiplatform.app",
+  KEYCLOAK_URL = "https://sso.wikiplatform.app",
+  KEYCLOAK_REALM = "saas",
+  KEYCLOAK_CLIENT_ID = "portal",
+  KEYCLOAK_CLIENT_SECRET
 } = process.env;
 
-if (!STRIPE_SECRET_KEY) {
-  console.error("❌ STRIPE_SECRET_KEY manquant dans l'env");
-  process.exit(1);
-}
-
-const stripe = require("stripe")(STRIPE_SECRET_KEY);
 const app = express();
 
+// Middlewares
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(cors());
@@ -33,76 +27,94 @@ app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use(express.static(path.join(__dirname, "public")));
+// Sessions pour Passport
+app.use(session({
+  secret: "supersecret", // ⚠️ Mets une vraie clé secrète en variable d’env
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Health
-app.get("/api/health", (_req, res) => res.json({ ok: true, service: "portal", time: new Date().toISOString() }));
-
-// Liste des plans exposés au front
-app.get("/api/plans", (_req, res) => {
-  res.json({
-    publicKey: STRIPE_PUBLIC_KEY,
-    plans: [
-      { id: "starter", name: "Starter", priceId: STRIPE_PRICE_STARTER, priceText: "29.99€ / mois", features: ["Accès DevOps"] },
-      { id: "pro",     name: "Pro",     priceId: STRIPE_PRICE_PRO,     priceText: "99€ / mois",    features: ["Accès IA", "Accès DevOps"] },
-      { id: "ent",     name: "Enterprise", priceId: STRIPE_PRICE_ENTERPRISE, priceText: "299€ / mois", features: ["IA + DevOps + Cyber"] }
-    ]
-  });
-});
-
-// Créer une session Stripe Checkout
-app.post("/api/checkout", async (req, res) => {
+// Découverte Keycloak + stratégie OIDC
+(async () => {
   try {
-    const { planId, customerEmail } = req.body || {};
-    const map = {
-      starter: STRIPE_PRICE_STARTER,
-      pro: STRIPE_PRICE_PRO,
-      ent: STRIPE_PRICE_ENTERPRISE
-    };
-    const priceId = map[planId];
-    if (!priceId) return res.status(400).json({ error: "Plan invalide" });
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
-      customer_email: customerEmail || undefined,
-      success_url: `https://app.${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `https://app.${DOMAIN}/cancel`,
-      metadata: { plan: planId }
+    const keycloakIssuer = await Issuer.discover(`${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`);
+    const client = new keycloakIssuer.Client({
+      client_id: KEYCLOAK_CLIENT_ID,
+      client_secret: KEYCLOAK_CLIENT_SECRET,
+      redirect_uris: [`https://app.${DOMAIN}/callback`],
+      response_types: ["code"]
     });
 
-    res.json({ url: session.url });
+    passport.use("oidc", new Strategy({ client }, (tokenSet, userinfo, done) => {
+      return done(null, { ...userinfo, tokenSet });
+    }));
+
+    passport.serializeUser((user, done) => done(null, user));
+    passport.deserializeUser((user, done) => done(null, user));
+
+    // Routes d’auth
+    app.get("/login", passport.authenticate("oidc"));
+    app.get("/callback", passport.authenticate("oidc", { failureRedirect: "/" }), (req, res) => {
+      res.redirect("/dashboard");
+    });
+    app.get("/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect("/");
+      });
+    });
+
+    // Middleware de protection
+    function ensureAuth(req, res, next) {
+      if (req.isAuthenticated()) return next();
+      res.redirect("/login");
+    }
+
+    // Static files
+    app.use(express.static(path.join(__dirname, "public")));
+
+    // Health check
+    app.get("/api/health", (_req, res) =>
+      res.json({ ok: true, service: "portal", time: new Date().toISOString() })
+    );
+
+    // Pages success/cancel
+    app.get("/success", (_req, res) =>
+      res.sendFile(path.join(__dirname, "public", "success.html"))
+    );
+    app.get("/cancel", (_req, res) =>
+      res.sendFile(path.join(__dirname, "public", "cancel.html"))
+    );
+
+    // Dashboard protégé par login Keycloak
+    app.set("view engine", "ejs");
+    app.set("views", path.join(__dirname, "views"));
+
+    app.get("/dashboard", ensureAuth, (req, res) => {
+      const user = req.user;
+      const groups = user.groups || [];
+
+      let services = [];
+      if (groups.includes("starter")) {
+        services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
+      }
+      if (groups.includes("pro")) {
+        services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
+      }
+      if (groups.includes("enterprise")) {
+        services.push({ name: "Wiki Cyber", url: "https://cyber.wikiplatform.app" });
+      }
+
+      res.render("dashboard", { user, services });
+    });
+
+    // Lancer le serveur
+    app.listen(PORT, () => {
+      console.log(`✅ Portal en écoute sur https://app.${DOMAIN}:${PORT}`);
+    });
+
   } catch (err) {
-    console.error("Stripe Checkout error:", err.message);
-    res.status(500).json({ error: "Impossible de créer la session de paiement" });
+    console.error("❌ Erreur configuration Keycloak :", err);
   }
-});
-
-// (Optionnel) Provision Enterprise+ dédié depuis le portail
-app.post("/api/provision", async (req, res) => {
-  try {
-    const { subdomain, email } = req.body || {};
-    if (!subdomain || !email) return res.status(400).json({ error: "subdomain et email requis" });
-    if (!PROVISIONER_URL) return res.status(400).json({ error: "PROVISIONER_URL non configuré" });
-
-    const r = await axios.post(PROVISIONER_URL, { subdomain, email });
-    return res.json(r.data);
-  } catch (err) {
-    console.error("Provision error:", err.message);
-    return res.status(500).json({ error: "Provisioning failed" });
-  }
-});
-
-// Pages success/cancel (servies en statique)
-app.get("/success", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "success.html"));
-});
-app.get("/cancel", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "cancel.html"));
-});
-
-app.listen(PORT, () => {
-  console.log(`✅ Portal en écoute sur : ${PORT} (https://app.${DOMAIN})`);
-});
+})();
