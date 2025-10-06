@@ -56,7 +56,7 @@
 # -------------------------------------------------------------------
 - name: Init Keycloak (première exécution)
   become: true
-  command: bash /opt/keycloak/keycloak-init.sh > /opt/keycloak/init.log 2>&1
+  command: bash /opt/keycloak/keycloak-init.sh 
   args:
     chdir: /opt/keycloak
     creates: /opt/keycloak/.init_done   # Si ce fichier existe, Ansible NE relance PAS le script
@@ -71,7 +71,7 @@
 # -------------------------------------------------------------------
 - name: Message succès première exécution
   debug:
-    msg: " Script d'init Keycloak exécuté (première fois). Voir /opt/keycloak/init.log pour les détails."
+    msg: " Script d'init Keycloak exécuté (première fois)"
   when: keycloak_init_result.changed     # S'exécute seulement si le script a été lancé (fichier .init_done créé)
 
 # -------------------------------------------------------------------

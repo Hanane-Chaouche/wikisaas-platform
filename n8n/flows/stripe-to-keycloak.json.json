@@ -1,5 +1,5 @@
 {
-  "name": "My workflow",
+  "name": "stripe-to-keycloak.json",
   "nodes": [
     {
       "parameters": {
@@ -375,7 +375,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e4f917db-7408-4669-aa59-26eb2f1e7a15",
+  "versionId": "b9f3d4da-8b5c-4570-8330-136f64c9b194",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2ea8f408a77c33e6e4fcd11d40b946fee92d4eb5120cad891c40d220bb4cff94"

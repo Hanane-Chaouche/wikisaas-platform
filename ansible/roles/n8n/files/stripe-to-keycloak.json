@@ -14,7 +14,7 @@
       "type": "n8n-nodes-base.stripeTrigger",
       "typeVersion": 1,
       "position": [
-        -1632,
+        -1552,
         432
       ],
       "webhookId": "60f4f349-1860-4ddc-aad2-52fe2168143a",
@@ -34,8 +34,8 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -1456,
-        432
+        -1360,
+        448
       ]
     },
     {
@@ -55,8 +55,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -752,
-        416
+        -784,
+        448
       ]
     },
     {
@@ -85,8 +85,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        -256,
-        416
+        -192,
+        464
       ]
     },
     {
@@ -149,45 +149,6 @@
     },
     {
       "parameters": {
-        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users\n\n\n",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "email",
-              "value": "={{$json[\"email\"]}}"
-            }
-          ]
-        },
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{$node[\"HTTP Request1(recuperation-token)\"].json[\"access_token\"]}}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -928,
-        416
-      ],
-      "id": "ddb2ecc1-48b5-4df1-b345-900eba87446b",
-      "name": "HTTP Request",
-      "retryOnFail": false,
-      "executeOnce": false,
-      "alwaysOutputData": false
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://sso.wikiplatform.app/realms/saas/protocol/openid-connect/token",
         "sendBody": true,
@@ -200,11 +161,11 @@
             },
             {
               "name": "client_id",
-              "value": "portal"
+              "value": "n8n-service"
             },
             {
               "name": "client_secret",
-              "value": "pXKdkY0hWfBvBQdOjdbTqidxquUVLX9J"
+              "value": "7ken53KU65ttUhe7ryCMP9UmaCf9YGS1"
             }
           ]
         },
@@ -213,11 +174,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1296,
-        176
+        -1152,
+        448
       ],
       "id": "b6c2d1fa-c4c5-466e-8bad-9eda5489da30",
-      "name": "HTTP Request1(recuperation-token)",
+      "name": "HTTP Request1",
       "alwaysOutputData": false,
       "executeOnce": false,
       "retryOnFail": false,
@@ -225,18 +186,29 @@
     },
     {
       "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
+        "url": "https://sso.wikiplatform.app/admin/realms/saas/users?email=test@example.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$node[\"HTTP Request1\"].json[\"access_token\"]}}"
+            }
+          ]
+        },
         "options": {}
       },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        -1168,
-        416
+        -976,
+        432
       ],
-      "id": "ed27b1d9-a6f1-43aa-8ca2-1d1848d3cebd",
-      "name": "Merge"
+      "id": "ddb2ecc1-48b5-4df1-b345-900eba87446b",
+      "name": "HTTP Request",
+      "retryOnFail": false,
+      "executeOnce": false,
+      "alwaysOutputData": false
     }
   ],
   "pinData": {},
@@ -256,14 +228,9 @@
       "main": [
         [
           {
-            "node": "HTTP Request1(recuperation-token)",
+            "node": "HTTP Request1",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -337,33 +304,22 @@
         ]
       ]
     },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "HTTP Request": {
       "main": [
         [
           {
             "node": "IF User Not Found",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request1(recuperation-token)": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
@@ -375,7 +331,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e4f917db-7408-4669-aa59-26eb2f1e7a15",
+  "versionId": "8d8ef80b-92a6-48e9-bb03-d6034a202535",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2ea8f408a77c33e6e4fcd11d40b946fee92d4eb5120cad891c40d220bb4cff94"
