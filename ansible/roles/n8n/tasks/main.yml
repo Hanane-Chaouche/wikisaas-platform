@@ -34,11 +34,14 @@
     state: present
     
 - name: Attendre que n8n démarre
-  wait_for:
-    host: 127.0.0.1
-    port: 5678
-    delay: 10
-    timeout: 60
+  uri:
+    url: "https://n8n.wikiplatform.app"
+    validate_certs: no
+  register: n8n_status
+  until: n8n_status.status == 200
+  retries: 30
+  delay: 5
+
 
 # --- Ajouter ici les imports automatiques ---
 - name: Copier le workflow stripe-to-keycloak.json

@@ -215,7 +215,42 @@ for cid in ia devops cyber portal; do
     [[ $i -eq 10 ]] && echo "  ERR: $cid introuvable après 50s"
   done
 done
+#############################################
+# Activer Service Account et donner le rôle super-admin
+#############################################
+echo -e "\n=== Configuration du client portal ==="
 
+PORTAL_UUID=$(get_client_uuid "portal")
+if [ -z "$PORTAL_UUID" ]; then
+  echo " ERR: UUID du client portal introuvable"
+  exit 1
+fi
+
+# Activer le Service Account
+echo " Activation du service account pour 'portal'..."
+dc "$KCADM update clients/${PORTAL_UUID} -r ${REALM} -s 'serviceAccountsEnabled=true'"
+
+SA_USER="service-account-portal"
+
+# Attendre la création automatique du compte
+for i in {1..10}; do
+  if dc "$KCADM get users -r ${REALM} -q username=${SA_USER} --fields username" | grep -q "${SA_USER}"; then
+    echo " Service account ${SA_USER} prêt."
+    break
+  else
+    echo " En attente du service account..."
+    sleep 3
+  fi
+done
+
+# Donner le rôle super-admin (realm-admin)
+echo " Attribution du rôle realm-admin au service account portal..."
+dc "$KCADM add-roles -r ${REALM} \
+    --uusername ${SA_USER} \
+    --cclientid realm-management \
+    --rolename realm-admin" || true
+
+echo " Le compte de service 'portal' possède maintenant le rôle super-admin (realm-admin)."
 
 #############################################
 # Export des secrets des clients OIDC
