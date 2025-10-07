@@ -14,8 +14,8 @@
       "type": "n8n-nodes-base.stripeTrigger",
       "typeVersion": 1,
       "position": [
-        -1632,
-        432
+        -1744,
+        480
       ],
       "webhookId": "60f4f349-1860-4ddc-aad2-52fe2168143a",
       "credentials": {
@@ -34,8 +34,8 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -1456,
-        432
+        -1440,
+        464
       ]
     },
     {
@@ -44,8 +44,8 @@
           "boolean": [],
           "string": [
             {
-              "value1": "={{$json.length}}",
-              "value2": "0"
+              "value1": "={{ $items().filter(i => Object.keys(i.json).length > 0).length }}\n }}\n",
+              "value2": "=0"
             }
           ]
         }
@@ -55,24 +55,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -752,
-        416
-      ]
-    },
-    {
-      "parameters": {
-        "authentication": "genericCredentialType",
-        "url": "https://sso.wikiplatform.app/admin/realms/master/users",
-        "options": {}
-      },
-      "id": "7f480287-3a07-4380-a988-9bbe2aed9271",
-      "name": "Keycloak: Create User",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
-      "position": [
-        -496,
-        128
-      ]
+        -224,
+        544
+      ],
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -85,8 +71,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        -256,
-        416
+        496,
+        528
       ]
     },
     {
@@ -105,7 +91,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        96,
+        880,
         464
       ]
     },
@@ -120,8 +106,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        352,
-        80
+        1792,
+        -16
       ]
     },
     {
@@ -137,15 +123,50 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        656,
-        480
+        1520,
+        416
       ],
       "credentials": {
         "smtp": {
-          "id": null,
+          "id": "smtp_cred_1",
           "name": "smtp_mail_provider"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -944,
+        464
+      ],
+      "id": "ed27b1d9-a6f1-43aa-8ca2-1d1848d3cebd",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://sso.wikiplatform.app/admin/realms/saas/users",
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "raw"
+        },
+        "bodyParametersJson": "={{\nJSON.stringify({\n  username: $node[\"Merge\"].json[\"name\"],\n  email: $node[\"Merge\"].json[\"email\"],\n  firstName: $node[\"Merge\"].json[\"first_name\"] || \"Client\",\n  lastName: $node[\"Merge\"].json[\"last_name\"] || \"\",\n  enabled: true,\n  emailVerified: true,\n  credentials: [\n    {\n      type: \"password\",\n      value: Math.random().toString(36).slice(-10),\n      temporary: false\n    }\n  ],\n  attributes: {\n    plan: $node[\"Merge\"].json[\"plan\"]\n  }\n})\n}}\n",
+        "headerParametersJson": "=\n\n{{  {\n  \"Authorization\": \"Bearer \" + $node[\"Merge\"].json[\"access_token\"].trim(),\n  \"Content-Type\": \"application/json\"\n   } }}\n"
+      },
+      "id": "7f480287-3a07-4380-a988-9bbe2aed9271",
+      "name": "Keycloak: Create User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        144,
+        240
+      ]
     },
     {
       "parameters": {
@@ -164,7 +185,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{$node[\"HTTP Request1(recuperation-token)\"].json[\"access_token\"]}}"
+              "value": "=Bearer {{$node[\"(recuperation-token)\"].json[\"access_token\"]}}"
             },
             {
               "name": "Content-Type",
@@ -177,14 +198,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -928,
-        416
+        -560,
+        544
       ],
       "id": "ddb2ecc1-48b5-4df1-b345-900eba87446b",
-      "name": "HTTP Request",
+      "name": "HTTP Request_find_user",
       "retryOnFail": false,
       "executeOnce": false,
-      "alwaysOutputData": false
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -204,7 +225,7 @@
             },
             {
               "name": "client_secret",
-              "value": "pXKdkY0hWfBvBQdOjdbTqidxquUVLX9J"
+              "value": "roUAefiNnF1o1AMFT6XKDAAFHKVyDbem"
             }
           ]
         },
@@ -213,30 +234,15 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1296,
-        176
+        -976,
+        64
       ],
       "id": "b6c2d1fa-c4c5-466e-8bad-9eda5489da30",
-      "name": "HTTP Request1(recuperation-token)",
+      "name": "(recuperation-token)",
       "alwaysOutputData": false,
       "executeOnce": false,
       "retryOnFail": false,
       "notesInFlow": false
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        -1168,
-        416
-      ],
-      "id": "ed27b1d9-a6f1-43aa-8ca2-1d1848d3cebd",
-      "name": "Merge"
     }
   ],
   "pinData": {},
@@ -256,7 +262,7 @@
       "main": [
         [
           {
-            "node": "HTTP Request1(recuperation-token)",
+            "node": "(recuperation-token)",
             "type": "main",
             "index": 0
           },
@@ -277,17 +283,6 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Keycloak: Assign Group",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Keycloak: Create User": {
-      "main": [
         [
           {
             "node": "Keycloak: Assign Group",
@@ -337,7 +332,34 @@
         ]
       ]
     },
-    "HTTP Request": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request_find_user",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Keycloak: Create User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keycloak: Create User": {
+      "main": [
+        [
+          {
+            "node": "Keycloak: Assign Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request_find_user": {
       "main": [
         [
           {
@@ -348,22 +370,16 @@
         ]
       ]
     },
-    "HTTP Request1(recuperation-token)": {
+    "(recuperation-token)": {
       "main": [
         [
           {
             "node": "Merge",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
+          },
           {
-            "node": "HTTP Request",
+            "node": "Keycloak: Create User",
             "type": "main",
             "index": 0
           }
@@ -375,10 +391,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "b9f3d4da-8b5c-4570-8330-136f64c9b194",
+  "versionId": "b0635ba0-0e44-4999-9d40-32b5c8131754",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2ea8f408a77c33e6e4fcd11d40b946fee92d4eb5120cad891c40d220bb4cff94"
+    "instanceId": "d985841870d1c3109fb3d3ca44159e32f0413506d57b34fcbe850b4ec982f0a9"
   },
   "id": "YAIEk7eIdFmJfjlS",
   "tags": []
