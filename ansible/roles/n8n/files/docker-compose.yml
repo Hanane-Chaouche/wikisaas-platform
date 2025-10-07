@@ -14,6 +14,7 @@ services:
       - N8N_BASIC_AUTH_PASSWORD=Hanane
       - GENERIC_TIMEZONE=America/Toronto
       - N8N_LICENSE_KEY=f5a864e3-5d14-4e0d-ba69-3c8422d7c5a2
+      - N8N_TRUSTED_PROXIES=loopback,linklocal,uniquelocal  # Corrige le bug express-rate-limit
     volumes:
       - /opt/n8n/data:/home/node/.n8n
       - /opt/keycloak:/opt/keycloak:ro  # Monte Keycloak en lecture seule pour les workflows
