@@ -10,9 +10,16 @@
 </head>
 <body>
   <header>
-    <h1>WikiPlatform</h1>
+       <h1>WikiPlatform</h1>
     <nav>
-      <a href="/login" class="btn-login">🔑 Mon compte</a>
+      <a href="/login" class="btn-login"> Mon compte</a>
+
+      <!-- Nouveau bouton Portail Client Stripe -->
+      <a href="https://billing.stripe.com/p/login/test_dRm5kw4oXcfedPj8Xu5c400"
+         target="_blank"
+         class="btn-manage">
+          Gérer mon abonnement
+      </a>
     </nav>
   </header>
 
@@ -25,9 +32,9 @@
         <h2>Starter</h2>
         <p>Accès au Wiki DevOps</p>
         <stripe-buy-button
-          buy-button-id="buy_btn_1SDphW2zLhYvGbhABjdKi8g3"
-          publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
-        </stripe-buy-button>
+		  buy-button-id="buy_btn_1SDphW2zLhYvGbhABjdKi8g3"
+		  publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
+		</stripe-buy-button>
                 
       </div>
 
@@ -36,9 +43,10 @@
         <h2>Pro</h2>
         <p>Accès aux Wikis IA + DevOps</p>
         <stripe-buy-button
-          buy-button-id="buy_btn_1SDpi12zLhYvGbhAzWPy6npv"
-          publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
-        </stripe-buy-button>
+        <stripe-buy-button
+		  buy-button-id="buy_btn_1SDpi12zLhYvGbhAzWPy6npv"
+		  publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
+		</stripe-buy-button>
       </div>
 
       <!-- Enterprise -->
@@ -46,9 +54,9 @@
         <h2>Enterprise</h2>
         <p>IA + DevOps + Cyber + Support Premium</p>
         <stripe-buy-button
-          buy-button-id="buy_btn_1SDpDq2zLhYvGbhAAawk1kPZ"
-          publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
-        </stripe-buy-button>
+		  buy-button-id="buy_btn_1SDpDq2zLhYvGbhAAawk1kPZ"
+		  publishable-key="pk_test_51SBp672zLhYvGbhAkJh3sbjSCK9JUhawoQexohGb7Miab7p2Kg8MAv3NCY2l3S8Yt5Vv3tIQ3gwRLUmxOu26i0VH00uedGU1Ke">
+		</stripe-buy-button>
       </div>
 
       <!-- Enterprise+ -->

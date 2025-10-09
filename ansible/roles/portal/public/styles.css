@@ -96,14 +96,14 @@ stripe-buy-button {
   border-radius: 8px;
   font-size: 1em;
   cursor: pointer;
-  background: #6f42c1; /* violet */
+  background: #540ade; /* violet */
   color: #fff;
   transition: background 0.3s;
   margin-top: 15px;
 }
 
 .enterprise-plus .contact-btn:hover {
-  background: #5a359c;
+  background: #4c04ca;
 }
 
 /* Styles communs aux boutons (success/cancel/mon compte) */
@@ -128,4 +128,19 @@ footer {
   background: #222;
   color: #fff;
   font-size: 0.9em;
+}
+
+.navbar a.manage-link {
+  background: #007bff;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 10px;
+  transition: background 0.3s ease;
+}
+
+.navbar a.manage-link:hover {
+  background: #0056b3;
 }
