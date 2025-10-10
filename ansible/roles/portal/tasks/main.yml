@@ -5,6 +5,14 @@
     state: directory
     mode: "0755"
 
+- name: Créer dossier /opt/portal/public
+  file:
+    path: /opt/portal/public
+    state: directory
+    mode: "0755"
+
+
+
 - name: Déployer les fichiers applicatifs (Dockerfile, package.json, server.js, public/)
   copy:
     src: "{{ item.src }}"
