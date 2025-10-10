@@ -15,4 +15,4 @@
     - role: keycloak     # Authentification SSO
     - role: wiki-essaie  # Rôle de gestion des instances Wiki.js
     - role: n8n          # Rôle de gestion de n8n (automatisation low-code)
-    - role: portal       # Rôle de gestion du portail d'accueil
+    
