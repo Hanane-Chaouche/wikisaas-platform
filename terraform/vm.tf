@@ -105,6 +105,13 @@ resource "aws_instance" "wikijs" {
   vpc_security_group_ids = [aws_security_group.ec2_sg.id] # Attachée au firewall défini plus haut
   key_name               = var.ec2_key_name               #  Nom de ta clé SSH dans AWS (pour se connecter)
 
+  # 🔹 Bloc ajouté pour définir la taille du disque EBS
+  root_block_device {
+    volume_size           = 30          # Taille du disque (Go)
+    volume_type           = "gp3"       # Type de volume rapide et économique
+    delete_on_termination = true        # Supprime le disque quand la VM est supprimée
+  }
+
   tags = {
     Name = "wikijs-server" # Nom de la VM dans la console AWS
   }
