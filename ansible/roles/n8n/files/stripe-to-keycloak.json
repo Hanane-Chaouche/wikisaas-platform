@@ -268,8 +268,8 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=bearer ***REMOVED***51SBp672zLhYvGbhADr1rAPsVt5BeDugEt6lPki8lDSFIw0txxAnLtTG9teEXLJO2CsiqDLsvEHgHcBi5lJKT8XM0006jfx2yL4"
-            }
+              "value": "=bearer {{$env.STRIPE_SECRET_KEY}}"
+           }
           ]
         },
         "options": {}
@@ -743,7 +743,8 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=bearer ***REMOVED***51SBp672zLhYvGbhADr1rAPsVt5BeDugEt6lPki8lDSFIw0txxAnLtTG9teEXLJO2CsiqDLsvEHgHcBi5lJKT8XM0006jfx2yL4"
+              "value": "=bearer {{$env.STRIPE_SECRET_KEY}}"
+
             }
           ]
         },
