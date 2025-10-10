@@ -9,13 +9,13 @@
           "customer.subscription.updated"
         ]
       },
-      "id": "b81aa912-3aea-4f4c-be33-a1b5e05158c9",
+      "id": "d0a78ad5-2146-4102-aaee-ddaafd7f557a",
       "name": "Stripe Trigger",
       "type": "n8n-nodes-base.stripeTrigger",
       "typeVersion": 1,
       "position": [
-        -1200,
-        288
+        -2016,
+        96
       ],
       "webhookId": "60f4f349-1860-4ddc-aad2-52fe2168143a",
       "credentials": {
@@ -27,30 +27,15 @@
     },
     {
       "parameters": {
-        "functionCode": "const session = $json.data.object;\n\nconst email = session.customer_details?.email || session.customer_email || \"inconnu\";\nconst fullName = session.customer_details?.name || email.split(\"@\")[0];\nconst plan = session.metadata?.plan || \"starter\";\n\n//  Découper le nom complet\nlet firstName = \"\";\nlet lastName = \"\";\n\nif (fullName.includes(\" \")) {\n  const parts = fullName.trim().split(\" \");\n  firstName = parts[0];\n  lastName = parts.slice(1).join(\" \"); // gère les noms composés\n} else {\n  firstName = fullName;\n  lastName = \"\";\n}\n\n// 🧱 Générer un username unique à partir de l’email\nconst base = email.split(\"@\")[0].toLowerCase().replace(/[^a-z0-9]/g, \"\");\nconst unique = Date.now().toString().slice(-4);\nconst username = `${base}${unique}`;\n\nreturn [{\n  email,\n  username,\n  firstName,\n  lastName,\n  plan,\n  customer_id: session.customer,\n  subscription_id: session.subscription,\n  session_id: session.id,\n  amount: session.amount_total / 100,\n  currency: session.currency,\n  status: session.status,\n  payment_status: session.payment_status\n}];\n"
+        "functionCode": "const session = $json.data.object;\nconst type = $json.type;\nconst email = session.customer_details?.email || session.customer_email || \"inconnu\";\nconst fullName = session.customer_details?.name || email.split(\"@\")[0];\nconst plan = session.metadata?.plan || \"starter\";\n\n//  Découper le nom complet\nlet firstName = \"\";\nlet lastName = \"\";\n\nif (fullName.includes(\" \")) {\n  const parts = fullName.trim().split(\" \");\n  firstName = parts[0];\n  lastName = parts.slice(1).join(\" \"); // gère les noms composés\n} else {\n  firstName = fullName;\n  lastName = \"\";\n}\n\n// 🧱 Générer un username unique à partir de l’email\nconst base = email.split(\"@\")[0].toLowerCase().replace(/[^a-z0-9]/g, \"\");\nconst unique = Date.now().toString().slice(-4);\nconst username = `${base}${unique}`;\n\nreturn [{\n  email,\n  username,\n  firstName,\n  lastName,\n  plan,\n  customer_id: session.customer,\n  subscription_id: session.subscription,\n  session_id: session.id,\n  amount: session.amount_total / 100,\n  currency: session.currency,\n  status: session.status,\n  payment_status: session.payment_status,\n  type\n  \n}];\n"
       },
-      "id": "5b18d6ca-b9de-49bb-82b8-23b6b5fb2c8c",
+      "id": "c4ff8a1c-eb12-4086-8e6e-7205cc89592d",
       "name": "Extract Plan + Email",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -976,
-        288
-      ]
-    },
-    {
-      "parameters": {
-        "authentication": "genericCredentialType",
-        "url": "https://sso.wikiplatform.app/admin/realms/master/users/{{$json[\"id\"]}}/groups/{{ $json.plan.toUpperCase() }}",
-        "options": {}
-      },
-      "id": "d7cef0bf-f9f8-4341-9b4f-694a3a32ae0c",
-      "name": "Keycloak: Assign Group",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
-      "position": [
-        144,
-        288
+        -1552,
+        -160
       ]
     },
     {
@@ -58,19 +43,19 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.plan}}",
+              "value1": "=",
               "value2": "enterprise-plus"
             }
           ]
         }
       },
-      "id": "74a3d5c5-4eca-44b0-860d-56077b3973ae",
+      "id": "67493974-32e3-4f46-9fec-b7b03df9e535",
       "name": "IF Enterprise+",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        368,
-        288
+        -192,
+        -304
       ]
     },
     {
@@ -79,31 +64,31 @@
         "jsonParameters": true,
         "options": {}
       },
-      "id": "8dd78cfe-2254-4b8a-bddc-e10d8b0d7d78",
+      "id": "684eacbd-9946-440a-b36d-11b521edaefc",
       "name": "Call Provisioner",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        528,
-        -80
+        32,
+        -448
       ]
     },
     {
       "parameters": {
         "fromEmail": "=brad@wikiplatform.app",
-        "toEmail": "=chamer6@hotmail.com",
+        "toEmail": "={{$node[\"Extract Plan + Email\"].json[\"email\"]}}\n",
         "ccEmail": "=",
-        "subject": "Bienvenue sur WikiPlatform 🚀",
-        "text": "Bonjour {{$json[\"first_name\"] || \"client\"}},\n\nMerci d’avoir rejoint WikiPlatform 🎉\nVotre espace est prêt : https://ia.wikiplatform.app\n\n-- L’équipe WikiPlatform\n",
+        "subject": "Bienvenue sur WikiPlatform ",
+        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f7f9fc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.1);\n    }\n    h1 {\n      color: #2a7ade;\n      font-size: 22px;\n      margin-bottom: 10px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 12px 0;\n    }\n    .plan-box {\n      background: #e9f5ff;\n      color: #004085;\n      border-left: 4px solid #2a7ade;\n      padding: 10px 15px;\n      border-radius: 6px;\n      margin: 15px 0;\n      font-weight: 600;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 24px;\n      border-radius: 8px;\n      margin-top: 20px;\n      font-weight: 600;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Bienvenue {{$node[\"Extract Plan + Email\"].json[\"firstName\"]}} {{$node[\"Extract Plan + Email\"].json[\"lastName\"]}},</h1>\n\n    <p>Merci d’avoir rejoint <strong>WikiPlatform</strong> </p>\n\n    <p>\n      Votre abonnement <span class=\"plan-box\">\n        {{$node[\"Extract Plan + Email\"].json[\"plan\"]}}\n      </span> a été activé avec succès.\n    </p>\n\n    <p>\n      Vous pouvez dès maintenant <strong>explorer votre plateforme WikiPlatform</strong> et profiter de toutes ses fonctionnalités.\n    </p>\n\n    <p style=\"text-align:center;\">\n      <a class=\"button\" href=\"https://ia.wikiplatform.app\" target=\"_blank\">\n        Accéder à mon espace Wiki\n      </a>\n    </p>\n\n    <p>\n      Nous vous souhaitons une excellente expérience au sein de <strong>WikiPlatform</strong>.  \n      Si vous avez la moindre question, notre équipe reste à votre écoute.\n    </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est automatique, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
         "options": {}
       },
-      "id": "d709db85-ee5d-4194-8640-7e1e5e28ce19",
+      "id": "2514fbec-56ad-4499-87af-174df2d735f7",
       "name": "Send Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        816,
-        288
+        160,
+        -304
       ],
       "credentials": {
         "smtp": {
@@ -111,30 +96,6 @@
           "name": "smtp_mail_provider"
         }
       }
-    },
-    {
-      "parameters": {
-        "requestMethod": "POST",
-        "url": "https://sso.wikiplatform.app/admin/realms/saas/users",
-        "responseFormat": "=json",
-        "jsonParameters": true,
-        "options": {
-          "bodyContentType": "raw"
-        },
-        "bodyParametersJson": "={\n  \"username\": \"{{$node['Extract Plan + Email'].json['username']}}\",\n  \"email\": \"{{$node['Extract Plan + Email'].json['email']}}\",\n  \"firstName\": \"{{$node['Extract Plan + Email'].json['firstName']}}\",\n  \"lastName\": \"{{$node['Extract Plan + Email'].json['lastName']}}\",\n  \"enabled\": true,\n  \"emailVerified\": true,\n  \"credentials\": [\n    {\n      \"type\": \"password\",\n      \"value\": \"{{Math.random().toString(36).slice(-8)}}\",\n      \"temporary\": false\n    }\n  ]\n}\n",
-        "headerParametersJson": "={{\n{\n  \"Authorization\": \"Bearer \" + $node[\"(recuperation-token)\"].json[\"access_token\"].trim(),\n  \"Content-Type\": \"application/json\"\n}\n}}"
-      },
-      "id": "7f480287-3a07-4380-a988-9bbe2aed9271",
-      "name": "Keycloak: Create User",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
-      "position": [
-        -80,
-        64
-      ],
-      "executeOnce": false,
-      "retryOnFail": false,
-      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -171,10 +132,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -528,
-        288
+        -1216,
+        -144
       ],
-      "id": "ddb2ecc1-48b5-4df1-b345-900eba87446b",
+      "id": "6b4f6995-d7d2-453f-ac0b-faae1f87e0ed",
       "name": "HTTP Request_find_user",
       "retryOnFail": false,
       "executeOnce": false,
@@ -199,7 +160,700 @@
             },
             {
               "name": "client_secret",
-              "value": "=jI9oQZTAQQQywYXIop3LglGuXr8daCuz"
+              "value": "=hdeJc4C7k03XotJ0KZYF58DFY28jjfaK"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1376,
+        -144
+      ],
+      "id": "91ad71ef-2c14-4160-aa2e-3e2cde805879",
+      "name": "(recuperation-token)",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"username\": \"{{$node['Extract Plan + Email'].json['username']}}\",\n  \"email\": \"{{$node['Extract Plan + Email'].json['email']}}\",\n  \"firstName\": \"{{$node['Extract Plan + Email'].json['firstName']}}\",\n  \"lastName\": \"{{$node['Extract Plan + Email'].json['lastName']}}\",\n  \"enabled\": true,\n  \"emailVerified\": true,\n  \"credentials\": [\n    {\n      \"type\": \"password\",\n      \"value\": \"{{Math.random().toString(36).slice(-8)}}\",\n      \"temporary\": false\n    }\n  ]\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": "={{ true }}",
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -880,
+        -336
+      ],
+      "id": "adedd65d-93ba-4c5e-8437-c6c0470d9dbd",
+      "name": "Keycloak: Create User",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n// 🧠 Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n// 🧠 Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  const out = $node[\"HTTP Request_find_user\"].json;   // peut être un objet OU un tableau\n  const existingUser = Array.isArray(out) ? out[0] : out; \n\n  if (existingUser && existingUser.id) {\n    userId = existingUser.id;\n    console.log(\" Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        -304
+      ],
+      "id": "8a3acb7c-a575-42b0-9434-1e82c9e859e1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users/{{$json[\"userId\"]}}/groups/{{$json[\"groupId\"]}}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -368,
+        -304
+      ],
+      "id": "9f09b722-7e32-491c-8427-4618f73b408a",
+      "name": "Keycloak: Assign Group"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.stripe.com/v1/customers/{{$json.data.object.customer\n}}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=bearer ***REMOVED***51SBp672zLhYvGbhADr1rAPsVt5BeDugEt6lPki8lDSFIw0txxAnLtTG9teEXLJO2CsiqDLsvEHgHcBi5lJKT8XM0006jfx2yL4"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1472,
+        160
+      ],
+      "id": "0ee146df-c298-4a99-a08f-28c5676183b7",
+      "name": "find_email"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1️⃣ Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst previous_plan = stripe.data.previous_attributes?.plan?.metadata?.plan ;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\nconst operation = type.includes(\"updated\")\n  ? \"updated\"\n  : type.includes(\"deleted\")\n  ? \"deleted\"\n  : \"created\";\n\n// 4️⃣ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  previous_plan,\n  customer_id,\n  status,\n  type,\n  operation\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1280,
+        176
+      ],
+      "id": "7171751d-a3bf-43ee-8d1d-d5477eed0d82",
+      "name": "Extract Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sso.wikiplatform.app/realms/saas/protocol/openid-connect/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "name": "client_id",
+              "value": "portal"
+            },
+            {
+              "name": "client_secret",
+              "value": "=hdeJc4C7k03XotJ0KZYF58DFY28jjfaK"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1104,
+        192
+      ],
+      "id": "e5339cbb-29af-467a-b28b-8c5a7f62ab65",
+      "name": "(recuperation-token)1",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "fromEmail": "=brad@wikiplatform.app",
+        "toEmail": "={{$node[\"Extract Plan + Email\"].json[\"email\"]}}",
+        "ccEmail": "=",
+        "subject": "=Bienvenue sur WikiPlatform ",
+        "text": "=",
+        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f7f9fc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.1);\n    }\n    h1 {\n      color: #2a7ade;\n      font-size: 22px;\n      margin-bottom: 15px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 12px 0;\n    }\n    .notice {\n      background: #fff5d6;\n      color: #856404;\n      border: 1px solid #ffeeba;\n      padding: 12px 16px;\n      border-radius: 8px;\n      margin: 20px 0;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 24px;\n      border-radius: 8px;\n      margin-top: 20px;\n      font-weight: 600;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Bonjour {{$node[\"Extract Plan + Email\"].json[\"firstName\"]}}  {{$node[\"Extract Plan + Email\"].json[\"lastName\"]}},</h1>\n\n    <div class=\"notice\">\n      <strong>Vous êtes déjà inscrit sur WikiPlatform.</strong><br>\n      Il semble que vous possédiez déjà un compte ou un abonnement actif associé à votre adresse <strong>{{$node[\"Extract Plan + Email\"].json[\"email\"]}}</strong>.\n    </div>\n\n    <p>Pour gérer votre abonnement, veuillez utiliser le bouton <strong>“Gérer mon abonnement”</strong> en haut de la page d’accueil :</p>\n\n    <p style=\"text-align:center;\">\n      <a class=\"button\" href=\"https://app.wikiplatform.app/account\" target=\"_blank\">\n        Gérer mon abonnement\n      </a>\n    </p>\n\n    <p>Si vous souhaitez modifier ou annuler votre plan actuel, vous pouvez le faire directement depuis cette interface sécurisée.</p>\n\n    <p>Merci de faire partie de la communauté <strong>WikiPlatform</strong> </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est automatique, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "id": "85bdf84a-23d8-4e48-b882-b5841a86b789",
+      "name": "Send Email1",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -48
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp_cred_1",
+          "name": "smtp_mail_provider"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "=GET",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{$node[\"Extract Email\"].json[\"email\"]}}"
+            },
+            {
+              "name": "=exact",
+              "value": "=true"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -928,
+        192
+      ],
+      "id": "0bde3cf5-8fb9-4ef6-8fad-a86da305ca5a",
+      "name": "find_user1",
+      "retryOnFail": false,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users/{{$node[\"find_user1\"].json[\"id\"]}}/groups/{{$json[\"id\"]}}\n",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=search",
+              "value": "={{$node[\"Extract Email\"].json[\"plan\"]}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        240
+      ],
+      "id": "43511db0-2689-48bf-95f5-415407556574",
+      "name": "delete_previous_group"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users/{{$node[\"find_user1\"].json[\"id\"]}}/groups/{{$node[\"find_id_current_group\"].json[\"id\"]}}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        128,
+        240
+      ],
+      "id": "762aa83f-2609-4d50-bd3c-8c8ac4583e2b",
+      "name": "Keycloak: Assign Group1"
+    },
+    {
+      "parameters": {
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/groups",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "search",
+              "value": "={{$node[\"Extract Email\"].json[\"previous_plan\"]}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        240
+      ],
+      "id": "70002887-f371-4fd9-b649-1f5a69c4ce2f",
+      "name": "find_id_prvious_group"
+    },
+    {
+      "parameters": {
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/groups",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=search",
+              "value": "={{$node[\"Extract Email\"].json[\"plan\"]}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -480,
+        240
+      ],
+      "id": "0faa00c7-218e-44a2-a696-fcdb64ca42cc",
+      "name": "find_id_current_group"
+    },
+    {
+      "parameters": {
+        "fromEmail": "=brad@wikiplatform.app",
+        "toEmail": "={{$node[\"Extract Email\"].json[\"email\"]}}",
+        "ccEmail": "=",
+        "subject": "=Bienvenue sur WikiPlatform ",
+        "text": "=",
+        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f7f9fc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.1);\n    }\n    h1 {\n      color: #2a7ade;\n      font-size: 22px;\n      margin-bottom: 10px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 10px 0;\n    }\n    .highlight {\n      display: inline-block;\n      background: #e9f5ff;\n      color: #0066cc;\n      padding: 4px 10px;\n      border-radius: 6px;\n      font-weight: 600;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 24px;\n      border-radius: 8px;\n      margin-top: 20px;\n      font-weight: 600;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Bonjour {{$node[\"find_user1\"].json[\"firstName\"]}} {{$node[\"find_user1\"].json[\"lastName\"]}},</h1>\n\n    <p>Nous vous confirmons que le changement a bien été effectué vers le plan \n      <span class=\"highlight\">{{$node[\"find_id_current_group\"].json[\"name\"]}}</span>.\n    </p>\n\n    <p>Votre espace personnel est maintenant prêt :</p>\n\n    <p style=\"text-align:center;\">\n      <a class=\"button\" href=\"https://ia.wikiplatform.app\" target=\"_blank\">\n        Accéder à votre espace\n      </a>\n    </p>\n\n    <p>Merci pour votre confiance et bienvenue sur <strong>WikiPlatform</strong> </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est généré automatiquement, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "id": "ef245100-e448-46f2-94c7-bebb49d74e44",
+      "name": "Send Email2",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        304,
+        240
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp_cred_1",
+          "name": "smtp_mail_provider"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/groups",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=search",
+              "value": "={{$node[\"Extract Plan + Email\"].json[\"plan\"]}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -720,
+        -304
+      ],
+      "id": "17015779-3d02-4cdd-81c8-192d85d04bf8",
+      "name": "find_group_id"
+    },
+    {
+      "parameters": {
+        "fromEmail": "=brad@wikiplatform.app",
+        "toEmail": "={{$node[\"Extract Email\"].json[\"email\"]}}",
+        "ccEmail": "=",
+        "subject": "=Bienvenue sur WikiPlatform ",
+        "text": "=",
+        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f7f9fc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.1);\n    }\n    h1 {\n      color: #d9534f;\n      font-size: 22px;\n      margin-bottom: 16px;\n      text-align: center;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 12px 0;\n    }\n    .highlight {\n      background: #fff4e5;\n      color: #856404;\n      border-left: 4px solid #ffc107;\n      padding: 12px 15px;\n      border-radius: 6px;\n      margin: 20px 0;\n      font-weight: 500;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 28px;\n      border-radius: 8px;\n      margin-top: 25px;\n      font-weight: 600;\n      text-align: center;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n      border-top: 1px solid #eee;\n      padding-top: 15px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Résiliation de votre abonnement WikiPlatform</h1>\n\n    <p>Bonjour <strong>{{$node[\"find_user1\"].json[\"firstName\"]}} {{$node[\"find_user1\"].json[\"lastName\"]}}</strong>,</p>\n\n    <p>\n      Nous confirmons la <strong>demande de résiliation</strong> de votre abonnement <strong>WikiPlatform</strong>.\n    </p>\n\n    <div class=\"highlight\">\n      Votre accès restera actif jusqu’à la fin de votre période en cours, soit le \n      <strong>{{ new Date($node[\"Stripe Trigger\"].json[\"data\"][\"previous_attributes\"][\"cancel_at\"] * 1000).toLocaleString(\"fr-FR\", { dateStyle: \"long\", timeStyle: \"short\" }) }}\n</strong>.\n    </div>\n\n    <p>\n      Vous pourrez toujours <strong>réactiver votre abonnement</strong> à tout moment depuis votre espace client.\n    </p>\n\n    <p style=\"text-align:center;\">\n      <a class=\"button\" href=\"https://app.wikiplatform.app/account\" target=\"_blank\">\n        Gérer mon abonnement\n      </a>\n    </p>\n\n    <p>\n      Merci d’avoir fait partie de la communauté <strong>WikiPlatform</strong>.<br>\n      Nous espérons vous retrouver très bientôt !\n    </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est automatique, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "id": "65b16f48-ea6b-4020-9e57-98179ae5cbd2",
+      "name": "Send Email3",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        80
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp_cred_1",
+          "name": "smtp_mail_provider"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"type\"]}}",
+                    "rightValue": "checkout.session.completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cbc0b584-0bce-4af9-9908-a48381c78542"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Completed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "66505301-ec0d-4616-9b73-2a34f6964484",
+                    "leftValue": "={{$json[\"type\"]}}",
+                    "rightValue": "customer.subscription.updated",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7ba0b67d-e967-4c49-88cf-778abc4b8126",
+                    "leftValue": "={{$json[\"type\"]}}",
+                    "rightValue": "customer.subscription.deleted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -1776,
+        96
+      ],
+      "id": "6cdf67df-968c-4771-be39-71d480539405",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.stripe.com/v1/customers/{{$json.data.object.customer\n}}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=bearer ***REMOVED***51SBp672zLhYvGbhADr1rAPsVt5BeDugEt6lPki8lDSFIw0txxAnLtTG9teEXLJO2CsiqDLsvEHgHcBi5lJKT8XM0006jfx2yL4"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1488,
+        352
+      ],
+      "id": "fc03a593-4863-4ace-a14b-10b5203f96ca",
+      "name": "find_email_delete"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sso.wikiplatform.app/realms/saas/protocol/openid-connect/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "name": "client_id",
+              "value": "portal"
+            },
+            {
+              "name": "client_secret",
+              "value": "=hdeJc4C7k03XotJ0KZYF58DFY28jjfaK"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1136,
+        352
+      ],
+      "id": "641c3949-2abf-4cdb-8a0c-ecb9b1287662",
+      "name": "(recuperation-token)2",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "method": "=GET",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{$node[\"Extract Email\"].json[\"email\"]}}"
+            },
+            {
+              "name": "=exact",
+              "value": "=true"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -960,
+        352
+      ],
+      "id": "5e3e6857-c46d-44c4-bd90-f77a1ec68fb4",
+      "name": "find_user",
+      "retryOnFail": false,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://sso.wikiplatform.app/admin/realms/saas/users/{{$json[\"userId\"]}}\n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization",
+              "value": "=Bearer {{$node[\"(recuperation-token)1\"].json[\"access_token\"]}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "=application/json"
             }
           ]
         },
@@ -209,14 +863,109 @@
       "typeVersion": 4.2,
       "position": [
         -752,
-        288
+        368
       ],
-      "id": "b6c2d1fa-c4c5-466e-8bad-9eda5489da30",
-      "name": "(recuperation-token)",
-      "alwaysOutputData": false,
-      "executeOnce": false,
+      "id": "a19b5cbc-3a22-474e-9da7-13a9fea2bf90",
+      "name": "delete_user",
       "retryOnFail": false,
-      "notesInFlow": false
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fromEmail": "=brad@wikiplatform.app",
+        "toEmail": "={{$node[\"Extract_Email_delete\"].json[\"email\"]}}",
+        "ccEmail": "=",
+        "subject": "=Bienvenue sur WikiPlatform ",
+        "text": "=",
+        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f8fafc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.08);\n    }\n    h1 {\n      color: #d9534f;\n      font-size: 22px;\n      margin-bottom: 15px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 12px 0;\n    }\n    .highlight {\n      background: #fff4e5;\n      color: #856404;\n      border-left: 4px solid #ffc107;\n      padding: 10px 15px;\n      border-radius: 6px;\n      margin: 15px 0;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 24px;\n      border-radius: 8px;\n      margin-top: 20px;\n      font-weight: 600;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Suppression de votre compte WikiPlatform</h1>\n\n    <p>Bonjour {{$node[\"find_user\"].json[0][\"firstName\"]}} {{$node[\"find_user\"].json[0][\"LastName\"]}} ,</p>\n\n    <p>\n      Nous vous informons que <strong>votre compte WikiPlatform</strong> a été supprimé à la suite de la\n      <strong>résiliation de votre abonnement</strong>.\n    </p>\n\n    <div class=\"highlight\">\n      Toutes vos données associées à ce compte ont été retirées conformément à notre politique de confidentialité.\n    </div>\n\n    <p>\n      Si vous souhaitez revenir parmi nous, il vous sera toujours possible de\n      <strong>créer un nouveau compte</strong> ou de <a href=\"https://app.wikiplatform.app\" target=\"_blank\">réactiver votre abonnement</a>.\n    </p>\n\n    <p>\n      Merci d’avoir fait partie de la communauté <strong>WikiPlatform</strong>.\n      Nous espérons vous retrouver bientôt !\n    </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est automatique, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "id": "61f3b435-4170-4b75-a560-d77d58fc6101",
+      "name": "Send Email4",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        384
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp_cred_1",
+          "name": "smtp_mail_provider"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1️⃣ Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\n\n// 4️ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  customer_id,\n  status,\n  type,\n  \n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        352
+      ],
+      "id": "2654e9d7-6570-47d0-bb58-65d3b5eca500",
+      "name": "Extract_Email_delete"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "855f7003-68e0-47e4-a1dc-817cd40c25de",
+              "leftValue": "={{$node[\"Stripe Trigger\"].json[\"type\"]}}",
+              "rightValue": "customer.subscription.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "5014c596-7b6d-4897-8806-7b358f86758f",
+              "leftValue": "={{$node[\"strip\"].json[\"data\"][\"previous_attributes\"][\"cancellation_details\"][\"reason\"]}}",
+              "rightValue": "cancellation_requested",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -704,
+        192
+      ],
+      "id": "b2f47c7b-1194-44d6-bad8-ed2007916143",
+      "name": "if_cancellation"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === Anti-duplicate Stripe Events ===\n// Chaque événement Stripe a un ID unique : evt_XXXXXX\n// On l'enregistre dans une mémoire interne (globale) de n8n pour éviter les doublons\n\nconst eventId = $json.id; // ID unique de l’événement Stripe\nconst cache = $getWorkflowStaticData('global'); // mémoire persistante du workflow\n\nif (cache[eventId]) {\n  console.log(`⚠️ Événement déjà traité (${eventId}), ignoré.`);\n  return []; // Stop ici : on ne renvoie rien → le workflow s’arrête\n}\n\n// Marque l’événement comme \"traité\"\ncache[eventId] = true;\nconsole.log(`✅ Nouveau événement Stripe traité : ${eventId}`);\n\n// Continue le flux\nreturn [$json];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1904,
+        112
+      ],
+      "id": "5bbde1d9-90a6-493f-b5fa-52aa0bffa32d",
+      "name": "strip"
     },
     {
       "parameters": {
@@ -245,36 +994,11 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -304,
-        288
+        -1088,
+        -192
       ],
-      "id": "9e708922-b11f-422f-b0a2-88882994b70c",
-      "name": "If"
-    },
-    {
-      "parameters": {
-        "fromEmail": "=brad@wikiplatform.app",
-        "toEmail": "=chamer6@hotmail.com",
-        "subject": "=Bienvenue sur WikiPlatform ",
-        "emailFormat": "=html",
-        "html": "=<html>\n  <body style=\"font-family: Arial, sans-serif; background-color: #f9fafc; color: #333; padding: 30px;\">\n    <table align=\"center\" width=\"600\" style=\"background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 30px;\">\n      <tr>\n        <td align=\"center\" style=\"padding-bottom: 20px;\">\n          <img src=\"https://wikiplatform.app/logo.png\" alt=\"WikiPlatform\" width=\"140\" style=\"margin-bottom: 10px;\" />\n        </td>\n      </tr>\n      <tr>\n        <td>\n          <h2 style=\"color: #1e90ff;\">Bienvenue sur WikiPlatform 🚀</h2>\n          <p>Bonjour <strong>{{$json[\"first_name\"] || \"cher membre\"}}</strong>,</p>\n\n          <p>Merci d’avoir rejoint <strong>WikiPlatform</strong> 🎉<br/>\n          Votre espace personnel est désormais prêt :</p>\n\n          <p style=\"text-align: center; margin: 30px 0;\">\n            <a href=\"{{$json[\"site_url\"]}}\" \n               style=\"background-color: #1e90ff; color: white; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: bold;\">\n              🔗 Accéder à mon Wiki\n            </a>\n          </p>\n\n          <p>Si vous avez besoin d’aide, notre équipe reste à votre disposition.</p>\n\n          <p style=\"margin-top: 40px;\">Cordialement,<br/>\n          <strong>L’équipe WikiPlatform</strong></p>\n        </td>\n      </tr>\n      <tr>\n        <td align=\"center\" style=\"font-size: 12px; color: #aaa; padding-top: 20px;\">\n          © {{new Date().getFullYear()}} WikiPlatform – Tous droits réservés.\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>\n",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [
-        816,
-        -32
-      ],
-      "id": "4051e7ea-5f80-4fa0-bd4a-1b463bdef6a9",
-      "name": "Send email",
-      "webhookId": "c1379f13-8698-4956-b739-50982b4a2d5f",
-      "credentials": {
-        "smtp": {
-          "id": "smtp_cred_1",
-          "name": "smtp_mail_provider"
-        }
-      }
+      "id": "95048943-3c01-4a0d-9732-d77d38ce2c13",
+      "name": "If_not_find_user"
     }
   ],
   "pinData": {},
@@ -283,7 +1007,7 @@
       "main": [
         [
           {
-            "node": "Extract Plan + Email",
+            "node": "strip",
             "type": "main",
             "index": 0
           }
@@ -295,17 +1019,6 @@
         [
           {
             "node": "(recuperation-token)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Keycloak: Assign Group": {
-      "main": [
-        [
-          {
-            "node": "IF Enterprise+",
             "type": "main",
             "index": 0
           }
@@ -341,22 +1054,11 @@
         ]
       ]
     },
-    "Keycloak: Create User": {
-      "main": [
-        [
-          {
-            "node": "Keycloak: Assign Group",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "HTTP Request_find_user": {
       "main": [
         [
           {
-            "node": "If",
+            "node": "If_not_find_user",
             "type": "main",
             "index": 0
           }
@@ -374,7 +1076,242 @@
         ]
       ]
     },
-    "If": {
+    "Keycloak: Create User": {
+      "main": [
+        [
+          {
+            "node": "find_group_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Keycloak: Assign Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keycloak: Assign Group": {
+      "main": [
+        [
+          {
+            "node": "IF Enterprise+",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email": {
+      "main": [
+        [
+          {
+            "node": "(recuperation-token)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_email": {
+      "main": [
+        [
+          {
+            "node": "Extract Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(recuperation-token)1": {
+      "main": [
+        [
+          {
+            "node": "find_user1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_user1": {
+      "main": [
+        [
+          {
+            "node": "if_cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delete_previous_group": {
+      "main": [
+        [
+          {
+            "node": "Keycloak: Assign Group1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_id_current_group": {
+      "main": [
+        [
+          {
+            "node": "find_id_prvious_group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_id_prvious_group": {
+      "main": [
+        [
+          {
+            "node": "delete_previous_group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keycloak: Assign Group1": {
+      "main": [
+        [
+          {
+            "node": "Send Email2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_group_id": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract Plan + Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "find_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "find_email_delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_email_delete": {
+      "main": [
+        [
+          {
+            "node": "Extract_Email_delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find_user": {
+      "main": [
+        [
+          {
+            "node": "delete_user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delete_user": {
+      "main": [
+        [
+          {
+            "node": "Send Email4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract_Email_delete": {
+      "main": [
+        [
+          {
+            "node": "(recuperation-token)2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if_cancellation": {
+      "main": [
+        [
+          {
+            "node": "Send Email3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "find_id_current_group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email2": {
+      "main": [
+        []
+      ]
+    },
+    "strip": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If_not_find_user": {
       "main": [
         [
           {
@@ -385,16 +1322,11 @@
         ],
         [
           {
-            "node": "Keycloak: Assign Group",
+            "node": "Send Email1",
             "type": "main",
             "index": 0
           }
         ]
-      ]
-    },
-    "Send Email": {
-      "main": [
-        []
       ]
     }
   },
@@ -402,11 +1334,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "d6a0135f-71fb-4475-98c1-33124aa148ce",
+  "versionId": "08185630-1a8a-4335-88eb-42cef2ca5609",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "625a7b508ddddc65f2d5a86ea86a8931fe67b4b1767e27c6c03aa1cdc193d6f5"
+    "instanceId": "cd56a87ccd0d77ae0a6e08e1a204f302d0af1f4a40a83c6cbf8cadb723dde7fb"
   },
-  "id": "YAIEk7eIdFmJfjlS",
+  "id": "K75m59X2ypLYWHtB",
   "tags": []
 }
