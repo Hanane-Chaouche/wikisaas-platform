@@ -160,7 +160,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{{ keycloak_clients.portal }}"
+              "value": "{{ keycloak_portal_secret }}"
             }
           ]
         },
@@ -314,7 +314,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{{ keycloak_clients.portal }}"
+              "value": "{{ keycloak_portal_secret }}"
           
             }
           ]
@@ -778,7 +778,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{{ keycloak_clients.portal }}"
+              "value": "{{ keycloak_portal_secret }}"
             }
           ]
         },
