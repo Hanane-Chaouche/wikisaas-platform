@@ -160,7 +160,7 @@
             },
             {
               "name": "client_secret",
-              "value": "=hdeJc4C7k03XotJ0KZYF58DFY28jjfaK"
+              "value": "{{ keycloak_clients.portal }}"
             }
           ]
         },
@@ -221,7 +221,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n// 🧠 Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n// 🧠 Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  const out = $node[\"HTTP Request_find_user\"].json;   // peut être un objet OU un tableau\n  const existingUser = Array.isArray(out) ? out[0] : out; \n\n  if (existingUser && existingUser.id) {\n    userId = existingUser.id;\n    console.log(\" Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
+        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n//  Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n// 🧠 Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  const out = $node[\"HTTP Request_find_user\"].json;   // peut être un objet OU un tableau\n  const existingUser = Array.isArray(out) ? out[0] : out; \n\n  if (existingUser && existingUser.id) {\n    userId = existingUser.id;\n    console.log(\" Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -285,7 +285,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1️⃣ Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst previous_plan = stripe.data.previous_attributes?.plan?.metadata?.plan ;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\nconst operation = type.includes(\"updated\")\n  ? \"updated\"\n  : type.includes(\"deleted\")\n  ? \"deleted\"\n  : \"created\";\n\n// 4️⃣ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  previous_plan,\n  customer_id,\n  status,\n  type,\n  operation\n}];\n"
+        "jsCode": "//  Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst previous_plan = stripe.data.previous_attributes?.plan?.metadata?.plan ;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\nconst operation = type.includes(\"updated\")\n  ? \"updated\"\n  : type.includes(\"deleted\")\n  ? \"deleted\"\n  : \"created\";\n\n// 4️⃣ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  previous_plan,\n  customer_id,\n  status,\n  type,\n  operation\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -314,7 +314,8 @@
             },
             {
               "name": "client_secret",
-              "value": "=hdeJc4C7k03XotJ0KZYF58DFY28jjfaK"
+              "value": "{{ keycloak_clients.portal }}"
+          
             }
           ]
         },
@@ -777,7 +778,7 @@
             },
             {
               "name": "client_secret",
-              "value": "=hdeJc4C7k03XotJ0KZYF58DFY28jjfaK"
+              "value": "{{ keycloak_clients.portal }}"
             }
           ]
         },

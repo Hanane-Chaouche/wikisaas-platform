@@ -9,7 +9,7 @@ services:
       - .env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.portal.rule=Host(`app.{{ domain }}`)"
+      - "traefik.http.routers.portal.rule=Host(`app.{{ DOMAIN }}`)"
       - "traefik.http.routers.portal.entrypoints=websecure"
       - "traefik.http.routers.portal.tls=true"
       - "traefik.http.routers.portal.tls.certresolver=le"

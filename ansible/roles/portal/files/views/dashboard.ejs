@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mon Tableau de Bord – WikiPlatform</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: #f4f4f8;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #212121;
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { margin: 0; font-size: 1.6rem; }
+    .btn-logout {
+      background: #e53935;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.2s ease-in-out;
+    }
+    .btn-logout:hover {
+      background: #c62828;
+    }
+    main {
+      padding: 30px;
+      text-align: center;
+    }
+    .user-info {
+      margin-bottom: 25px;
+    }
+    .services {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .service-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      width: 250px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s ease-in-out;
+    }
+    .service-card:hover {
+      transform: translateY(-5px);
+    }
+    .service-card a {
+      display: inline-block;
+      margin-top: 10px;
+      color: white;
+      background: #007bff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+    .service-card a:hover {
+      background: #0056b3;
+    }
+    footer {
+      margin-top: 50px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>WikiPlatform</h1>
+    <a href="/logout" class="btn-logout">Déconnexion</a>
+  </header>
+
+  <main>
+    <div class="user-info">
+      <h2>Bienvenue, <%= user.name || user.preferred_username || user.email %> 👋</h2>
+      <p>Voici vos services disponibles :</p>
+    </div>
+
+    <% if (services.length === 0) { %>
+      <p>Aucun service actif pour le moment.</p>
+    <% } else { %>
+      <div class="services">
+        <% services.forEach(service => { %>
+          <div class="service-card">
+            <h3><%= service.name %></h3>
+            <a href="<%= service.url %>" target="_blank">Accéder au Wiki</a>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+
+  <footer>
+    © 2025 WikiPlatform – Tous droits réservés.
+  </footer>
+
+</body>
+</html>

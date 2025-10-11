@@ -90,3 +90,15 @@
   debug:
     msg: "Script d'init déjà exécuté auparavant. Aucun nouveau log généré."
   when: not keycloak_init_result.changed # Si le script n'a PAS été relancé (donc .init_done déjà présent)
+
+# -------------------------------------------------------------------
+# Tâche 5 : Charger et afficher les secrets Keycloak
+# -------------------------------------------------------------------
+- name: Charger les secrets Keycloak
+  include_vars:
+    file: /opt/keycloak/clients.json
+    name: keycloak_clients
+
+- debug:
+    msg: "Secret du client portal = {{ keycloak_clients.portal }}"
+

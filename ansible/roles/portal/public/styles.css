@@ -130,17 +130,19 @@ footer {
   font-size: 0.9em;
 }
 
-.navbar a.manage-link {
-  background: #007bff;
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 6px;
-  text-decoration: none;
+/* Boutons principaux du header (connexion et gestion Stripe) */
+.btn-action {
+  background: #007bff;        /* Bleu principal */
+  color: #fff;                /* Texte blanc */
+  padding: 8px 14px;          /* Taille du bouton */
+  border-radius: 6px;         /* Coins arrondis */
+  text-decoration: none;      /* Pas de soulignement */
+  font-size: 0.9em;
   font-weight: 500;
-  margin-left: 10px;
   transition: background 0.3s ease;
+  margin-left: 10px;          /* Petit espace entre les boutons */
 }
 
-.navbar a.manage-link:hover {
-  background: #0056b3;
+.btn-action:hover {
+  background: #0056b3;        /* Bleu plus foncé au survol */
 }

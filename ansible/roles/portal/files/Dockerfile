@@ -11,7 +11,7 @@ RUN npm install --production
 # Copier le code de l'application
 COPY server.js ./server.js
 COPY public ./public
-COPY views ./views   # <-- Nouveau : ajoute le dossier des vues EJS
+COPY views ./views
 
 # Variables d'environnement
 ENV NODE_ENV=production

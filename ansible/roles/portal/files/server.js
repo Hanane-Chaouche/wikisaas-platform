@@ -9,12 +9,12 @@ const passport = require("passport");
 const { Issuer, Strategy } = require("openid-client");
 
 const {
-  PORT = 3000,
-  DOMAIN = "wikiplatform.app",
-  KEYCLOAK_URL = "https://sso.wikiplatform.app",
-  KEYCLOAK_REALM = "saas",
-  KEYCLOAK_CLIENT_ID = "portal",
-  KEYCLOAK_CLIENT_SECRET
+  PORT,
+  DOMAIN,
+  KEYCLOAK_URL,
+  KEYCLOAK_REALM,
+  KEYCLOAK_CLIENT_ID,
+  KEYCLOAK_CLIENT_SECRET,
 } = process.env;
 
 const app = express();
@@ -97,12 +97,15 @@ app.use(passport.session());
 
       let services = [];
       if (groups.includes("starter")) {
-        services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
+        services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
       }
       if (groups.includes("pro")) {
         services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
+        services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
       }
       if (groups.includes("enterprise")) {
+        services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
+        services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
         services.push({ name: "Wiki Cyber", url: "https://cyber.wikiplatform.app" });
       }
 
@@ -111,10 +114,10 @@ app.use(passport.session());
 
     // Lancer le serveur
     app.listen(PORT, () => {
-      console.log(`✅ Portal en écoute sur https://app.${DOMAIN}:${PORT}`);
+      console.log(`Portal en écoute sur https://app.${DOMAIN}:${PORT}`);
     });
 
   } catch (err) {
-    console.error("❌ Erreur configuration Keycloak :", err);
+    console.error("Erreur configuration Keycloak :", err);
   }
 })();
