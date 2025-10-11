@@ -36,7 +36,7 @@
 
 - name: Définir le secret du client portal
   set_fact:
-    keycloak_portal_secret: "{{ keycloak_clients.portal.secret }}"
+    keycloak_portal_secret: "{{ keycloak_clients.portal }}"
 - debug:
     msg: "Secret du client portal = {{ keycloak_portal_secret }}"
 
