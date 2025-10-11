@@ -56,26 +56,9 @@
 
 - name: Définir le secret du client portal
   set_fact:
-    keycloak_portal_secret: "{{ keycloak_clients.portal}}"
+    keycloak_portal_secret: "{{ keycloak_clients.portal }}"
 - debug:
     msg: "Secret du client portal = {{ keycloak_portal_secret }}"
-
-- name: Générer .env de l’app portail
-  template:
-    src: "env.j2"
-    dest: "/opt/portal/.env"
-    mode: "0640"
-
-- name: Générer docker-compose.yml du portail
-  template:
-    src: "docker-compose.yml"
-    dest: "/opt/portal/docker-compose.yml"
-    mode: "0644"
-
-- name: Démarrer le portail (docker compose)
-  command: docker compose up -d
-  args:
-    chdir: /opt/portal
 
 # --- Ajouter ici les imports automatiques ---
 - name: Copier le workflow stripe-to-keycloak.json
