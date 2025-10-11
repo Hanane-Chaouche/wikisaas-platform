@@ -42,31 +42,6 @@
   retries: 30
   delay: 5
 
-  ## Partie portail web
-- name: Créer dossier /opt/portal
-  file:
-    path: /opt/portal
-    state: directory
-    mode: "0755"
-
-- name: Créer dossier /opt/portal/public
-  file:
-    path: /opt/portal/public
-    state: directory
-    mode: "0755"
-
-- name: Déployer les fichiers applicatifs (Dockerfile, package.json, server.js, public/)
-  copy:
-    src: "{{ item.src }}"
-    dest: "/opt/portal/{{ item.dest }}"
-    mode: "0644"
-  with_items:
-    - { src: "Dockerfile",            dest: "Dockerfile" }
-    - { src: "package.json",          dest: "package.json" }
-    - { src: "server.js",             dest: "server.js" }
-    - { src: "public/index.html",     dest: "public/index.html" }
-    - { src: "public/styles.css",     dest: "public/styles.css" }
-    - { src: "views/dashboard.ejs",   dest: "views/dashboard.ejs" }
   
   # Charger et afficher les secrets Keycloak
 
