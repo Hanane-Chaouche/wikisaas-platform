@@ -21,6 +21,8 @@
     - { src: "package.json",          dest: "package.json" }
     - { src: "server.js",             dest: "server.js" }
     - { src: "public/index.html",     dest: "public/index.html" }
+    - { src: "public/success.html",    dest: "public/success.html" }
+    - { src: "public/cancel.html",     dest: "public/cancel.html" }
     - { src: "public/styles.css",     dest: "public/styles.css" }
     - { src: "views/dashboard.ejs",   dest: "views/dashboard.ejs" }
   
