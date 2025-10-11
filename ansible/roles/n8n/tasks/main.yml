@@ -42,7 +42,7 @@
   retries: 30
   delay: 5
 
-  ---
+  ## Partie portail web
 - name: Créer dossier /opt/portal
   file:
     path: /opt/portal
