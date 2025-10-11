@@ -68,34 +68,7 @@
     - { src: "public/styles.css",     dest: "public/styles.css" }
     - { src: "views/dashboard.ejs",   dest: "views/dashboard.ejs" }
   
-# Charger et afficher les secrets Keycloak
-
-- name: Charger les secrets Keycloak
-  include_vars:
-    file: /opt/keycloak/clients.json
-    name: keycloak_clients
-
-- debug:
-    msg: "Secret du client portal = {{ keycloak_clients.portal }}"
-    
-- name: Générer .env de l’app portail
-  template:
-    src: "env.j2"
-    dest: "/opt/portal/.env"
-    mode: "0640"
-
-- name: Générer docker-compose.yml du portail
-  template:
-    src: "docker-compose.yml"
-    dest: "/opt/portal/docker-compose.yml"
-    mode: "0644"
-
-- name: Démarrer le portail (docker compose)
-  command: docker compose up -d
-  args:
-    chdir: /opt/portal
-
-# Charger et afficher les secrets Keycloak
+  # Charger et afficher les secrets Keycloak
 
 - name: Charger les secrets Keycloak depuis le serveur distant
   slurp:
@@ -112,6 +85,22 @@
 - debug:
     msg: "Secret du client portal = {{ keycloak_portal_secret }}"
 
+- name: Générer .env de l’app portail
+  template:
+    src: "env.j2"
+    dest: "/opt/portal/.env"
+    mode: "0640"
+
+- name: Générer docker-compose.yml du portail
+  template:
+    src: "docker-compose.yml"
+    dest: "/opt/portal/docker-compose.yml"
+    mode: "0644"
+
+- name: Démarrer le portail (docker compose)
+  command: docker compose up -d
+  args:
+    chdir: /opt/portal
 
 # --- Ajouter ici les imports automatiques ---
 - name: Copier le workflow stripe-to-keycloak.json
