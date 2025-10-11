@@ -32,7 +32,7 @@
     - { src: "views/dashboard.ejs",   dest: "views/dashboard.ejs" }
   
  # Charger et afficher les secrets Keycloak
-- name: Charger les secrets Keycloak depuis le serveur distant
+- name: Charger les clients.json Keycloak 
   slurp:
     src: /opt/keycloak/clients.json
   register: keycloak_clients_raw
