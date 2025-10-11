@@ -24,15 +24,21 @@
     - { src: "public/styles.css",     dest: "public/styles.css" }
     - { src: "views/dashboard.ejs",   dest: "views/dashboard.ejs" }
   
-# Charger et afficher les secrets Keycloak
+ # Charger et afficher les secrets Keycloak
+- name: Charger les secrets Keycloak depuis le serveur distant
+  slurp:
+    src: /opt/keycloak/clients.json
+  register: keycloak_clients_raw
 
-- name: Charger les secrets Keycloak
-  include_vars:
-    file: /opt/keycloak/clients.json
-    name: keycloak_clients
+- name: Convertir le JSON en dictionnaire
+  set_fact:
+    keycloak_clients: "{{ keycloak_clients_raw.content | b64decode | from_json }}"
 
+- name: Définir le secret du client portal
+  set_fact:
+    keycloak_portal_secret: "{{ keycloak_clients.portal.secret }}"
 - debug:
-    msg: "Secret du client portal = {{ keycloak_clients.portal }}"
+    msg: "Secret du client portal = {{ keycloak_portal_secret }}"
 
 - name: Générer .env de l’app portail
   template:
