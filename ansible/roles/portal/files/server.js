@@ -21,45 +21,7 @@ const app = express();
 
 // Middlewares
 app.disable("x-powered-by");
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: {
-        "default-src": ["'self'"],
-        "script-src": [
-          "'self'",
-          "https://js.stripe.com",
-          "'unsafe-inline'", // nécessaire pour Stripe
-        ],
-        "frame-src": [
-          "'self'",
-          "https://js.stripe.com",
-          "https://hooks.stripe.com",
-        ],
-        "connect-src": [
-          "'self'",
-          "https://api.stripe.com",
-          "https://hooks.stripe.com",
-        ],
-        "style-src": [
-          "'self'",
-          "'unsafe-inline'",
-          "https://fonts.googleapis.com",
-        ],
-        "img-src": [
-          "'self'",
-          "data:",
-          "https://*.stripe.com",
-        ],
-        "font-src": [
-          "'self'",
-          "https://fonts.gstatic.com",
-        ],
-      },
-    },
-  })
-);
+
 app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());

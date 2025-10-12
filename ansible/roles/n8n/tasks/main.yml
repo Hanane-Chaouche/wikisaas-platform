@@ -27,23 +27,7 @@
     mode: '0644'
   notify: Redémarrer n8n
 
-- name: Démarrer n8n avec Docker Compose v2
-  become: true
-  community.docker.docker_compose_v2:
-    project_src: /opt/n8n
-    state: present
-    
-- name: Attendre que n8n démarre
-  uri:
-    url: "https://n8n.wikiplatform.app"
-    validate_certs: no
-  register: n8n_status
-  until: n8n_status.status == 200
-  retries: 30
-  delay: 5
-
-  
-  # Charger et afficher les secrets Keycloak
+ # Charger et afficher les secrets Keycloak
 
 - name: Charger les secrets Keycloak depuis le serveur distant
   slurp:
@@ -60,6 +44,32 @@
 - debug:
     msg: "Secret du client portal = {{ keycloak_portal_secret }}"
 
+- name: Générer le fichier .env de n8n
+  become: true
+  template:
+    src: env.j2
+    dest: /opt/n8n/.env
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Redémarrer 
+  
+- name: Démarrer n8n avec Docker Compose v2
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /opt/n8n
+    state: present
+    
+- name: Attendre que n8n démarre
+  uri:
+    url: "https://n8n.wikiplatform.app"
+    validate_certs: no
+  register: n8n_status
+  until: n8n_status.status == 200
+  retries: 30
+  delay: 5
+ 
+   
 # --- Ajouter ici les imports automatiques ---
 - name: Copier le workflow stripe-to-keycloak.json.j2
   become: true
