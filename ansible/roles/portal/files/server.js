@@ -27,12 +27,42 @@ app.use(
       useDefaults: true,
       directives: {
         "default-src": ["'self'"],
-        "script-src": ["'self'", "https://js.stripe.com"],
-        "frame-src": ["'self'", "https://js.stripe.com"],
-        "connect-src": ["'self'", "https://api.stripe.com"],
-        "style-src": ["'self'", "'unsafe-inline'"], // autorise les styles inline
+
+        // Autoriser Stripe
+        "script-src": [
+          "'self'",
+          "https://js.stripe.com",
+          "https://m.stripe.network",
+          "'unsafe-inline'" // nécessaire pour certains scripts Stripe
+        ],
+        "frame-src": [
+          "'self'",
+          "https://js.stripe.com",
+          "https://hooks.stripe.com"
+        ],
+        "connect-src": [
+          "'self'",
+          "https://api.stripe.com",
+          "https://m.stripe.network"
+        ],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com"
+        ],
+        "font-src": [
+          "'self'",
+          "https://fonts.gstatic.com"
+        ],
+        "img-src": [
+          "'self'",
+          "data:",
+          "https://*.stripe.com"
+        ],
       },
     },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
   })
 );
 app.use(cors());
