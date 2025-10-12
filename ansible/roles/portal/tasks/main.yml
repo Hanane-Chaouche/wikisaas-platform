@@ -53,8 +53,8 @@
     dest: "/opt/portal/.env"
     mode: "0640"
 
-- name: Générer docker-compose.yml du portail
-  template:
+- name: Copier le docker-compose.yml du portail
+  copy:
     src: "docker-compose.yml"
     dest: "/opt/portal/docker-compose.yml"
     mode: "0644"
