@@ -41,11 +41,11 @@
   set_fact:
     keycloak_clients: "{{ keycloak_clients_raw.content | b64decode | from_json }}"
 
-- name: Définir le secret du client portal
+- name: Définir le secret du client app
   set_fact:
-    keycloak_portal_secret: "{{ keycloak_clients.portal }}"
+    keycloak_app_secret: "{{ keycloak_clients.app }}"
 - debug:
-    msg: "Secret du client portal = {{ keycloak_portal_secret }}"
+    msg: "Secret du client app = {{ keycloak_app_secret }}"
 
 - name: Générer .env de l’app portail
   template:
