@@ -21,7 +21,20 @@ const app = express();
 
 // Middlewares
 app.disable("x-powered-by");
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "https://js.stripe.com"],
+        "frame-src": ["'self'", "https://js.stripe.com"],
+        "connect-src": ["'self'", "https://api.stripe.com"],
+        "style-src": ["'self'", "'unsafe-inline'"], // autorise les styles inline
+      },
+    },
+  })
+);
 app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());
