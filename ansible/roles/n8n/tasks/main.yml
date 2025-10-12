@@ -46,12 +46,9 @@
 
 - name: Générer le fichier .env de n8n
   become: true
-  copy:
+  template:
     src: env.j2
     dest: /opt/n8n/.env
-    owner: root
-    group: root
-    mode: '0640'
   notify: Redémarrer 
   
 - name: Démarrer n8n avec Docker Compose v2
@@ -71,10 +68,10 @@
  
    
 # --- Ajouter ici les imports automatiques ---
-- name: Copier le workflow stripe-to-keycloak.json
+- name: Copier le workflow stripe-to-keycloak.json.j2
   become: true
-  copy:
-    src: stripe-to-keycloak.json      # ← depuis roles/n8n/files/
+  template:
+    src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
   vars:
     keycloak_portal_secret: "{{ keycloak_portal_secret }}"
