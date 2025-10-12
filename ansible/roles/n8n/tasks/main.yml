@@ -66,6 +66,8 @@
   template:
     src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
+  vars:
+    keycloak_portal_secret: "{{ keycloak_portal_secret }}"
     
 
 - name: Importer le workflow dans n8n
