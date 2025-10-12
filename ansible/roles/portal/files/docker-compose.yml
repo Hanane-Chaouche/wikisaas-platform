@@ -7,6 +7,10 @@ services:
     restart: always
     env_file:
       - .env
+    
+    networks:
+      - proxy
+      - portal_network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.portal.rule=Host(`app.wikiplatform.app`)"
@@ -14,12 +18,9 @@ services:
       - "traefik.http.routers.portal.tls=true"
       - "traefik.http.routers.portal.tls.certresolver=le"
       - "traefik.http.services.portal.loadbalancer.server.port=3000"
-    networks:
-      - portal_network
-      - proxy
-
+  
 networks:
-  portal_network:
-    driver: bridge
-  proxy:
-    external: true
+    proxy:
+      external: true
+    portal_network:
+      driver: bridge
