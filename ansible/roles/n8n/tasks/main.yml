@@ -41,7 +41,7 @@
 - name: Définir le secret du client app
   set_fact:
     keycloak_app_secret: "{{ keycloak_clients.app }}"
-    cacheable: true   # <-- cette ligne rend la variable persistante globalement
+  cacheable: true   # <-- cette ligne rend la variable persistante globalement
 - debug:
     msg: "Secret du client app = {{ keycloak_app_secret }}"
 
@@ -74,9 +74,7 @@
   template:
     src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
-  vars:
-    keycloak_app_secret: "{{ keycloak_app_secret }}"
-
+  
 
 - name: Importer le workflow dans n8n
   become: true
