@@ -31,8 +31,9 @@
     - { src: "public/styles.css",     dest: "public/styles.css" }
     - { src: "views/dashboard.ejs",   dest: "views/dashboard.ejs" }
   
+
  # Charger et afficher les secrets Keycloak
-- name: Charger les clients.json Keycloak 
+- name: Charger les secrets Keycloak depuis le serveur distant
   slurp:
     src: /opt/keycloak/clients.json
   register: keycloak_clients_raw
@@ -44,7 +45,10 @@
 - name: Définir le secret du client app
   set_fact:
     keycloak_app_secret: "{{ keycloak_clients.app }}"
-- debug:
+    cacheable: true   # <-- cette ligne rend la variable persistante globalement
+
+- name: Afficher le secret du client app (pour debug)
+  debug:
     msg: "Secret du client app = {{ keycloak_app_secret }}"
 
 - name: Générer .env de l’app portail
