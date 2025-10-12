@@ -46,7 +46,7 @@
 
 - name: Générer le fichier .env de n8n
   become: true
-  :
+  copy:
     src: env.j2
     dest: /opt/n8n/.env
     owner: root
