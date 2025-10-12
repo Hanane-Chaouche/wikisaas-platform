@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-require('dotenv').config(); // ← CHARGEMENT DES VARIABLES .env
+
 const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
