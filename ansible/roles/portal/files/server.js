@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+require('dotenv').config(); // ← CHARGEMENT DES VARIABLES .env
 const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -16,6 +17,15 @@ const {
   KEYCLOAK_CLIENT_ID,
   KEYCLOAK_CLIENT_SECRET,
 } = process.env;
+// DEBUG: Afficher les variables chargées (à retirer en production)
+console.log('Variables chargées:', {
+  PORT,
+  DOMAIN,
+  KEYCLOAK_URL,
+  KEYCLOAK_REALM,
+  KEYCLOAK_CLIENT_ID,
+  KEYCLOAK_CLIENT_SECRET: KEYCLOAK_CLIENT_SECRET ? '***' : 'NON DÉFINI'
+});
 
 const app = express();
 
