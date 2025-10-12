@@ -41,7 +41,7 @@
 - name: Définir le secret du client portal
   set_fact:
     keycloak_portal_secret: "{{ keycloak_clients.portal }}"
-  cacheable: true   # <-- cette ligne rend la variable persistante globalement
+    cacheable: true   # <-- cette ligne rend la variable persistante globalement
 - debug:
     msg: "Secret du client portal = {{ keycloak_portal_secret }}"
 
@@ -52,7 +52,7 @@
     dest: /opt/n8n/.env
   vars:
     keycloak_portal_secret: "{{ keycloak_portal_secret }}"
-  notify: Redémarrer 
+  notify: Redémarrer n8n
   
 - name: Démarrer n8n avec Docker Compose v2
   become: true
