@@ -41,8 +41,8 @@
 - name: Définir le secret du client app
   set_fact:
     keycloak_app_secret: "{{ keycloak_clients.app }}"
-  cacheable: true   # <-- cette ligne rend la variable persistante globalement
-  
+    cacheable: true   # <-- cette ligne rend la variable persistante globalement
+
 - name: Afficher le secret du client app (pour debug)
   debug:
     msg: "Secret du client app = {{ keycloak_app_secret }}"
