@@ -132,8 +132,10 @@ get_client_uuid() {
 # Fonction : création d’un client avec ses mappers
 create_client () {
   local cid="$1"
-  local redirect="https://${cid}.${BASE_DOMAIN}/login/oidc/callback"
-  local origin="https://${cid}.${BASE_DOMAIN}"
+  local base_url="https://${cid}.${BASE_DOMAIN}"
+  local redirect="${base_url}/*"
+  local post_logout="${base_url}/*"
+  local origin="${base_url}"
 
   # --- Client ---
   if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" \
@@ -143,8 +145,10 @@ create_client () {
     echo " Création du client '${cid}'..."
     dc "$KCADM create clients -r ${REALM} -f - <<JSON
 { \"clientId\":\"${cid}\", \"protocol\":\"openid-connect\", \"publicClient\":false,
-  \"standardFlowEnabled\":true, \"redirectUris\":[\"${redirect}\"],
-  \"webOrigins\":[\"${origin}\"] }
+  \"standardFlowEnabled\":true, \"directAccessGrantsEnabled\":true,
+  \"rootUrl\":\"${base_url}\", \"redirectUris\":[\"${redirect}\"],
+  \"webOrigins\":[\"${origin}\"],
+  \"attributes\":{ \"post.logout.redirect.uris\":\"${post_logout}\" } }
 JSON"
   fi
 
@@ -218,11 +222,11 @@ done
 #############################################
 # Activer Service Account et donner le rôle super-admin
 #############################################
-echo -e "\n=== Configuration du client portal ==="
+echo -e "\n=== Configuration du client app ==="
 
-PORTAL_UUID=$(get_client_uuid "portal")
+PORTAL_UUID=$(get_client_uuid "app")
 if [ -z "$PORTAL_UUID" ]; then
-  echo " ERR: UUID du client portal introuvable"
+  echo " ERR: UUID du client app introuvable"
   exit 1
 fi
 
