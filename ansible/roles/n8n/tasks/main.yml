@@ -61,14 +61,12 @@
     msg: "Secret du client portal = {{ keycloak_portal_secret }}"
 
 # --- Ajouter ici les imports automatiques ---
-- name: Copier le workflow stripe-to-keycloak.json
+- name: Copier le workflow stripe-to-keycloak.json.j2
   become: true
-  copy:
-    src: stripe-to-keycloak.json      # ← depuis roles/n8n/files/
+  template:
+    src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
-    owner: 1000
-    group: 1000
-    mode: '0644'
+    
 
 - name: Importer le workflow dans n8n
   become: true
@@ -77,13 +75,10 @@
 
 - name: Copier les credentials n8n
   become: true
-  copy:
-    src: credentials.json
+  template:
+    src: credentials.json.j2
     dest: /opt/n8n/data/credentials.json
-    owner: 1000
-    group: 1000
-    mode: '0600'
-
+    
 - name: Importer les credentials dans n8n
   become: true
   command: docker exec n8n n8n import:credentials --input=/home/node/.n8n/credentials.json
