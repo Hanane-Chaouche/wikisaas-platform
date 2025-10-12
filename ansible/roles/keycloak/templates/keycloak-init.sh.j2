@@ -197,13 +197,13 @@ JSON"
 create_client "ia"
 create_client "devops"
 create_client "cyber"
-create_client "portal"  
+create_client "app"  
 
 echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
 
 # Vérifier que les 4 clients existent avant export
 echo "[check] Vérification de la présence des clients..."
-for cid in ia devops cyber portal; do
+for cid in ia devops cyber app; do
   for i in {1..10}; do
     if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" | grep -q '"id"'; then
       echo "  → $cid trouvé"
@@ -227,10 +227,10 @@ if [ -z "$PORTAL_UUID" ]; then
 fi
 
 # Activer le Service Account
-echo " Activation du service account pour 'portal'..."
+echo " Activation du service account pour 'app'..."
 dc "$KCADM update clients/${PORTAL_UUID} -r ${REALM} -s 'serviceAccountsEnabled=true'"
 
-SA_USER="service-account-portal"
+SA_USER="service-account-app"
 
 # Attendre la création automatique du compte
 for i in {1..10}; do
@@ -244,13 +244,13 @@ for i in {1..10}; do
 done
 
 # Donner le rôle super-admin (realm-admin)
-echo " Attribution du rôle realm-admin au service account portal..."
+echo " Attribution du rôle realm-admin au service account app..."
 dc "$KCADM add-roles -r ${REALM} \
     --uusername ${SA_USER} \
     --cclientid realm-management \
     --rolename realm-admin" || true
 
-echo " Le compte de service 'portal' possède maintenant le rôle super-admin (realm-admin)."
+echo " Le compte de service 'app' possède maintenant le rôle super-admin (realm-admin)."
 
 #############################################
 # Export des secrets des clients OIDC
@@ -265,7 +265,7 @@ echo "{" > $OUTPUT
 first=true  # variable pour gérer la virgule entre les entrées JSON
 
 # On boucle sur tes 4 clients Wiki.js
-for cid in ia devops cyber portal; do
+for cid in ia devops cyber app; do
   # 1. Récupérer l'UUID (ID interne Keycloak) du client via kcadm
   uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" \
          | grep '"id"' | head -n1 | cut -d '"' -f4)

@@ -38,21 +38,19 @@
   set_fact:
     keycloak_clients: "{{ keycloak_clients_raw.content | b64decode | from_json }}"
 
-- name: Définir le secret du client portal
+- name: Définir le secret du client app
   set_fact:
-    keycloak_portal_secret: "{{ keycloak_clients.portal }}"
+    keycloak_app_secret: "{{ keycloak_clients.app }}"
     cacheable: true   # <-- cette ligne rend la variable persistante globalement
 - debug:
-    msg: "Secret du client portal = {{ keycloak_portal_secret }}"
+    msg: "Secret du client app = {{ keycloak_app_secret }}"
 
 - name: Générer le fichier .env de n8n
   become: true
   template:
     src: env.j2
     dest: /opt/n8n/.env
-  vars:
-    keycloak_portal_secret: "{{ keycloak_portal_secret }}"
-  notify: Redémarrer n8n
+ 
   
 - name: Démarrer n8n avec Docker Compose v2
   become: true
@@ -77,8 +75,8 @@
     src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
   vars:
-    keycloak_portal_secret: "{{ keycloak_portal_secret }}"
-    
+    keycloak_app_secret: "{{ keycloak_app_secret }}"
+
 
 - name: Importer le workflow dans n8n
   become: true
