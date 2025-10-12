@@ -10,7 +10,7 @@ services:
     
     networks:
       - proxy
-      - portal_network
+      
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.portal.rule=Host(`app.wikiplatform.app`)"
@@ -22,5 +22,4 @@ services:
 networks:
     proxy:
       external: true
-    portal_network:
-      driver: bridge
+    
