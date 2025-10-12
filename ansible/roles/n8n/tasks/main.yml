@@ -46,7 +46,7 @@
 
 - name: Générer le fichier .env de n8n
   become: true
-  template:
+  :
     src: env.j2
     dest: /opt/n8n/.env
     owner: root
@@ -71,10 +71,10 @@
  
    
 # --- Ajouter ici les imports automatiques ---
-- name: Copier le workflow stripe-to-keycloak.json.j2
+- name: Copier le workflow stripe-to-keycloak.json
   become: true
-  template:
-    src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
+  copy:
+    src: stripe-to-keycloak.json      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
   vars:
     keycloak_portal_secret: "{{ keycloak_portal_secret }}"
