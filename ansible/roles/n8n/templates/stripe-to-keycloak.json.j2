@@ -161,7 +161,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{% endraw %}{{ keycloak_client_secret }}{% raw %}"
+              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
           ]
         },
         "options": {}
@@ -301,7 +301,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{% endraw %}{{ keycloak_client_secret }}{% raw %}"
+              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
             }
           ]
         },
@@ -763,7 +763,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{% endraw %}{{ keycloak_client_secret }}{% raw %}"
+              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
             }
           ]
         },
@@ -886,7 +886,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1️⃣ Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\n\n// 4️ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  customer_id,\n  status,\n  type,\n  \n}];\n"
+        "jsCode": "//  Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\n\n// 4️ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  customer_id,\n  status,\n  type,\n  \n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

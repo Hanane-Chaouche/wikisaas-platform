@@ -68,20 +68,21 @@
   until: n8n_status.status == 200
   retries: 30
   delay: 5
- 
-   
+    
 # --- Ajouter ici les imports automatiques ---
 - name: Copier le workflow stripe-to-keycloak.json.j2
   become: true
   template:
     src: stripe-to-keycloak.json.j2      # ← depuis roles/n8n/files/
     dest: /opt/n8n/data/stripe-to-keycloak.json
+  notify: Redémarrer n8n
   
-
 - name: Importer le workflow dans n8n
   become: true
   command: docker exec n8n n8n import:workflow --input=/home/node/.n8n/stripe-to-keycloak.json
-  ignore_errors: true  
+  ignore_errors: true 
+  when: workflow_file.changed
+  notify: Redémarrer n8n 
 
 - name: Copier les credentials n8n
   become: true
@@ -93,3 +94,5 @@
   become: true
   command: docker exec n8n n8n import:credentials --input=/home/node/.n8n/credentials.json
   ignore_errors: true
+  when: creds_file.changed
+  notify: Redémarrer n8n
