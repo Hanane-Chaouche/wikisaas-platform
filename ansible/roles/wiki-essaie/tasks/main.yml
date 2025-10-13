@@ -170,7 +170,6 @@
   loop_control:
     label: "{{ item.name }}"
   ignore_errors: true
-
 # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
@@ -192,23 +191,23 @@
         'clientSecret', '{{ kc_clients[item.name] }}',
         'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-       ),
+        'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+        'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+        'logoutUpstream', false,
+        'logoutUpstreamRedirectLegacy', false
+      ),
       false,
       '[]'::json,
       '[]'::json
     )
     ON CONFLICT (\"strategyKey\") DO UPDATE
       SET config = EXCLUDED.config;"
-  register: keycloak_insert   'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-        'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-        'logoutUpstream', false,
-        'logoutUpstreamRedirectLegacy', false
-    
+  register: keycloak_insert
   changed_when: "'INSERT 0 1' in keycloak_insert.stdout or 'UPDATE' in keycloak_insert.stdout"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-
+ 
 # Installer pip3 (nécessaire pour installer passlib)
 - name: Installer pip3 (Ubuntu)
   become: true
