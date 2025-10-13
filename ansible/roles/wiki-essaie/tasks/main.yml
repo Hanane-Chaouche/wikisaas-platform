@@ -134,7 +134,6 @@
   loop_control:
     label: "{{ item.name }}"
 
-
 # Étape 3 : Configurer les bases de données dans les conteneurs Docker
 - name: Attendre que les DB Docker soient prêtes
   command: docker exec {{ item.pg_host }} pg_isready -U {{ item.pg_user }} -d {{ item.pg_db }}
@@ -200,7 +199,7 @@
       ),
       true,
       '[]'::json,
-      '["Administrator"]'::json
+      '[Administrator]'::json
     )
     ON CONFLICT (\"strategyKey\") DO UPDATE
       SET config = EXCLUDED.config;"
