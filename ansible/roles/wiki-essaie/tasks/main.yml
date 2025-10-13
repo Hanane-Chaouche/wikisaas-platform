@@ -1,18 +1,4 @@
 ---
-# Étape 0 : Construire la liste des instances (manuel ou dynamique)
-- name: Préparer la liste des instances
-  set_fact:
-    instances: >-
-      {{ wikis_docker if subdomain is not defined else
-         [ { 'name': subdomain,
-             'pg_db': pg_db,
-             'pg_user': pg_user,
-             'pg_pass': pg_pass,
-             'admin_email': admin_email,
-             'admin_password': admin_password,
-             'site_url': site_url } ] }}
-# Étape 1 : Préparer les dossiers et fichiers nécessaires
-
 - name: Créer le dossier Wiki.js
   become: true
   file:
@@ -22,22 +8,20 @@
     group: root
     mode: '0755'
 
-- name: Créer le dossier des fichiers envs pour Wiki.js
+- name: Créer le dossier des fichiers .env pour Wiki.js
   become: true
   file:
-    path: "/opt/wiki/{{ item.name }}/envs"
+    path: /opt/wiki/envs
     state: directory
     owner: root
     group: root
     mode: '0755'
-  loop: "{{ instances }}"
-  loop_control: {label: "{{ item.name }}"}
 
 - name: Supprimer les anciens fichiers .env
   file:
-    path: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
+    path: "/opt/wiki/envs/wiki-{{ item.name }}.env"
     state: absent
-  loop: "{{ instances }}"
+  loop: "{{ wikis }}"
 
 - name: Créer le dossier des certificats RDS
   become: true
@@ -55,7 +39,16 @@
     dest: /opt/wiki/certs/rds-ca-bundle.pem
     mode: '0644'
 
-# -------------------------------------------------------------------
+
+- name: Copier le docker-compose.yml de Wiki.js
+  become: true
+  copy:
+    src: docker-compose.yml        # ton fichier compose (dans roles/wiki/files/)
+    dest: /opt/wiki/docker-compose.yml
+    mode: '0644'
+  notify: Restart Wiki.js
+
+  # -------------------------------------------------------------------
 # Étape 1 : Lire le fichier clients.json sur la VM
 # -------------------------------------------------------------------
 - name: Lire clients.json sur la VM
@@ -81,10 +74,10 @@
 - name: Générer les fichiers .env pour chaque instance Wiki.js
   become: true
   template:
-    src: env.j2                    #  template (dans roles/wiki/templates/)
-    dest: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
+    src: env.j2                    # ton template (dans roles/wiki/templates/)
+    dest: "/opt/wiki/envs/wiki-{{ item.name }}.env"
     mode: '0644'
-  loop: "{{ instances }}"              # défini dans group_vars/all.yml
+  loop: "{{ wikis }}"              # défini dans group_vars/all.yml
   notify: Restart Wiki.js
 
 - name: Copier le Dockerfile Postgres custom
@@ -98,43 +91,20 @@
     name: postgres-python
     tag: "15"
     build:
-      path: /opt/wiki     # ou le chemin où tu as mis le Dockerfile.postgres
+      path: /opt/wiki     # ou le chemin où tu as mis ton Dockerfile.postgres
       dockerfile: Dockerfile.postgres
     source: build
     state: present
-- name: Créer le dossier item.name
-  become: true
-  file:
-    path: /opt/wiki/{{ item.name }}
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-  loop: "{{ instances }}"
-  loop_control: {label: "{{ item.name }}"}
 
-
-# 7) Générer docker-compose.yml par instance
-- name: Générer le docker-compose.yml pour chaque instance
+- name: Déployer Wiki.js avec Docker Compose v2
   become: true
-  template:
-    src: docker-compose.yml.j2
-    dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
-    mode: '0644'
-  loop: "{{ instances }}"
-  loop_control: {label: "{{ item.name }}"}
+  community.docker.docker_compose_v2:
+    project_src: /opt/wiki
+    state: present
   notify: Restart Wiki.js
-
-# Étape 3 : Déployer chaque Wiki.js a
-- name: Déployer chaque Wiki.js avec Docker Compose v2
-  command: docker compose up -d
-  args:
-    chdir: "/opt/wiki/{{ item.name }}"
-  loop: "{{ instances }}"
-  loop_control:
-    label: "{{ item.name }}"
-
+# -------------------------------------------------------------------
 # Étape 3 : Configurer les bases de données dans les conteneurs Docker
+# -------------------------------------------------------------------
 - name: Attendre que les DB Docker soient prêtes
   command: docker exec {{ item.pg_host }} pg_isready -U {{ item.pg_user }} -d {{ item.pg_db }}
   register: pg_ready
@@ -169,6 +139,7 @@
   loop_control:
     label: "{{ item.name }}"
   ignore_errors: true
+
 # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
@@ -192,14 +163,12 @@
         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
         'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
         'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-        'logoutUpstream', true,
-        'logoutUpstreamRedirectLegacy', false,
-        'groupsClaim', 'groups',
-        'rolesClaim', 'realm_access.roles'
+        'logoutUpstream', false,
+        'logoutUpstreamRedirectLegacy', false
       ),
-      true,
+      false,
       '[]'::json,
-      '[Administrator]'::json
+      '[]'::json
     )
     ON CONFLICT (\"strategyKey\") DO UPDATE
       SET config = EXCLUDED.config;"
@@ -208,7 +177,7 @@
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
- 
+
 # Installer pip3 (nécessaire pour installer passlib)
 - name: Installer pip3 (Ubuntu)
   become: true
@@ -286,7 +255,7 @@
 
 
 # -------------------------------------------------------------------
-# - name: Upsert locale 'en' (PK sur code)
+#- name: Upsert locale 'en' (PK sur code)
 #  command: >
 #    docker exec -i {{ item.pg_host }}
 #    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
@@ -313,7 +282,7 @@
 #  loop_control:
 #    label: "{{ item.name }}"
 
-# - name: Seed editors (markdown / wysiwyg / code)
+#- name: Seed editors (markdown / wysiwyg / code)
 #  command: >
 #    docker exec -i {{ item.pg_host }}
 #    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
@@ -337,7 +306,7 @@
 # - Sert pour la première connexion avant configuration Keycloak
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
-# - name: Créer un compte admin local dans chaque DB Docker
+#- name: Créer un compte admin local dans chaque DB Docker
 #  command: >
 #    docker exec -i {{ item.pg_host }}
 #    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "

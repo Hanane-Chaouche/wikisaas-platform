@@ -62,7 +62,7 @@ fi
 #  Création des Rôles
 #############################################
 echo -e "\n=== Création des Rôles ==="
-for role in ia-admin devops-admin cyber-admin; do
+for role in admin reader writer; do
   if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
     echo " Rôle '${role}' existe déjà."
   else
