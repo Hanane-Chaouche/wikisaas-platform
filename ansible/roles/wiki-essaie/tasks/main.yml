@@ -1,4 +1,18 @@
 ---
+# Étape 0 : Construire la liste des instances (manuel ou dynamique)
+- name: Préparer la liste des instances
+  set_fact:
+    instances: >-
+      {{ wikis_docker if subdomain is not defined else
+         [ { 'name': subdomain,
+             'pg_db': pg_db,
+             'pg_user': pg_user,
+             'pg_pass': pg_pass,
+             'admin_email': admin_email,
+             'admin_password': admin_password,
+             'site_url': site_url } ] }}
+# Étape 1 : Préparer les dossiers et fichiers nécessaires
+
 - name: Créer le dossier Wiki.js
   become: true
   file:
@@ -8,20 +22,22 @@
     group: root
     mode: '0755'
 
-- name: Créer le dossier des fichiers .env pour Wiki.js
+- name: Créer le dossier des fichiers envs pour Wiki.js
   become: true
   file:
-    path: /opt/wiki/envs
+    path: "/opt/wiki/{{ item.name }}/envs"
     state: directory
     owner: root
     group: root
     mode: '0755'
+  loop: "{{ instances }}"
+  loop_control: {label: "{{ item.name }}"}
 
 - name: Supprimer les anciens fichiers .env
   file:
-    path: "/opt/wiki/envs/wiki-{{ item.name }}.env"
+    path: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
     state: absent
-  loop: "{{ wikis }}"
+  loop: "{{ instances }}"
 
 - name: Créer le dossier des certificats RDS
   become: true
@@ -39,16 +55,7 @@
     dest: /opt/wiki/certs/rds-ca-bundle.pem
     mode: '0644'
 
-
-- name: Copier le docker-compose.yml de Wiki.js
-  become: true
-  template:
-    src: docker-compose.yml.j2       # ton fichier compose (dans roles/wiki/files/)
-    dest: /opt/wiki/docker-compose.yml
-    mode: '0644'
-  notify: Restart Wiki.js
-
-  # -------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Étape 1 : Lire le fichier clients.json sur la VM
 # -------------------------------------------------------------------
 - name: Lire clients.json sur la VM
@@ -74,10 +81,10 @@
 - name: Générer les fichiers .env pour chaque instance Wiki.js
   become: true
   template:
-    src: env.j2                    # ton template (dans roles/wiki/templates/)
-    dest: "/opt/wiki/envs/wiki-{{ item.name }}.env"
+    src: env.j2                    #  template (dans roles/wiki/templates/)
+    dest: "/opt/wiki/{{ item.name }}/envs/wiki-{{ item.name }}.env"
     mode: '0644'
-  loop: "{{ wikis }}"              # défini dans group_vars/all.yml
+  loop: "{{ instances }}"              # défini dans group_vars/all.yml
   notify: Restart Wiki.js
 
 - name: Copier le Dockerfile Postgres custom
@@ -91,20 +98,44 @@
     name: postgres-python
     tag: "15"
     build:
-      path: /opt/wiki     # ou le chemin où tu as mis ton Dockerfile.postgres
+      path: /opt/wiki     # ou le chemin où tu as mis le Dockerfile.postgres
       dockerfile: Dockerfile.postgres
     source: build
     state: present
-
-- name: Déployer Wiki.js avec Docker Compose v2
+- name: Créer le dossier item.name
   become: true
-  community.docker.docker_compose_v2:
-    project_src: /opt/wiki
-    state: present
+  file:
+    path: /opt/wiki/{{ item.name }}
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ instances }}"
+  loop_control: {label: "{{ item.name }}"}
+
+
+# 7) Générer docker-compose.yml par instance
+- name: Générer le docker-compose.yml pour chaque instance
+  become: true
+  template:
+    src: docker-compose.yml.j2
+    dest: "/opt/wiki/{{ item.name }}/docker-compose.yml"
+    mode: '0644'
+  loop: "{{ instances }}"
+  loop_control: {label: "{{ item.name }}"}
   notify: Restart Wiki.js
-# -------------------------------------------------------------------
+
+# Étape 3 : Déployer chaque Wiki.js a
+- name: Déployer chaque Wiki.js avec Docker Compose v2
+  command: docker compose up -d
+  args:
+    chdir: "/opt/wiki/{{ item.name }}"
+  loop: "{{ instances }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+
 # Étape 3 : Configurer les bases de données dans les conteneurs Docker
-# -------------------------------------------------------------------
 - name: Attendre que les DB Docker soient prêtes
   command: docker exec {{ item.pg_host }} pg_isready -U {{ item.pg_user }} -d {{ item.pg_db }}
   register: pg_ready
@@ -142,36 +173,39 @@
 
 # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
-  command: >
-    docker exec -i {{ item.pg_host }}
-    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -t -A -c "
+  shell: |
+    docker exec -i {{ item.pg_host }} bash -c 'cat <<EOF | psql -U {{ item.pg_user }} -d {{ item.pg_db }} -t -A
     INSERT INTO authentication
-     (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
-      \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+     ("key", "strategyKey", "displayName", "isEnabled", "order",
+      "config", "selfRegistration", "domainWhitelist", "autoEnrollGroups")
     VALUES (
       gen_random_uuid(),
-      'keycloak',
-      'Keycloak',
+      ''keycloak'',
+      ''Keycloak'',
       true,
       1,
       jsonb_build_object(
-        'host', 'https://sso.{{ base_domain }}',
-        'realm', 'saas',
-        'clientId', '{{ item.name }}',
-        'clientSecret', '{{ kc_clients[item.name] }}',
-        'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
-        'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-        'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
-        'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-        'logoutUpstream', false,
-        'logoutUpstreamRedirectLegacy', false
+        ''host'', ''https://sso.{{ base_domain }}'',
+        ''realm'', ''saas'',
+        ''clientId'', ''{{ item.name }}'',
+        ''clientSecret'', ''{{ kc_clients[item.name] }}'',
+        ''authorizationURL'', ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth'',
+        ''tokenURL'',        ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token'',
+        ''userInfoURL'',     ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo'',
+        ''logoutURL'',       ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout'',
+        ''logoutUpstream'',  false,
+        ''logoutUpstreamRedirectLegacy'', false,
+        ''groupsClaim'', ''groups''
       ),
-      false,
+      true,
       '[]'::json,
-      '[]'::json
+      ''["Administrators"]''::json
     )
-    ON CONFLICT (\"strategyKey\") DO UPDATE
-      SET config = EXCLUDED.config;"
+    ON CONFLICT ("strategyKey") DO UPDATE
+      SET config = EXCLUDED.config,
+          selfRegistration = EXCLUDED.selfRegistration,
+          autoEnrollGroups = EXCLUDED.autoEnrollGroups;
+    EOF'
   register: keycloak_insert
   changed_when: "'INSERT 0 1' in keycloak_insert.stdout or 'UPDATE' in keycloak_insert.stdout"
   loop: "{{ wikis_docker }}"
@@ -255,7 +289,7 @@
 
 
 # -------------------------------------------------------------------
-#- name: Upsert locale 'en' (PK sur code)
+# - name: Upsert locale 'en' (PK sur code)
 #  command: >
 #    docker exec -i {{ item.pg_host }}
 #    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
@@ -282,7 +316,7 @@
 #  loop_control:
 #    label: "{{ item.name }}"
 
-#- name: Seed editors (markdown / wysiwyg / code)
+# - name: Seed editors (markdown / wysiwyg / code)
 #  command: >
 #    docker exec -i {{ item.pg_host }}
 #    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -v ON_ERROR_STOP=1 -c "
@@ -306,7 +340,7 @@
 # - Sert pour la première connexion avant configuration Keycloak
 # - Si l’admin existe déjà, met à jour son mot de passe et réactive le compte
 # -------------------------------------------------------------------
-#- name: Créer un compte admin local dans chaque DB Docker
+# - name: Créer un compte admin local dans chaque DB Docker
 #  command: >
 #    docker exec -i {{ item.pg_host }}
 #    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
