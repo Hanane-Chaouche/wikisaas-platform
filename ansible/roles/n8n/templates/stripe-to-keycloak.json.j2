@@ -1,4 +1,3 @@
-{% raw %}
 {
   "name": "stripe-to-keycloak.json",
   "nodes": [
@@ -35,8 +34,8 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -1552,
-        -160
+        -1536,
+        -128
       ]
     },
     {
@@ -70,7 +69,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        32,
+        -16,
         -448
       ]
     },
@@ -80,7 +79,7 @@
         "toEmail": "={{$node[\"Extract Plan + Email\"].json[\"email\"]}}\n",
         "ccEmail": "=",
         "subject": "Bienvenue sur WikiPlatform ",
-        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f7f9fc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.1);\n    }\n    h1 {\n      color: #2a7ade;\n      font-size: 22px;\n      margin-bottom: 10px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 12px 0;\n    }\n    .plan-box {\n      background: #e9f5ff;\n      color: #004085;\n      border-left: 4px solid #2a7ade;\n      padding: 10px 15px;\n      border-radius: 6px;\n      margin: 15px 0;\n      font-weight: 600;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 24px;\n      border-radius: 8px;\n      margin-top: 20px;\n      font-weight: 600;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Bienvenue {{$node[\"Extract Plan + Email\"].json[\"firstName\"]}} {{$node[\"Extract Plan + Email\"].json[\"lastName\"]}},</h1>\n\n    <p>Merci d’avoir rejoint <strong>WikiPlatform</strong> </p>\n\n    <p>\n      Votre abonnement <span class=\"plan-box\">\n        {{$node[\"Extract Plan + Email\"].json[\"plan\"]}}\n      </span> a été activé avec succès.\n    </p>\n\n    <p>\n      Vous pouvez dès maintenant <strong>explorer votre plateforme WikiPlatform</strong> et profiter de toutes ses fonctionnalités.\n    </p>\n\n    <p style=\"text-align:center;\">\n      <a class=\"button\" href=\"https://ia.wikiplatform.app\" target=\"_blank\">\n        Accéder à mon espace Wiki\n      </a>\n    </p>\n\n    <p>\n      Nous vous souhaitons une excellente expérience au sein de <strong>WikiPlatform</strong>.  \n      Si vous avez la moindre question, notre équipe reste à votre écoute.\n    </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est automatique, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
+        "html": "=<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: \"Segoe UI\", Roboto, Arial, sans-serif;\n      background-color: #f7f9fc;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      background: #ffffff;\n      max-width: 600px;\n      margin: 40px auto;\n      padding: 30px 40px;\n      border-radius: 12px;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.1);\n    }\n    h1 {\n      color: #2a7ade;\n      font-size: 22px;\n      margin-bottom: 10px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      margin: 12px 0;\n    }\n    .plan-box {\n      background: #e9f5ff;\n      color: #004085;\n      border-left: 4px solid #2a7ade;\n      padding: 10px 15px;\n      border-radius: 6px;\n      margin: 15px 0;\n      font-weight: 600;\n    }\n    .button {\n      display: inline-block;\n      background-color: #2a7ade;\n      color: #fff !important;\n      text-decoration: none;\n      padding: 12px 24px;\n      border-radius: 8px;\n      margin-top: 20px;\n      font-weight: 600;\n    }\n    .footer {\n      margin-top: 30px;\n      font-size: 14px;\n      color: #777;\n      text-align: center;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Bienvenue {{$node[\"Extract Plan + Email\"].json[\"firstName\"]}} {{$node[\"Extract Plan + Email\"].json[\"lastName\"]}},</h1>\n\n    <p>Merci d’avoir rejoint <strong>WikiPlatform</strong> </p>\n\n    <p>\n      Votre abonnement <span class=\"plan-box\">\n        {{$node[\"Extract Plan + Email\"].json[\"plan\"]}}\n      </span> a été activé avec succès.\n    </p>\n    <p>\n      <strong>Vos identifiants de connexion :</strong><br>\n      Identifiant : <strong>{{$node[\"Extract Plan + Email\"].json[\"username\"]}}</strong><br>\n      Mot de passe temporaire : <strong>{{$node[\"Generate Password\"].json[\"password\"]}}</strong>\n    </p>\n\n    <p>\n      Vous pouvez dès maintenant <strong>explorer votre plateforme WikiPlatform</strong> et profiter de toutes ses fonctionnalités.\n    </p>\n\n    <p style=\"text-align:center;\">\n      <a class=\"button\" href=\"https://ia.wikiplatform.app\" target=\"_blank\">\n        Accéder à mon espace Wiki\n      </a>\n    </p>\n\n    <p>\n      Nous vous souhaitons une excellente expérience au sein de <strong>WikiPlatform</strong>.  \n      Si vous avez la moindre question, notre équipe reste à votre écoute.\n    </p>\n\n    <div class=\"footer\">\n      — L’équipe <strong>WikiPlatform</strong> —<br>\n      <small>Ce message est automatique, merci de ne pas y répondre.</small>\n    </div>\n  </div>\n</body>\n</html>\n",
         "options": {}
       },
       "id": "2514fbec-56ad-4499-87af-174df2d735f7",
@@ -133,7 +132,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1216,
+        -1248,
         -144
       ],
       "id": "6b4f6995-d7d2-453f-ac0b-faae1f87e0ed",
@@ -161,7 +160,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
+              "value": "GltA6ZEY5mWeAcvW66JnGnbgyURJGimv"
             }
           ]
         },
@@ -199,7 +198,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"username\": \"{{$node['Extract Plan + Email'].json['username']}}\",\n  \"email\": \"{{$node['Extract Plan + Email'].json['email']}}\",\n  \"firstName\": \"{{$node['Extract Plan + Email'].json['firstName']}}\",\n  \"lastName\": \"{{$node['Extract Plan + Email'].json['lastName']}}\",\n  \"enabled\": true,\n  \"emailVerified\": true,\n  \"credentials\": [\n    {\n      \"type\": \"password\",\n      \"value\": \"{{Math.random().toString(36).slice(-8)}}\",\n      \"temporary\": false\n    }\n  ]\n}\n",
+        "jsonBody": "={\n  \"username\": \"{{$node['Extract Plan + Email'].json['username']}}\",\n  \"email\": \"{{$node['Extract Plan + Email'].json['email']}}\",\n  \"firstName\": \"{{$node['Extract Plan + Email'].json['firstName']}}\",\n  \"lastName\": \"{{$node['Extract Plan + Email'].json['lastName']}}\",\n  \"enabled\": true,\n  \"emailVerified\": true,\n  \"credentials\": [\n    {\n      \"type\": \"password\",\n      \"value\": \"{{$node['Generate Password'].json['password']}}\",\n      \"temporary\": false\n    }\n  ]\n}\n",
         "options": {
           "response": {
             "response": {
@@ -212,26 +211,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -880,
-        -336
+        -768,
+        -320
       ],
       "id": "adedd65d-93ba-4c5e-8437-c6c0470d9dbd",
       "name": "Keycloak: Create User",
       "alwaysOutputData": false,
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n//  Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n// 🧠 Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  const out = $node[\"HTTP Request_find_user\"].json;   // peut être un objet OU un tableau\n  const existingUser = Array.isArray(out) ? out[0] : out; \n\n  if (existingUser && existingUser.id) {\n    userId = existingUser.id;\n    console.log(\" Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -528,
-        -304
-      ],
-      "id": "8a3acb7c-a575-42b0-9434-1e82c9e859e1",
-      "name": "Code in JavaScript"
     },
     {
       "parameters": {
@@ -255,8 +241,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -368,
-        -304
+        -352,
+        -320
       ],
       "id": "9f09b722-7e32-491c-8427-4618f73b408a",
       "name": "Keycloak: Assign Group"
@@ -270,7 +256,7 @@
             {
               "name": "Authorization",
               "value": "=bearer {{$env.STRIPE_SECRET_KEY}}"
-           }
+            }
           ]
         },
         "options": {}
@@ -315,8 +301,7 @@
             },
             {
               "name": "client_secret",
-              "value":"{% endraw %}{{ keycloak_app_secret }}{% raw %}"
-          
+              "value": "GltA6ZEY5mWeAcvW66JnGnbgyURJGimv"
             }
           ]
         },
@@ -350,8 +335,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        -864,
-        -48
+        -784,
+        -80
       ],
       "credentials": {
         "smtp": {
@@ -615,8 +600,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -720,
-        -304
+        -640,
+        -320
       ],
       "id": "17015779-3d02-4cdd-81c8-192d85d04bf8",
       "name": "find_group_id"
@@ -746,7 +731,6 @@
             {
               "name": "Authorization",
               "value": "=bearer {{$env.STRIPE_SECRET_KEY}}"
-
             }
           ]
         },
@@ -779,7 +763,7 @@
             },
             {
               "name": "client_secret",
-              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
+              "value": "GltA6ZEY5mWeAcvW66JnGnbgyURJGimv"
             }
           ]
         },
@@ -998,10 +982,36 @@
       "typeVersion": 2.2,
       "position": [
         -1088,
-        -192
+        -256
       ],
       "id": "95048943-3c01-4a0d-9732-d77d38ce2c13",
       "name": "If_not_find_user"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  password: Math.random().toString(36).slice(-8)\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        -480
+      ],
+      "id": "367e88d4-6610-4b29-8bec-ea1bda144fc9",
+      "name": "Generate Password"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n//  Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n// 🧠 Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  await new Promise(r => setTimeout(r, 1500)); // petit délai avant recherche\n  const out = $node[\"HTTP Request_find_user\"].json;   // peut être un objet OU un tableau\n  const existingUser = Array.isArray(out) ? out[0] : out; \n\n  if (existingUser && existingUser.id) {\n    userId = existingUser.id;\n    console.log(\" Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -320
+      ],
+      "id": "8a3acb7c-a575-42b0-9434-1e82c9e859e1",
+      "name": "Get User and Group IDs"
     }
   ],
   "pinData": {},
@@ -1084,17 +1094,6 @@
         [
           {
             "node": "find_group_id",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Keycloak: Assign Group",
             "type": "main",
             "index": 0
           }
@@ -1204,7 +1203,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Get User and Group IDs",
             "type": "main",
             "index": 0
           }
@@ -1318,7 +1317,7 @@
       "main": [
         [
           {
-            "node": "Keycloak: Create User",
+            "node": "Generate Password",
             "type": "main",
             "index": 0
           }
@@ -1331,17 +1330,38 @@
           }
         ]
       ]
+    },
+    "Generate Password": {
+      "main": [
+        [
+          {
+            "node": "Keycloak: Create User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User and Group IDs": {
+      "main": [
+        [
+          {
+            "node": "Keycloak: Assign Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "08185630-1a8a-4335-88eb-42cef2ca5609",
+  "versionId": "4d5b4be8-50e2-4376-b5f7-b6e00b89a96b",
   "meta": {
-    "instanceId": "cd56a87ccd0d77ae0a6e08e1a204f302d0af1f4a40a83c6cbf8cadb723dde7fb"
+    "instanceId": "f8a00f9c5ca29a15ffe76be420a20f7e6fec5279a5b7c7ceab1412f6237bfd2b"
   },
   "id": "K75m59X2ypLYWHtB",
   "tags": []
 }
-{% endraw %}
