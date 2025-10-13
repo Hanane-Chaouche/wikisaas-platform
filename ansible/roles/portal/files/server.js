@@ -101,17 +101,18 @@ app.use(passport.session());
 
     app.get("/dashboard", ensureAuth, (req, res) => {
       const user = req.user;
+      console.log("Userinfo reçu :", user);
       const groups = user.groups || [];
 
       let services = [];
-      if (groups.includes("starter")) {
+      if (groups.includes("STARTER")) {
         services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
       }
-      if (groups.includes("pro")) {
+      if (groups.includes("PRO")) {
         services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
         services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
       }
-      if (groups.includes("enterprise")) {
+      if (groups.includes("ENTERPRISE")) {
         services.push({ name: "Wiki IA", url: "https://ia.wikiplatform.app" });
         services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
         services.push({ name: "Wiki Cyber", url: "https://cyber.wikiplatform.app" });
