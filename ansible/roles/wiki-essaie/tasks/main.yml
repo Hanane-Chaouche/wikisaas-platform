@@ -192,18 +192,24 @@
         'clientSecret', '{{ kc_clients[item.name] }}',
         'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
-        'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+        'logoutURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+        'logoutUpstream', true,
+        'logoutUpstreamRedirectLegacy', false,
+        'groupsClaim', 'groups'
+       ),
+      true,                -- ✅ Active le "Allow self-registration"
+      '[]'::json,          -- ✅ Aucun domaine restreint
+      '[\"Guests\"]'::json -- ✅ Groupe par défaut (temporaire)
+    )
+    ON CONFLICT ("strategyKey") DO UPDATE
+      SET config = EXCLUDED.config,
+          selfRegistration = EXCLUDED.selfRegistration,
+          autoEnrollGroups = EXCLUDED.autoEnrollGroups;
+
+  register: keycloak_insert   'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
         'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
         'logoutUpstream', false,
         'logoutUpstreamRedirectLegacy', false
-      ),
-      false,
-      '[]'::json,
-      '[]'::json
-    )
-    ON CONFLICT (\"strategyKey\") DO UPDATE
-      SET config = EXCLUDED.config;"
-  register: keycloak_insert
   changed_when: "'INSERT 0 1' in keycloak_insert.stdout or 'UPDATE' in keycloak_insert.stdout"
   loop: "{{ wikis_docker }}"
   loop_control:
