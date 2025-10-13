@@ -84,7 +84,7 @@ app.use(passport.session());
 
     // Health check
     app.get("/api/health", (_req, res) =>
-      res.json({ ok: true, service: "portal", time: new Date().toISOString() })
+      res.json({ ok: true, service: "app", time: new Date().toISOString() })
     );
 
     // Pages success/cancel
