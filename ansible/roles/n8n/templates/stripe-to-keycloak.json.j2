@@ -1,3 +1,4 @@
+{% raw %}
 {
   "name": "stripe-to-keycloak.json",
   "nodes": [
@@ -160,8 +161,7 @@
             },
             {
               "name": "client_secret",
-              "value": "GltA6ZEY5mWeAcvW66JnGnbgyURJGimv"
-            }
+              "value": "{% endraw %}{{ keycloak_client_secret }}{% raw %}"
           ]
         },
         "options": {}
@@ -301,7 +301,7 @@
             },
             {
               "name": "client_secret",
-              "value": "GltA6ZEY5mWeAcvW66JnGnbgyURJGimv"
+              "value": "{% endraw %}{{ keycloak_client_secret }}{% raw %}"
             }
           ]
         },
@@ -763,7 +763,7 @@
             },
             {
               "name": "client_secret",
-              "value": "GltA6ZEY5mWeAcvW66JnGnbgyURJGimv"
+              "value": "{% endraw %}{{ keycloak_client_secret }}{% raw %}"
             }
           ]
         },
@@ -1365,3 +1365,4 @@
   "id": "K75m59X2ypLYWHtB",
   "tags": []
 }
+{% endraw %}
