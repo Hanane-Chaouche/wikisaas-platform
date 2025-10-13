@@ -83,7 +83,7 @@
   command: docker exec n8n n8n import:workflow --input=/home/node/.n8n/stripe-to-keycloak.json
   when: workflow_file.changed
   notify: Redémarrer n8n 
-  ignore_errors: true 
+   
 
 - name: Copier les credentials n8n
   become: true
@@ -97,4 +97,4 @@
   command: docker exec n8n n8n import:credentials --input=/home/node/.n8n/credentials.json
   when: creds_file.changed
   notify: Redémarrer n8n
-  ignore_errors: true
+  

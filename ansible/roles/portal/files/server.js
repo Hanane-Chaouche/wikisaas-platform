@@ -67,15 +67,16 @@ app.use(passport.session());
     app.get("/callback", passport.authenticate("oidc", { failureRedirect: "/" }), (req, res) => {
       res.redirect("/dashboard");
     });
-     app.get("/logout", (req, res) => {
+    app.get("/logout", (req, res) => {
       req.logout(() => {
         req.session.destroy(() => {
-          // 👉 Redirige aussi vers Keycloak pour fermer la session SSO
-          const logoutUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?redirect_uri=https://app.${DOMAIN}/`;
+          const redirectUri = encodeURIComponent(`https://app.${DOMAIN}/`);
+          const logoutUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?redirect_uri=${redirectUri}`;
           res.redirect(logoutUrl);
         });
       });
     });
+
 
     // Middleware de protection
     function ensureAuth(req, res, next) {
