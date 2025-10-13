@@ -68,21 +68,16 @@ app.use(passport.session());
       res.redirect("/dashboard");
     });
   app.get("/logout", (req, res) => {
+  // Supprime uniquement la session Passport (Keycloak)
   req.logout(() => {
-    req.session.destroy(() => {
-      // ✅ URL où l'utilisateur revient après le logout complet
-      const redirectUri = encodeURIComponent(`https://app.${DOMAIN}/`);
-
-      // ✅ Utilisation du paramètre officiel post_logout_redirect_uri + client_id
-      const logoutUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?client_id=${KEYCLOAK_CLIENT_ID}&post_logout_redirect_uri=${redirectUri}`;
-
-      console.log("➡️ Redirection vers Keycloak logout:", logoutUrl);
-
-      // ✅ Redirige vers Keycloak → efface la session SSO et revient au portail
-      res.redirect(logoutUrl);
-    });
+  
+    // Redirection vers Keycloak pour fermer la session SSO
+    const redirectUri = encodeURIComponent(`https://app.${DOMAIN}`);
+    const logoutUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?post_logout_redirect_uri=${redirectUri}`;
+    res.redirect(logoutUrl);
   });
 });
+
 
 
 
