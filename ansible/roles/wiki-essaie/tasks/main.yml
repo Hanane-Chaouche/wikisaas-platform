@@ -199,7 +199,7 @@
        ),
       true,                -- ✅ Active le "Allow self-registration"
       '[]'::json,          -- ✅ Aucun domaine restreint
-      '[\"Guests\"]'::json -- ✅ Groupe par défaut (temporaire)
+      '[\"Administrators\"]'::json -- ✅ Groupe par défaut (temporaire)
     )
     ON CONFLICT ("strategyKey") DO UPDATE
       SET config = EXCLUDED.config,
