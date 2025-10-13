@@ -193,12 +193,14 @@
         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
         'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
         'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
-        'logoutUpstream', false,
-        'logoutUpstreamRedirectLegacy', false
+        'logoutUpstream', true,
+        'logoutUpstreamRedirectLegacy', false,
+        'groupsClaim', 'groups',
+        'rolesClaim', 'realm_access.roles'
       ),
-      false,
+      true,
       '[]'::json,
-      '[]'::json
+      '["Administrator"]'::json
     )
     ON CONFLICT (\"strategyKey\") DO UPDATE
       SET config = EXCLUDED.config;"
