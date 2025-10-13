@@ -20,18 +20,26 @@
       align-items: center;
     }
     h1 { margin: 0; font-size: 1.6rem; }
-    .btn-logout {
-      background: #e53935;
-      color: white;
+
+    /* Boutons d'action (logout / change password) */
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
       padding: 8px 16px;
       border-radius: 6px;
       text-decoration: none;
       font-weight: 500;
       transition: background 0.2s ease-in-out;
+      color: white;
     }
-    .btn-logout:hover {
-      background: #c62828;
-    }
+    .btn-logout { background: #e53935; }
+    .btn-logout:hover { background: #c62828; }
+
+    .btn-password { background: #6c63ff; }
+    .btn-password:hover { background: #5348d6; }
+
     main {
       padding: 30px;
       text-align: center;
@@ -80,12 +88,19 @@
 
   <header>
     <h1>WikiPlatform</h1>
-    <a href="/logout" class="btn-logout">Déconnexion</a>
+    <div class="actions">
+      <!--  Bouton pour changer le mot de passe -->
+      <a href="<%= accountUrl %>" target="_blank" class="btn btn-password">🔑 Changer le mot de passe</a>
+
+      <!--  Bouton de déconnexion -->
+      <a href="/logout" class="btn btn-logout">🚪 Déconnexion</a>
+    </div>
   </header>
 
   <main>
     <div class="user-info">
-      <h2>Bienvenue, <%= user.name || user.preferred_username || user.email %> /h2>
+      
+      <h2>Bienvenue, <%= user.name || user.preferred_username || user.email %> </h2>
       <p>Voici vos services disponibles :</p>
     </div>
 

@@ -67,9 +67,13 @@ app.use(passport.session());
     app.get("/callback", passport.authenticate("oidc", { failureRedirect: "/" }), (req, res) => {
       res.redirect("/dashboard");
     });
-    app.get("/logout", (req, res) => {
+     app.get("/logout", (req, res) => {
       req.logout(() => {
-        res.redirect("/");
+        req.session.destroy(() => {
+          // 👉 Redirige aussi vers Keycloak pour fermer la session SSO
+          const logoutUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?redirect_uri=https://app.${DOMAIN}/`;
+          res.redirect(logoutUrl);
+        });
       });
     });
 
@@ -117,8 +121,10 @@ app.use(passport.session());
         services.push({ name: "Wiki DevOps", url: "https://devops.wikiplatform.app" });
         services.push({ name: "Wiki Cyber", url: "https://cyber.wikiplatform.app" });
       }
+       // Ajouter un lien vers le compte Keycloak (changement de mot de passe)
+      const accountUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/account/#/security/signingin`;
 
-      res.render("dashboard", { user, services });
+      res.render("dashboard", { user, services, accountUrl });
     });
 
     // Lancer le serveur
