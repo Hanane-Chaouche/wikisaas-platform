@@ -42,8 +42,8 @@
 
 - name: Copier le docker-compose.yml de Wiki.js
   become: true
-  copy:
-    src: docker-compose.yml        # ton fichier compose (dans roles/wiki/files/)
+  template:
+    src: docker-compose.yml.j2       # ton fichier compose (dans roles/wiki/files/)
     dest: /opt/wiki/docker-compose.yml
     mode: '0644'
   notify: Restart Wiki.js
