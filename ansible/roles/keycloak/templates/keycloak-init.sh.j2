@@ -62,7 +62,7 @@ fi
 #  Création des Rôles
 #############################################
 echo -e "\n=== Création des Rôles ==="
-for role in ia-admin devops-admin cyber-admin; do
+for role in admin reader writer; do
   if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
     echo " Rôle '${role}' existe déjà."
   else
@@ -82,38 +82,6 @@ for group in STARTER PRO ENTERPRISE; do
   else
     echo " Création du groupe '${group}'..."
     dc "$KCADM create groups -r ${REALM} -s name=${group}"
-  fi
-done
-
-#############################################
-#  Association Rôles → Groupes
-#############################################
-echo -e "\n=== Association Rôles → Groupes ==="
-
-# Fonction : récupérer l'ID d'un groupe par son nom
-get_group_id() {
-  local name="$1"
-  dc "$KCADM get groups -r ${REALM} -q search=${name} --fields id,name" \
-  | grep '"id"' | head -n1 | cut -d '"' -f4
-}
-
-# Récupération des IDs
-STARTER_ID="$(get_group_id STARTER || true)"
-PRO_ID="$(get_group_id PRO || true)"
-ENTERPRISE_ID="$(get_group_id ENTERPRISE || true)"
-
-# Mappage des rôles vers les groupes
-for mapping in \
-  "$STARTER_ID:ia-admin" \
-  "$PRO_ID:ia-admin" "$PRO_ID:devops-admin" \
-  "$ENTERPRISE_ID:ia-admin" "$ENTERPRISE_ID:devops-admin" "$ENTERPRISE_ID:cyber-admin"; do
-
-  gid="${mapping%%:*}"   # partie avant ":", c’est l’ID du groupe
-  role="${mapping##*:}"  # partie après ":", c’est le rôle
-
-  if [ -n "$gid" ]; then
-    echo " Association rôle '${role}' → groupe '${gid}'"
-    dc "$KCADM add-roles -r ${REALM} --gid ${gid} --rolename ${role}" || true
   fi
 done
 
@@ -194,7 +162,14 @@ JSON"
      \"access.token.claim\":\"true\", \
      \"userinfo.token.claim\":\"true\" }"
 
-  
+    add_mapper "realm roles" "oidc-usermodel-realm-role-mapper" \
+  "{ \"claim.name\":\"realm_access.roles\", \
+     \"jsonType.label\":\"String\", \
+     \"multivalued\":\"true\", \
+     \"id.token.claim\":\"true\", \
+     \"access.token.claim\":\"true\", \
+     \"userinfo.token.claim\":\"true\" }"
+ 
 }
 
 # --- Création des clients attendus ---
@@ -219,6 +194,7 @@ for cid in ia devops cyber app; do
     [[ $i -eq 10 ]] && echo "  ERR: $cid introuvable après 50s"
   done
 done
+
 #############################################
 # Activer Service Account et donner le rôle super-admin
 #############################################
@@ -299,4 +275,49 @@ echo "}" >> $OUTPUT
 
 echo "[export] Fichier généré : $OUTPUT"
 echo "[export] Contenu :"
-cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)     
+cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)    
+
+#############################################
+#  Association Groupes → Clients
+#############################################
+echo -e "\n=== Association Groupes → Clients ==="
+
+# Fonction : assigner un rôle client à un groupe
+assign_client_role_to_group() {
+  local group_name="$1"
+  local client_id="$2"
+
+  # Récupérer l’UUID du groupe
+  local group_uuid
+  group_uuid=$(dc "$KCADM get groups -r ${REALM} -q search=${group_name} --fields id" \
+                | grep '"id"' | head -n1 | cut -d '"' -f4)
+
+  # Récupérer l’UUID du client
+  local client_uuid
+  client_uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=${client_id} --fields id" \
+                | grep '"id"' | head -n1 | cut -d '"' -f4)
+
+  # Récupérer le rôle du client (par défaut Keycloak crée un rôle du même nom que le client)
+  local client_role
+  client_role=$(dc "$KCADM get clients/${client_uuid}/roles -r ${REALM}" \
+                | grep -A1 "\"name\" : \"${client_id}\"" | grep '"name"' | cut -d '"' -f4 | head -n1)
+
+  if [ -n "$client_role" ]; then
+    echo " → Lien groupe '${group_name}' → client '${client_id}' (rôle ${client_role})"
+    dc "$KCADM add-roles -r ${REALM} --gid ${group_uuid} --cclientid ${client_id} --rolename ${client_role}" || true
+  else
+    echo " ⚠️ Aucun rôle client trouvé pour ${client_id}"
+  fi
+}
+
+# STARTER → IA
+assign_client_role_to_group "STARTER" "ia"
+
+# PRO → IA, DEVOPS
+assign_client_role_to_group "PRO" "ia"
+assign_client_role_to_group "PRO" "devops"
+
+# ENTERPRISE → IA, DEVOPS, CYBER
+assign_client_role_to_group "ENTERPRISE" "ia"
+assign_client_role_to_group "ENTERPRISE" "devops"
+assign_client_role_to_group "ENTERPRISE" "cyber"
