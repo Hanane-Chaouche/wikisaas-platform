@@ -8,7 +8,6 @@ set -euo pipefail
 ENV_FILE="/opt/keycloak/.env"
 [ -f "$ENV_FILE" ] || { echo "ERR: $ENV_FILE introuvable"; exit 1; }
 
-# On exporte toutes les variables du .env (KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD, KEYCLOAK_REALM, DOMAIN)
 set -a; source "$ENV_FILE"; set +a
 
 echo "=== Variables récupérées du fichier .env ==="
@@ -16,18 +15,17 @@ echo "=== Variables récupérées du fichier .env ==="
 #############################################
 # Constantes / chemins
 #############################################
-COMPOSE="/opt/keycloak/docker-compose.yml"   # chemin vers ton docker-compose
-SERVICE="keycloak"                           # nom du service Keycloak dans le docker-compose
-KCADM="/opt/keycloak/bin/kcadm.sh"           # chemin vers kcadm.sh
+COMPOSE="/opt/keycloak/docker-compose.yml"
+SERVICE="keycloak"
+KCADM="/opt/keycloak/bin/kcadm.sh"
 
-# Fonction utilitaire : exécuter une commande dans le conteneur Keycloak
 dc() { docker compose -f "$COMPOSE" exec -T "$SERVICE" sh -lc "$*"; }
 
 #############################################
 # Attente de disponibilité de Keycloak
 #############################################
 echo " [init] Attente que Keycloak soit prêt..."
-for i in {1..60}; do
+for i in {1..30}; do
   if dc "export KCADM_CONFIG=/tmp/kcadm.config && \
          $KCADM config credentials \
          --server http://localhost:8080 \
@@ -38,7 +36,7 @@ for i in {1..60}; do
     break
   fi
   sleep 2
-  [[ $i -eq 60 ]] && { echo " ERR: Keycloak pas prêt après 2 min"; exit 1; }
+  [[ $i -eq 30 ]] && { echo " ERR: Keycloak pas prêt après 1 min"; exit 1; }
 done
 
 REALM="${KEYCLOAK_REALM}"
@@ -55,7 +53,7 @@ if dc "$KCADM get realms/${REALM}" >/dev/null 2>&1; then
   echo " Realm '${REALM}' existe déjà."
 else
   echo "Création du realm '${REALM}'..."
-  dc "$KCADM create realms -s realm='${REALM}' -s enabled=true"
+  dc "$KCADM create realms -s realm='${REALM}' -s enabled=true" || true
 fi
 
 #############################################
@@ -68,7 +66,7 @@ for group in STARTER PRO ENTERPRISE; do
     echo " Groupe '${group}' existe déjà."
   else
     echo " Création du groupe '${group}'..."
-    dc "$KCADM create groups -r ${REALM} -s name=${group}"
+    dc "$KCADM create groups -r ${REALM} -s name=${group}" || true
   fi
 done
 
@@ -77,26 +75,23 @@ done
 #############################################
 echo -e "\n===  Gestion des Clients & Mappers ==="
 
-# Fonction : récupérer l’UUID d’un client
 get_client_uuid() {
   local cid="$1"
   dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields id" \
   | grep '"id"' | head -n1 | cut -d '"' -f4
 }
 
-# Fonction : création d’un client avec ses mappers
 create_client () {
   local cid="$1"
   local base_url="https://${cid}.${BASE_DOMAIN}"
   local redirect="${base_url}/*"
   local post_logout="${base_url}/*"
   local origin="${base_url}"
-  local client_exists=false
+
   # --- Client ---
   if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" \
      | grep -q "\"clientId\" : \"${cid}\""; then
     echo " Client '${cid}' existe déjà."
-    client_exists=true
   else
     echo " Création du client '${cid}'..."
     dc "$KCADM create clients -r ${REALM} -f - <<JSON
@@ -105,7 +100,7 @@ create_client () {
   \"rootUrl\":\"${base_url}\", \"redirectUris\":[\"${redirect}\"],
   \"webOrigins\":[\"${origin}\"],
   \"attributes\":{ \"post.logout.redirect.uris\":\"${post_logout}\" } }
-JSON"
+JSON" || true
   fi
 
   # --- UUID du client ---
@@ -123,48 +118,35 @@ JSON"
       echo " Ajout du mapper '${name}' pour ${cid}..."
       dc "$KCADM create clients/${uuid}/protocol-mappers/models -r ${REALM} -f - <<JSON
 { \"name\":\"${name}\", \"protocol\":\"openid-connect\", \"protocolMapper\":\"${mapper}\", \"config\": ${extra} }
-JSON"
+JSON" || true
     fi
   }
 
   # --- Ajout des mappers standards ---
-  add_mapper "email"              "oidc-usermodel-property-mapper" \
+  add_mapper "email" "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"email\", \"user.attribute\":\"email\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
   add_mapper "preferred_username" "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"preferred_username\", \"user.attribute\":\"username\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
-  add_mapper "given_name"         "oidc-usermodel-property-mapper" \
+  add_mapper "given_name" "oidc-usermodel-property-mapper" \
     "{ \"claim.name\":\"given_name\", \"user.attribute\":\"firstName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
   add_mapper "family_name" "oidc-usermodel-property-mapper" \
-    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \
-       \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \
-       \"userinfo.token.claim\":\"true\" }"
+    "{ \"claim.name\":\"family_name\", \"user.attribute\":\"lastName\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
   add_mapper "groups" "oidc-group-membership-mapper" \
-  "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \
-     \"jsonType.label\":\"String\", \
-     \"multivalued\":\"true\", \
-     \"id.token.claim\":\"true\", \
-     \"access.token.claim\":\"true\", \
-     \"userinfo.token.claim\":\"true\" }"
+    "{ \"full.path\":\"false\", \"claim.name\":\"groups\", \"jsonType.label\":\"String\", \"multivalued\":\"true\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 
-    add_mapper "realm roles" "oidc-usermodel-realm-role-mapper" \
-  "{ \"claim.name\":\"realm_access.roles\", \
-     \"jsonType.label\":\"String\", \
-     \"multivalued\":\"true\", \
-     \"id.token.claim\":\"true\", \
-     \"access.token.claim\":\"true\", \
-     \"userinfo.token.claim\":\"true\" }"
- 
+  add_mapper "realm roles" "oidc-usermodel-realm-role-mapper" \
+    "{ \"claim.name\":\"realm_access.roles\", \"jsonType.label\":\"String\", \"multivalued\":\"true\", \"id.token.claim\":\"true\", \"access.token.claim\":\"true\", \"userinfo.token.claim\":\"true\" }"
 }
 
 # --- Création des clients attendus ---
 create_client "ia"
 create_client "devops"
 create_client "cyber"
-create_client "app"  
+create_client "app"
 
 echo "Init Keycloak terminé avec succès le $(date)" > /opt/keycloak/.init_done
 
@@ -196,7 +178,7 @@ fi
 
 # Activer le Service Account
 echo " Activation du service account pour 'app'..."
-dc "$KCADM update clients/${PORTAL_UUID} -r ${REALM} -s 'serviceAccountsEnabled=true'"
+dc "$KCADM update clients/${PORTAL_UUID} -r ${REALM} -s 'serviceAccountsEnabled=true'" || true
 
 SA_USER="service-account-app"
 
@@ -213,10 +195,7 @@ done
 
 # Donner le rôle super-admin (realm-admin)
 echo " Attribution du rôle realm-admin au service account app..."
-dc "$KCADM add-roles -r ${REALM} \
-    --uusername ${SA_USER} \
-    --cclientid realm-management \
-    --rolename realm-admin" || true
+dc "$KCADM add-roles -r ${REALM} --uusername ${SA_USER} --cclientid realm-management --rolename realm-admin" || true
 
 echo " Le compte de service 'app' possède maintenant le rôle super-admin (realm-admin)."
 
@@ -225,45 +204,31 @@ echo " Le compte de service 'app' possède maintenant le rôle super-admin (real
 #############################################
 echo -e "\n=== Export des secrets des clients OIDC ==="
 
-# On définit le fichier de sortie qui contiendra les secrets
 OUTPUT="/opt/keycloak/clients.json"
-
-# On commence un JSON
 echo "{" > $OUTPUT
-first=true  # variable pour gérer la virgule entre les entrées JSON
+first=true
 
-# On boucle sur tes 4 clients Wiki.js
 for cid in ia devops cyber app; do
-  # 1. Récupérer l'UUID (ID interne Keycloak) du client via kcadm
   uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=$cid --fields id" \
          | grep '"id"' | head -n1 | cut -d '"' -f4)
 
-  # 2. Récupérer le secret associé à cet UUID
   secret=$(dc "$KCADM get clients/$uuid/client-secret -r ${REALM}" \
            | grep '"value"' | cut -d '"' -f4)
 
-  # 3. Écrire le résultat dans le fichier JSON
-  #    - Si c’est le premier client, pas de virgule
-  #    - Sinon, ajouter une virgule pour séparer les objets
   if [ "$first" = true ]; then
     first=false
   else
     echo "," >> $OUTPUT
   fi
 
-  # 4. Ajouter la ligne "clientId": "secret"
   echo "  \"$cid\": \"$secret\"" >> $OUTPUT
-
-  # 5. Afficher dans la console pour debug
   echo "  → $cid : $secret"
 done
 
-# On ferme le JSON
 echo "}" >> $OUTPUT
 
 echo "[export] Fichier généré : $OUTPUT"
-echo "[export] Contenu :"
-cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)    
+cat $OUTPUT || true
 
 #############################################
 #  Création des rôles pour chaque client
@@ -281,12 +246,11 @@ create_client_roles() {
       echo " Rôle client '${role}' existe déjà pour ${cid}"
     else
       echo "Création du rôle '${role}' pour ${cid}"
-      dc "$KCADM create clients/${uuid}/roles -r ${REALM} -s name=${role}"
+      dc "$KCADM create clients/${uuid}/roles -r ${REALM} -s name=${role}" || true
     fi
   done
 }
 
-# Appliquer la création des rôles pour chaque client
 for cid in ia devops cyber; do
   create_client_roles "$cid"
 done
@@ -296,32 +260,26 @@ done
 #############################################
 echo -e "\n=== Assignment des rôles clients aux groupes ==="
 
-# Fonction pour assigner un rôle client spécifique à un groupe
 assign_specific_role_to_group() {
     local group_name="$1"
     local client_id="$2"
     local role_name="$3"
 
-    # Récupérer l'UUID du groupe
     local group_uuid
     group_uuid=$(dc "$KCADM get groups -r ${REALM} -q search=${group_name} --fields id" \
                   | grep '"id"' | head -n1 | cut -d '"' -f4)
     
     echo " → Assignation rôle '${role_name}' (client ${client_id}) au groupe '${group_name}'"
-
-    # Assigner le rôle client spécifique au groupe
     dc "$KCADM add-roles -r ${REALM} --gid \"$group_uuid\" --cclientid \"$client_id\" --rolename \"$role_name\"" || true
 }
 
-# === ASSIGNATION DES RÔLES PAR PLAN ===
-
-# STARTER : Accès uniquement au wiki IA avec tous les rôles
+# STARTER
 echo "Configuration groupe STARTER..."
 assign_specific_role_to_group "STARTER" "ia" "reader"
 assign_specific_role_to_group "STARTER" "ia" "writer" 
 assign_specific_role_to_group "STARTER" "ia" "admin"
 
-# PRO : Accès aux wikis IA + DevOps avec tous les rôles
+# PRO
 echo "Configuration groupe PRO..."
 assign_specific_role_to_group "PRO" "ia" "reader"
 assign_specific_role_to_group "PRO" "ia" "writer"
@@ -330,7 +288,7 @@ assign_specific_role_to_group "PRO" "devops" "reader"
 assign_specific_role_to_group "PRO" "devops" "writer"
 assign_specific_role_to_group "PRO" "devops" "admin"
 
-# ENTERPRISE : Accès aux 3 wikis avec tous les rôles
+# ENTERPRISE
 echo "Configuration groupe ENTERPRISE..."
 assign_specific_role_to_group "ENTERPRISE" "ia" "reader"
 assign_specific_role_to_group "ENTERPRISE" "ia" "writer"
@@ -341,5 +299,3 @@ assign_specific_role_to_group "ENTERPRISE" "devops" "admin"
 assign_specific_role_to_group "ENTERPRISE" "cyber" "reader"
 assign_specific_role_to_group "ENTERPRISE" "cyber" "writer"
 assign_specific_role_to_group "ENTERPRISE" "cyber" "admin"
-
-
