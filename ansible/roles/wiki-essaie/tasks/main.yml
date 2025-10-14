@@ -197,7 +197,7 @@
          'logoutUpstream',  false,
          'logoutUpstreamRedirectLegacy', false,
          'groupsClaim', 'groups',
-         "rolesClaim" , "realm_access.roles"
+         'rolesClaim', 'realm_access.roles'
          
        ),
        true,
