@@ -333,8 +333,7 @@
 #  loop_control:
 #    label: "{{ item.name }}"
 #
-#
-# -------------------------------------------------------------------
+## -------------------------------------------------------------------
 # Créer un compte admin local dans chaque DB Wiki.js
 # - Compte administrateur initial avec email et mot de passe hashé (passlib)
 # - Sert pour la première connexion avant configuration Keycloak
