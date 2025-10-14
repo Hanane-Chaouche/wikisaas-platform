@@ -173,45 +173,47 @@
 
 # Configurer Keycloak comme méthode d’authentification (sso)dans Wiki.js
 - name: Configurer Keycloak dans la table authentication (DB Docker)
-  shell: |
-    docker exec -i {{ item.pg_host }} bash -c 'cat <<EOF | psql -U {{ item.pg_user }} -d {{ item.pg_db }} -t -A
-    INSERT INTO authentication
-     ("key", "strategyKey", "displayName", "isEnabled", "order",
-      "config", "selfRegistration", "domainWhitelist", "autoEnrollGroups")
-    VALUES (
-      gen_random_uuid(),
-      ''keycloak'',
-      ''Keycloak'',
-      true,
-      1,
-      jsonb_build_object(
-        ''host'', ''https://sso.{{ base_domain }}'',
-        ''realm'', ''saas'',
-        ''clientId'', ''{{ item.name }}'',
-        ''clientSecret'', ''{{ kc_clients[item.name] }}'',
-        ''authorizationURL'', ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth'',
-        ''tokenURL'',        ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token'',
-        ''userInfoURL'',     ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo'',
-        ''logoutURL'',       ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout'',
-        ''logoutUpstream'',  false,
-        ''logoutUpstreamRedirectLegacy'', false,
-        ''groupsClaim'', ''groups'',
-        
-      ),
-      true,
-      '[]'::json,
-      ''["Administrators"]''::json
-    )
-    ON CONFLICT ("strategyKey") DO UPDATE
-      SET config = EXCLUDED.config,
-          selfRegistration = EXCLUDED.selfRegistration,
-          autoEnrollGroups = EXCLUDED.autoEnrollGroups;
-    EOF'
+  command: >
+    docker exec -i {{ item.pg_host }}
+    psql -U {{ item.pg_user }} -d {{ item.pg_db }} -t -A -c
+    "INSERT INTO authentication
+      (\"key\", \"strategyKey\", \"displayName\", \"isEnabled\", \"order\",
+       \"config\", \"selfRegistration\", \"domainWhitelist\", \"autoEnrollGroups\")
+     VALUES (
+       gen_random_uuid(),
+       'keycloak',
+       'Keycloak',
+       true,
+       1,
+       jsonb_build_object(
+         'host', 'https://sso.{{ base_domain }}',
+         'realm', 'saas',
+         'clientId', '{{ item.name }}',
+         'clientSecret', '{{ kc_clients[item.name] }}',
+         'authorizationURL', 'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/auth',
+         'tokenURL',        'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/token',
+         'userInfoURL',     'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/userinfo',
+         'logoutURL',       'https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout',
+         'logoutUpstream',  false,
+         'logoutUpstreamRedirectLegacy', false,
+         'groupsClaim', 'groups',
+         "rolesClaim": "realm_access.roles"
+         
+       ),
+       true,
+       '[]'::json,
+       '["Administrators"]'::json
+     )
+     ON CONFLICT (\"strategyKey\") DO UPDATE
+       SET config = EXCLUDED.config,
+           selfRegistration = EXCLUDED.selfRegistration,
+           autoEnrollGroups = EXCLUDED.autoEnrollGroups;"
   register: keycloak_insert
   changed_when: "'INSERT 0 1' in keycloak_insert.stdout or 'UPDATE' in keycloak_insert.stdout"
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
+
 
 # Installer pip3 (nécessaire pour installer passlib)
 - name: Installer pip3 (Ubuntu)

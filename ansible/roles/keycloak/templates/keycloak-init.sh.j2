@@ -59,17 +59,31 @@ else
 fi
 
 #############################################
-#  Création des Rôles
+#  Création des rôles pour chaque client
 #############################################
-echo -e "\n=== Création des Rôles ==="
-for role in admin reader writer; do
-  if dc "$KCADM get roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
-    echo " Rôle '${role}' existe déjà."
-  else
-    echo " Création du rôle '${role}'..."
-    dc "$KCADM create roles -r ${REALM} -s name=${role}"
-  fi
+echo -e "\n=== Création des rôles clients (admin, reader, writer) ==="
+
+create_client_roles() {
+  local cid="$1"
+  local uuid
+  uuid=$(get_client_uuid "${cid}")
+  [ -z "$uuid" ] && { echo " UID introuvable pour ${cid}"; return; }
+
+  for role in admin reader writer; do
+    if dc "$KCADM get clients/${uuid}/roles -r ${REALM}" | grep -q "\"name\" : \"${role}\""; then
+      echo " Rôle client '${role}' existe déjà pour ${cid}"
+    else
+      echo "Création du rôle '${role}' pour ${cid}"
+      dc "$KCADM create clients/${uuid}/roles -r ${REALM} -s name=${role}"
+    fi
+  done
+}
+
+# Appliquer la création des rôles pour chaque client
+for cid in ia devops cyber; do
+  create_client_roles "$cid"
 done
+
 
 #############################################
 #  Création des Groupes
@@ -306,7 +320,7 @@ assign_client_role_to_group() {
     echo " → Lien groupe '${group_name}' → client '${client_id}' (rôle ${client_role})"
     dc "$KCADM add-roles -r ${REALM} --gid ${group_uuid} --cclientid ${client_id} --rolename ${client_role}" || true
   else
-    echo " ⚠️ Aucun rôle client trouvé pour ${client_id}"
+    echo "  Aucun rôle client trouvé pour ${client_id}"
   fi
 }
 
