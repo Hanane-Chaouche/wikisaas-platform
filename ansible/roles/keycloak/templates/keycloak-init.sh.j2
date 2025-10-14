@@ -91,11 +91,12 @@ create_client () {
   local redirect="${base_url}/*"
   local post_logout="${base_url}/*"
   local origin="${base_url}"
-
+  local client_exists=false
   # --- Client ---
   if dc "$KCADM get clients -r ${REALM} -q clientId=${cid} --fields clientId" \
      | grep -q "\"clientId\" : \"${cid}\""; then
     echo " Client '${cid}' existe déjà."
+    client_exists=true
   else
     echo " Création du client '${cid}'..."
     dc "$KCADM create clients -r ${REALM} -f - <<JSON
