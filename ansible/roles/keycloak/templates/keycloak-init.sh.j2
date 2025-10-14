@@ -292,46 +292,52 @@ echo "[export] Contenu :"
 cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)    
 
 #############################################
-#  Association Groupes → Clients
+#  Assignment des rôles clients aux groupes
 #############################################
-echo -e "\n=== Association Groupes → Clients ==="
+echo -e "\n=== Assignment des rôles clients aux groupes ==="
 
-# Fonction : assigner un rôle client à un groupe
-assign_client_role_to_group() {
-  local group_name="$1"
-  local client_id="$2"
+# Fonction pour assigner un rôle client spécifique à un groupe
+assign_specific_role_to_group() {
+    local group_name="$1"
+    local client_id="$2"
+    local role_name="$3"
 
-  # Récupérer l’UUID du groupe
-  local group_uuid
-  group_uuid=$(dc "$KCADM get groups -r ${REALM} -q search=${group_name} --fields id" \
-                | grep '"id"' | head -n1 | cut -d '"' -f4)
+    # Récupérer l'UUID du groupe
+    local group_uuid
+    group_uuid=$(dc "$KCADM get groups -r ${REALM} -q search=${group_name} --fields id" \
+                  | grep '"id"' | head -n1 | cut -d '"' -f4)
+    
+    echo " → Assignation rôle '${role_name}' (client ${client_id}) au groupe '${group_name}'"
 
-  # Récupérer l’UUID du client
-  local client_uuid
-  client_uuid=$(dc "$KCADM get clients -r ${REALM} -q clientId=${client_id} --fields id" \
-                | grep '"id"' | head -n1 | cut -d '"' -f4)
-
-  # Récupérer le rôle du client (par défaut Keycloak crée un rôle du même nom que le client)
-  local client_role
-  client_role=$(dc "$KCADM get clients/${client_uuid}/roles -r ${REALM}" \
-                | grep -A1 "\"name\" : \"${client_id}\"" | grep '"name"' | cut -d '"' -f4 | head -n1)
-
-  if [ -n "$client_role" ]; then
-    echo " → Lien groupe '${group_name}' → client '${client_id}' (rôle ${client_role})"
-    dc "$KCADM add-roles -r ${REALM} --gid ${group_uuid} --cclientid ${client_id} --rolename ${client_role}" || true
-  else
-    echo "  Aucun rôle client trouvé pour ${client_id}"
-  fi
+    # Assigner le rôle client spécifique au groupe
+    dc "$KCADM add-roles -r ${REALM} --gid \"$group_uuid\" --cclientid \"$client_id\" --rolename \"$role_name\"" || true
 }
 
-# STARTER → IA
-assign_client_role_to_group "STARTER" "ia"
+# === ASSIGNATION DES RÔLES PAR PLAN ===
 
-# PRO → IA, DEVOPS
-assign_client_role_to_group "PRO" "ia"
-assign_client_role_to_group "PRO" "devops"
+# STARTER : Accès uniquement au wiki IA avec tous les rôles
+echo "Configuration groupe STARTER..."
+assign_specific_role_to_group "STARTER" "ia" "reader"
+assign_specific_role_to_group "STARTER" "ia" "writer" 
+assign_specific_role_to_group "STARTER" "ia" "admin"
 
-# ENTERPRISE → IA, DEVOPS, CYBER
-assign_client_role_to_group "ENTERPRISE" "ia"
-assign_client_role_to_group "ENTERPRISE" "devops"
-assign_client_role_to_group "ENTERPRISE" "cyber"
+# PRO : Accès aux wikis IA + DevOps avec tous les rôles
+echo "Configuration groupe PRO..."
+assign_specific_role_to_group "PRO" "ia" "reader"
+assign_specific_role_to_group "PRO" "ia" "writer"
+assign_specific_role_to_group "PRO" "ia" "admin"
+assign_specific_role_to_group "PRO" "devops" "reader"
+assign_specific_role_to_group "PRO" "devops" "writer"
+assign_specific_role_to_group "PRO" "devops" "admin"
+
+# ENTERPRISE : Accès aux 3 wikis avec tous les rôles
+echo "Configuration groupe ENTERPRISE..."
+assign_specific_role_to_group "ENTERPRISE" "ia" "reader"
+assign_specific_role_to_group "ENTERPRISE" "ia" "writer"
+assign_specific_role_to_group "ENTERPRISE" "ia" "admin"
+assign_specific_role_to_group "ENTERPRISE" "devops" "reader"
+assign_specific_role_to_group "ENTERPRISE" "devops" "writer"
+assign_specific_role_to_group "ENTERPRISE" "devops" "admin"
+assign_specific_role_to_group "ENTERPRISE" "cyber" "reader"
+assign_specific_role_to_group "ENTERPRISE" "cyber" "writer"
+assign_specific_role_to_group "ENTERPRISE" "cyber" "admin"

@@ -201,7 +201,7 @@
       ),
       true,
       '[]'::json,
-      '[\"Administrators\"]'::json
+      '[]'::json
     )
     ON CONFLICT (\"strategyKey\") DO UPDATE
       SET config = EXCLUDED.config,
