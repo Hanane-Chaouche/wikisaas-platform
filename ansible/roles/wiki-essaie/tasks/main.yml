@@ -195,7 +195,8 @@
         ''logoutURL'',       ''https://sso.{{ base_domain }}/realms/saas/protocol/openid-connect/logout'',
         ''logoutUpstream'',  false,
         ''logoutUpstreamRedirectLegacy'', false,
-        ''groupsClaim'', ''groups''
+        ''groupsClaim'', ''groups'',
+        
       ),
       true,
       '[]'::json,
