@@ -98,6 +98,57 @@ for group in STARTER PRO ENTERPRISE; do
     dc "$KCADM create groups -r ${REALM} -s name=${group}"
   fi
 done
+#############################################
+#  Assignment des rôles clients aux groupes
+#############################################
+echo -e "\n=== Assignment des rôles clients aux groupes ==="
+
+# Fonction pour assigner un rôle client spécifique à un groupe
+assign_specific_role_to_group() {
+    local group_name="$1"
+    local client_id="$2"
+    local role_name="$3"
+
+    # Récupérer l'UUID du groupe
+    local group_uuid
+    group_uuid=$(dc "$KCADM get groups -r ${REALM} -q search=${group_name} --fields id" \
+                  | grep '"id"' | head -n1 | cut -d '"' -f4)
+    
+    echo " → Assignation rôle '${role_name}' (client ${client_id}) au groupe '${group_name}'"
+
+    # Assigner le rôle client spécifique au groupe
+    dc "$KCADM add-roles -r ${REALM} --gid \"$group_uuid\" --cclientid \"$client_id\" --rolename \"$role_name\"" || true
+}
+
+# === ASSIGNATION DES RÔLES PAR PLAN ===
+
+# STARTER : Accès uniquement au wiki IA avec tous les rôles
+echo "Configuration groupe STARTER..."
+assign_specific_role_to_group "STARTER" "ia" "reader"
+assign_specific_role_to_group "STARTER" "ia" "writer" 
+assign_specific_role_to_group "STARTER" "ia" "admin"
+
+# PRO : Accès aux wikis IA + DevOps avec tous les rôles
+echo "Configuration groupe PRO..."
+assign_specific_role_to_group "PRO" "ia" "reader"
+assign_specific_role_to_group "PRO" "ia" "writer"
+assign_specific_role_to_group "PRO" "ia" "admin"
+assign_specific_role_to_group "PRO" "devops" "reader"
+assign_specific_role_to_group "PRO" "devops" "writer"
+assign_specific_role_to_group "PRO" "devops" "admin"
+
+# ENTERPRISE : Accès aux 3 wikis avec tous les rôles
+echo "Configuration groupe ENTERPRISE..."
+assign_specific_role_to_group "ENTERPRISE" "ia" "reader"
+assign_specific_role_to_group "ENTERPRISE" "ia" "writer"
+assign_specific_role_to_group "ENTERPRISE" "ia" "admin"
+assign_specific_role_to_group "ENTERPRISE" "devops" "reader"
+assign_specific_role_to_group "ENTERPRISE" "devops" "writer"
+assign_specific_role_to_group "ENTERPRISE" "devops" "admin"
+assign_specific_role_to_group "ENTERPRISE" "cyber" "reader"
+assign_specific_role_to_group "ENTERPRISE" "cyber" "writer"
+assign_specific_role_to_group "ENTERPRISE" "cyber" "admin"
+
 
 #############################################
 # Clients + Mappers OIDC
@@ -290,54 +341,3 @@ echo "}" >> $OUTPUT
 echo "[export] Fichier généré : $OUTPUT"
 echo "[export] Contenu :"
 cat $OUTPUT || true # on continue même si erreur (ex: fichier vide)    
-
-#############################################
-#  Assignment des rôles clients aux groupes
-#############################################
-echo -e "\n=== Assignment des rôles clients aux groupes ==="
-
-# Fonction pour assigner un rôle client spécifique à un groupe
-assign_specific_role_to_group() {
-    local group_name="$1"
-    local client_id="$2"
-    local role_name="$3"
-
-    # Récupérer l'UUID du groupe
-    local group_uuid
-    group_uuid=$(dc "$KCADM get groups -r ${REALM} -q search=${group_name} --fields id" \
-                  | grep '"id"' | head -n1 | cut -d '"' -f4)
-    
-    echo " → Assignation rôle '${role_name}' (client ${client_id}) au groupe '${group_name}'"
-
-    # Assigner le rôle client spécifique au groupe
-    dc "$KCADM add-roles -r ${REALM} --gid \"$group_uuid\" --cclientid \"$client_id\" --rolename \"$role_name\"" || true
-}
-
-# === ASSIGNATION DES RÔLES PAR PLAN ===
-
-# STARTER : Accès uniquement au wiki IA avec tous les rôles
-echo "Configuration groupe STARTER..."
-assign_specific_role_to_group "STARTER" "ia" "reader"
-assign_specific_role_to_group "STARTER" "ia" "writer" 
-assign_specific_role_to_group "STARTER" "ia" "admin"
-
-# PRO : Accès aux wikis IA + DevOps avec tous les rôles
-echo "Configuration groupe PRO..."
-assign_specific_role_to_group "PRO" "ia" "reader"
-assign_specific_role_to_group "PRO" "ia" "writer"
-assign_specific_role_to_group "PRO" "ia" "admin"
-assign_specific_role_to_group "PRO" "devops" "reader"
-assign_specific_role_to_group "PRO" "devops" "writer"
-assign_specific_role_to_group "PRO" "devops" "admin"
-
-# ENTERPRISE : Accès aux 3 wikis avec tous les rôles
-echo "Configuration groupe ENTERPRISE..."
-assign_specific_role_to_group "ENTERPRISE" "ia" "reader"
-assign_specific_role_to_group "ENTERPRISE" "ia" "writer"
-assign_specific_role_to_group "ENTERPRISE" "ia" "admin"
-assign_specific_role_to_group "ENTERPRISE" "devops" "reader"
-assign_specific_role_to_group "ENTERPRISE" "devops" "writer"
-assign_specific_role_to_group "ENTERPRISE" "devops" "admin"
-assign_specific_role_to_group "ENTERPRISE" "cyber" "reader"
-assign_specific_role_to_group "ENTERPRISE" "cyber" "writer"
-assign_specific_role_to_group "ENTERPRISE" "cyber" "admin"
