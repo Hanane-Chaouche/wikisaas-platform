@@ -170,6 +170,7 @@
   loop_control:
     label: "{{ item.name }}"
   ignore_errors: true
+# Configurer Keycloak comme provider d’authentification dans Wiki.js
 
 - name: Configurer Keycloak dans la table authentication (DB Docker)
   command: >
@@ -204,8 +205,8 @@
     )
     ON CONFLICT (\"strategyKey\") DO UPDATE
       SET config = EXCLUDED.config,
-          selfRegistration = EXCLUDED.selfRegistration,
-          autoEnrollGroups = EXCLUDED.autoEnrollGroups;"
+           \"selfRegistration\" = EXCLUDED.\"selfRegistration\",
+          \"autoEnrollGroups\" = EXCLUDED.\"autoEnrollGroups\";"
   register: keycloak_insert
   changed_when: "'INSERT 0 1' in keycloak_insert.stdout or 'UPDATE' in keycloak_insert.stdout"
   loop: "{{ wikis_docker }}"
