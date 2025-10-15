@@ -68,16 +68,17 @@ app.use(passport.session());
       res.redirect("/dashboard");
     });
     
-    app.get("/logout", (req, res) => {
-      // Supprime uniquement la session locale (Express + Passport)
-      req.logout(() => {
-        // Optionnel : détruit aussi la session Express
-        req.session.destroy(() => {
-          // Redirige simplement vers la page principale du portail
-          res.redirect(`https://app.${DOMAIN}`);
-        });
-      });
-    });
+    // Se déconnecter de Wiki.js ET Keycloak
+    function logoutComplet() {
+        // 1. Déconnexion Wiki.js
+        fetch('/logout');
+        
+        // 2. Déconnexion Keycloak
+        window.open('https://KEYCLOAK/auth/realms/REALM/protocol/openid-connect/logout', '_blank');
+        
+        // 3. Redirection portail
+        window.location.href = 'https://app.DOMAIN';
+    }
 
     // Middleware de protection
     function ensureAuth(req, res, next) {

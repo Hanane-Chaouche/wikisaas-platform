@@ -45,7 +45,7 @@ h1 {
 
 .plans {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   gap: 20px;
   margin: 40px auto;
   flex-wrap: wrap;   /* ✅ wrap pour s’adapter aux petits écrans */
