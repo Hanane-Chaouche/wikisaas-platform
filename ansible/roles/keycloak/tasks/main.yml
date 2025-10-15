@@ -58,7 +58,7 @@
   args:
     chdir: /opt/keycloak
   register: keycloak_init_result
-  retries: 6
+  retries: 60
   delay: 20
   until: keycloak_init_result.rc == 0
 
