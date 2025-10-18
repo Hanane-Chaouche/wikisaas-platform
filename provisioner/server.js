@@ -7,7 +7,9 @@ const { spawn } = require("child_process");
 const path = require("path");
 const formData = require("form-data");
 const Mailgun = require("mailgun.js");
-require("dotenv").config();
+const dotenv = require("dotenv");
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;

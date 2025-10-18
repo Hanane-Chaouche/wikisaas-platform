@@ -86,6 +86,17 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Autoriser accès à l'API Provisioner (port 3000)
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] #  Accessible à tous (test)
+    #  En production, il faut les restreindre à :
+    # cidr_blocks = ["<ip_personnelle>/32", "<ip_n8n>/32"]
+  }
+
+
   # Autoriser toutes les connexions sortantes (updates, téléchargement, etc.)
   egress {
     from_port   = 0
