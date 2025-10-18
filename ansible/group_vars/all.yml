@@ -144,3 +144,10 @@ portal_env:
   n8n_webhook_url: "https://n8n.wikiplatform.app/webhook/stripe-hook"
   provisioner_url: "http://provisioner:3000/deploy-new-wiki"
 
+############################################
+# Mailgun
+############################################
+mailgun_api_key: "{{ lookup('env','MAILGUN_API_KEY') | mandatory }}"
+mailgun_domain: "wikiplatform.app"
+mailgun_from: "brad@wikiplatform.app"
+

@@ -1,0 +1,51 @@
+---
+- name: Créer le dossier du provisioner sur la VM
+  file:
+    path: /opt/provisioner
+    state: directory
+    mode: '0755'
+
+- name: Copier le code du provisioner
+  copy:
+    src: "{{ playbook_dir }}/../provisioner/"
+    dest: /opt/provisioner/
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Créer le fichier .env sur la VM
+  template:
+    src: env.j2
+    dest: /opt/provisioner/.env
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Installer Node.js et npm
+  apt:
+    name: ['nodejs', 'npm']
+    state: present
+    update_cache: yes
+
+- name: Installer PM2 globalement
+  npm:
+    name: pm2
+    global: yes
+    state: present
+
+#  Étape importante : installation des dépendances du projet
+- name: Installer les dépendances Node.js du provisioner
+  command: npm install
+  args:
+    chdir: /opt/provisioner/
+
+- name: Démarrer server.js avec PM2
+  command: pm2 start /opt/provisioner/server.js --name provisioner
+  args:
+    chdir: /opt/provisioner/
+
+- name: Sauvegarder la configuration PM2
+  command: pm2 save
+
+- name: Configurer PM2 pour démarrer au boot
+  command: pm2 startup systemd -u root --hp /root

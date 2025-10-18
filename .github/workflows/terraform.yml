@@ -101,6 +101,7 @@ jobs:
       KEYCLOAK_DB_PASSWORD: ${{ secrets.KEYCLOAK_DB_PASSWORD }}
       VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
