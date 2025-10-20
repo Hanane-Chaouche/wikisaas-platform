@@ -29,8 +29,8 @@ services:
       #    -> évite de redemander 3 certs séparés (ia/devops/cyber) et de taper le rate limit
       - --entrypoints.websecure.http.tls=true
       - --entrypoints.websecure.http.tls.certresolver=le
-      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].main=wikiplatform.app
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.wikiplatform.app
 
     ports:
       - 80:80
@@ -49,7 +49,7 @@ services:
     labels:
       # Dashboard Traefik (protégé)
       - traefik.enable=true
-      - traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)
+      - traefik.http.routers.traefik.rule=Host(`traefik.wikiplatform.app`)
       - traefik.http.routers.traefik.entrypoints=websecure
       # TLS est déjà activé sur l’entrypoint websecure, pas besoin de remettre certresolver ici
       - traefik.http.services.traefik.loadbalancer.server.port=8080

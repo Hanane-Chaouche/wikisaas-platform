@@ -15,9 +15,33 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-  
+
 // ============================
-// 📧 Initialisation Mailgun
+// 🔧 CORS - Autoriser app.wikiplatform.app
+// ============================
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    "https://app.wikiplatform.app",        // ton portail web
+    "https://n8n.wikiplatform.app"         // ton instance n8n
+  ];
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+// ============================
+// Initialisation Mailgun
 // ============================
 const mailgun = new Mailgun(formData);
 const mg = mailgun.client({
@@ -132,6 +156,6 @@ app.post("/deploy-new-wiki", (req, res) => {
 // ============================
 //  Lancer le serveur
 // ============================
-app.listen(PORT, () => {
-  console.log(`Provisioner running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {  // ← AJOUTER '0.0.0.0' ICI
+  console.log(` Provisioner running on ALL interfaces: http://0.0.0.0:${PORT}`);
 });

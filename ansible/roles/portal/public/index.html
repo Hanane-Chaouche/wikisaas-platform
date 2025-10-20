@@ -127,17 +127,10 @@
 </style>
 
 <script>
-function openForm() {
-  document.getElementById("contactModal").style.display = "block";
-}
-function closeForm() {
-  document.getElementById("contactModal").style.display = "none";
-}
-
-// Envoi du message vers ton backend (Mailgun via server.js)
 async function sendMessage(e) {
   e.preventDefault();
-
+  console.log("Fonction sendMessage appelée !");
+  
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
   const message = document.getElementById("message").value;
@@ -146,7 +139,8 @@ async function sendMessage(e) {
   status.textContent = "Envoi en cours...";
 
   try {
-    const res = await fetch("https://app.wikiplatform.app/contact-enterprise", {
+    //  APPEL DIRECT À L'API
+    const res = await fetch("https://provisioner.wikiplatform.app/contact-enterprise", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, message })
@@ -156,11 +150,13 @@ async function sendMessage(e) {
     if (data.success) {
       status.textContent = " Message envoyé avec succès !";
       document.getElementById("contactForm").reset();
+      setTimeout(() => closeForm(), 2000);
     } else {
       status.textContent = " Erreur : " + data.message;
     }
   } catch (err) {
     status.textContent = " Impossible d'envoyer le message.";
+    console.error("Erreur:", err);
   }
 }
 </script>
