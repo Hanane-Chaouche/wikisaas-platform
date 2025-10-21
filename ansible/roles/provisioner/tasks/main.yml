@@ -20,7 +20,7 @@
   with_items:
     - { src: "Dockerfile",            dest: "Dockerfile" }
     - { src: "package.json",          dest: "package.json" }
-    - { src: "provisionner.js",      dest: "provisionner.js" }
+    - { src: "provisioner.js",      dest: "provisioner.js" }
 
 - name: Copier le playbook site_wiki.yml
   copy:
