@@ -18,6 +18,7 @@
     dest: "/opt/provisioner/{{ item.dest }}"
     mode: "0644"
   with_items:
+    - { src: "docker_compose.yml",            dest: "docker_compose.yml" }
     - { src: "Dockerfile",            dest: "Dockerfile" }
     - { src: "package.json",          dest: "package.json" }
     - { src: "provisioner.js",      dest: "provisioner.js" }
@@ -52,7 +53,7 @@
     project_src: /opt/provisioner
     state: present
 
-    
+
 - name: Installer Node.js et npm
   apt:
     name: ['nodejs', 'npm']
