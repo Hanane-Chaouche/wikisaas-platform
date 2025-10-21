@@ -127,6 +127,14 @@
 </style>
 
 <script>
+
+function openForm() {
+  document.getElementById("contactModal").style.display = "block";
+}
+
+function closeForm() {
+  document.getElementById("contactModal").style.display = "none";
+}
 async function sendMessage(e) {
   e.preventDefault();
   console.log("Fonction sendMessage appelée !");
