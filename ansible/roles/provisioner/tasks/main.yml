@@ -38,6 +38,21 @@
     group: ubuntu 
     mode: '0640'
 
+- name: Créer le fichier .env sur la VM
+  template:
+    src: env.j2
+    dest: /opt/provisioner/.env
+    owner: root
+    group: ubuntu
+    mode: '0640'
+
+- name: Lancer provisionner avec Docker Compose v2
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /opt/provisioner
+    state: present
+
+    
 - name: Installer Node.js et npm
   apt:
     name: ['nodejs', 'npm']
@@ -56,13 +71,4 @@
   args:
     chdir: /opt/provisioner/
 
-- name: Démarrer provisionner.js avec PM2
-  command: pm2 start /opt/provisioner/provisionner.js --name provisioner
-  args:
-    chdir: /opt/provisioner/
 
-- name: Sauvegarder la configuration PM2
-  command: pm2 save
-
-- name: Configurer PM2 pour démarrer au boot
-  command: pm2 startup systemd -u root --hp /root
