@@ -15,7 +15,7 @@
       "type": "n8n-nodes-base.stripeTrigger",
       "typeVersion": 1,
       "position": [
-        -2016,
+        -2096,
         96
       ],
       "webhookId": "60f4f349-1860-4ddc-aad2-52fe2168143a",
@@ -24,7 +24,8 @@
           "id": "neeXG42GaYK12nLy",
           "name": "Stripe account"
         }
-      }
+      },
+      "disabled": true
     },
     {
       "parameters": {
@@ -35,8 +36,8 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -1536,
-        -128
+        -1664,
+        -144
       ]
     },
     {
@@ -147,6 +148,12 @@
       "parameters": {
         "method": "POST",
         "url": "https://sso.wikiplatform.app/realms/saas/protocol/openid-connect/token",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
         "sendBody": true,
         "contentType": "form-urlencoded",
         "bodyParameters": {
@@ -170,8 +177,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1376,
-        -144
+        -1456,
+        -160
       ],
       "id": "91ad71ef-2c14-4160-aa2e-3e2cde805879",
       "name": "(recuperation-token)",
@@ -250,30 +257,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.stripe.com/v1/customers/{{$json.data.object.customer\n}}\n",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=bearer {{$env.STRIPE_SECRET_KEY}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -1472,
-        160
-      ],
-      "id": "0ee146df-c298-4a99-a08f-28c5676183b7",
-      "name": "find_email"
-    },
-    {
-      "parameters": {
-        "jsCode": "//  Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst previous_plan = stripe.data.previous_attributes?.plan?.metadata?.plan ;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\nconst operation = type.includes(\"updated\")\n  ? \"updated\"\n  : type.includes(\"deleted\")\n  ? \"deleted\"\n  : \"created\";\n\n// 4️⃣ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  previous_plan,\n  customer_id,\n  status,\n  type,\n  operation\n}];\n"
+        "jsCode": "//  Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis get user\nlet emailData = {};\ntry {\n  emailData = $items(\"get_user\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst previous_plan = stripe?.data?.previous_attributes?.plan?.metadata?.plan || null;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\nconst operation = type.includes(\"updated\")\n  ? \"updated\"\n  : type.includes(\"deleted\")\n  ? \"deleted\"\n  : \"created\";\n\n// 4️⃣ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  previous_plan,\n  customer_id,\n  status,\n  type,\n  operation\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -725,29 +709,6 @@
     },
     {
       "parameters": {
-        "url": "=https://api.stripe.com/v1/customers/{{$json.data.object.customer\n}}\n",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=bearer {{$env.STRIPE_SECRET_KEY}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -1488,
-        352
-      ],
-      "id": "fc03a593-4863-4ace-a14b-10b5203f96ca",
-      "name": "find_email_delete"
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://sso.wikiplatform.app/realms/saas/protocol/openid-connect/token",
         "sendBody": true,
@@ -764,7 +725,7 @@
             },
             {
               "name": "client_secret",
-              "value":"{% endraw %}{{ keycloak_app_secret }}{% raw %}"
+              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
             }
           ]
         },
@@ -887,7 +848,7 @@
     },
     {
       "parameters": {
-        "jsCode": "//  Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"find_email\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\n\n// 4️ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  customer_id,\n  status,\n  type,\n  \n}];\n"
+        "jsCode": "//  Données principales de Stripe\nconst stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data.object;\n\n// 2️⃣ Email depuis find_email\nlet emailData = {};\ntry {\n  emailData = $items(\"get_user1\")[0]?.json || {};\n} catch (e) {\n  emailData = {};\n}\n\n// 3️⃣ Champs extraits\nconst email = emailData.email || data.customer_details?.email || data.customer_email;\nconst plan = data.metadata?.plan || data.plan?.metadata?.plan;\nconst customer_id = data.customer || null;\nconst status = data.status || \"unknown\";\nconst type = stripe.type || \"unknown\";\n\n// 4️ Retour propre et à plat\nreturn [{\n  email,\n  plan,\n  customer_id,\n  status,\n  type,\n  \n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -920,8 +881,18 @@
             },
             {
               "id": "5014c596-7b6d-4897-8806-7b358f86758f",
-              "leftValue": "={{$node[\"strip\"].json[\"data\"][\"previous_attributes\"][\"cancellation_details\"][\"reason\"]}}",
-              "rightValue": "cancellation_requested",
+              "leftValue": "={{ $node[\"Stripe Trigger\"].json[\"data\"][\"previous_attributes\"]?.[\"plan\"]?.[\"metadata\"]?.[\"plan\"] || \"none\" }}\n\n",
+              "rightValue": "=cancellation_requested",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "66e95e04-82cd-4fcf-b032-1660be24a91c",
+              "leftValue": "",
+              "rightValue": "",
               "operator": {
                 "type": "string",
                 "operation": "equals",
@@ -1013,6 +984,59 @@
       ],
       "id": "8a3acb7c-a575-42b0-9434-1e82c9e859e1",
       "name": "Get User and Group IDs"
+    },
+    {
+      "parameters": {
+        "resource": "customer",
+        "customerId": "={{$json.data.object.customer}}"
+      },
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        128
+      ],
+      "id": "03efebaa-1b40-4f51-95bc-9a1c0c315c89",
+      "name": "get_user",
+      "credentials": {
+        "stripeApi": {
+          "id": "neeXG42GaYK12nLy",
+          "name": "Stripe account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "customer",
+        "customerId": "={{$json.data.object.customer}}"
+      },
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        304
+      ],
+      "id": "0313fdd8-5a06-4269-885e-d3f8736ca97e",
+      "name": "get_user1",
+      "credentials": {
+        "stripeApi": {
+          "id": "neeXG42GaYK12nLy",
+          "name": "Stripe account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stripe = $items(\"Stripe Trigger\")[0].json;\nconst data = stripe.data?.object || {};\nconst prev = stripe.data?.previous_attributes || {};\n\nconst current_plan = data.plan?.metadata?.plan || data.metadata?.plan || null;\nconst previous_plan = prev.plan?.metadata?.plan || prev.metadata?.plan || null;\nconst cancellation_reason =\n  data.cancellation_details?.reason ||\n  prev.cancellation_details?.reason ||\n  prev.cancellation_details?.feedback ||\n  null;\n\nconst event_type = stripe.type || \"unknown\";\nconst status = data.status || \"unknown\";\n\nreturn [{\n  event_type,\n  current_plan,\n  previous_plan,\n  cancellation_reason,\n  status\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -96
+      ],
+      "id": "71c78e21-1494-4424-86c0-f4fed5f09982",
+      "name": "Code in JavaScript1"
     }
   ],
   "pinData": {},
@@ -1123,17 +1147,6 @@
         ]
       ]
     },
-    "find_email": {
-      "main": [
-        [
-          {
-            "node": "Extract Email",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "(recuperation-token)1": {
       "main": [
         [
@@ -1150,6 +1163,11 @@
         [
           {
             "node": "if_cancellation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript1",
             "type": "main",
             "index": 0
           }
@@ -1222,25 +1240,14 @@
         ],
         [
           {
-            "node": "find_email",
+            "node": "get_user",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "find_email_delete",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "find_email_delete": {
-      "main": [
-        [
-          {
-            "node": "Extract_Email_delete",
+            "node": "get_user1",
             "type": "main",
             "index": 0
           }
@@ -1353,15 +1360,49 @@
           }
         ]
       ]
+    },
+    "get_user": {
+      "main": [
+        [
+          {
+            "node": "Extract Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_user1": {
+      "main": [
+        [
+          {
+            "node": "Extract_Email_delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "if_cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c12bef38-9d67-4e06-ac69-4ae18709507c",
+  "versionId": "cf1e38a2-b5f9-4ce3-994a-093b309d1282",
   "meta": {
-    "instanceId": "1884093067ae6f6165375c710c94cba1736fde4701905f32096fe8882397245b"
+    "instanceId": "1884093067ae6f6165375c710c94cba1736fde4701905f32096fe8882397245b",
+    "templateCredsSetupCompleted": true
   },
   "id": "K75m59X2ypLYWHtB",
   "tags": []

@@ -13,21 +13,12 @@
 
 - name: Copier le code du provisioner
   copy:
-    src: "{{ playbook_dir }}/../provisioner/"
+    src: "{{ playbook_dir }}/../provisioner/files/"
     dest: /opt/provisioner/
     owner: root
     group: root
     mode: '0755'
 
-# Ajouter cette tâche avant la copie du site_wiki.yml
-- name: Créer le dossier Ansible sur la VM
-  file:
-    path: /opt/wikisaas-platform/ansible
-    state: directory
-    owner: root
-    group: ubuntu
-    mode: '0755'
-  
 - name: Copier le playbook site_wiki.yml
   copy:
     src: "{{ playbook_dir }}/../ansible/site_wiki.yml"
@@ -44,16 +35,31 @@
     group: ubuntu 
     mode: '0640'
 
-- name: Copier le docker-compose du provisioner sur la VM
-  copy:
-    src: files/docker-compose.yml
-    dest: /opt/provisioner/docker-compose.yml
-    owner: root
-    group: ubuntu
-    mode: '0644'
+- name: Installer Node.js et npm
+  apt:
+    name: ['nodejs', 'npm']
+    state: present
+    update_cache: yes
 
-- name: Lancer le conteneur du provisioner
-  command: docker compose up -d
+- name: Installer PM2 globalement
+  npm:
+    name: pm2
+    global: yes
+    state: present
+
+#  Étape importante : installation des dépendances du projet
+- name: Installer les dépendances Node.js du provisioner
+  command: npm install
   args:
     chdir: /opt/provisioner/
 
+- name: Démarrer provisionner.js avec PM2
+  command: pm2 start /opt/provisioner/provisionner.js --name provisioner
+  args:
+    chdir: /opt/provisioner/
+
+- name: Sauvegarder la configuration PM2
+  command: pm2 save
+
+- name: Configurer PM2 pour démarrer au boot
+  command: pm2 startup systemd -u root --hp /root
