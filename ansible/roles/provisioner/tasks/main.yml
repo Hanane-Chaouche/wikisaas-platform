@@ -18,9 +18,9 @@
     dest: "/opt/provisioner/{{ item.dest }}"
     mode: "0644"
   with_items:
-    - { src: "docker_compose.yml",            dest: "docker_compose.yml" }
-    - { src: "Dockerfile",            dest: "Dockerfile" }
-    - { src: "package.json",          dest: "package.json" }
+    - { src: "docker-compose.yml",  dest: "docker-compose.yml" }
+    - { src: "Dockerfile",          dest: "Dockerfile" }
+    - { src: "package.json",        dest: "package.json" }
     - { src: "provisioner.js",      dest: "provisioner.js" }
 
 - name: Copier le playbook site_wiki.yml

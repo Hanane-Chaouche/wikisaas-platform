@@ -9,7 +9,7 @@
     volumes:
       - ./provisioner:/app/provisioner
     networks:
-      - proxy
+      - proxycd 
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.provisioner.rule=Host(`provisioner.wikiplatform.app`)"
