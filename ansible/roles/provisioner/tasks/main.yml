@@ -25,7 +25,7 @@
 - name: Copier le playbook site_wiki.yml
   copy:
     src: "{{ playbook_dir }}/../ansible/site_wiki.yml"
-    dest: /opt/wikisaas-platform/ansible/site_wiki.yml
+    dest: /opt/site_wiki.yml
     owner: root
     group: ubuntu
     mode: '0640'
