@@ -162,6 +162,7 @@
             {
               "name": "client_secret",
               "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
+
             }
           ]
         },
@@ -303,7 +304,7 @@
             {
               "name": "client_secret",
               "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
-            }
+
           ]
         },
         "options": {}
@@ -764,8 +765,8 @@
             },
             {
               "name": "client_secret",
-              "value": "{% endraw %}{{ keycloak_app_secret }}{% raw %}"
-            }
+              "value":"{% endraw %}{{ keycloak_app_secret }}{% raw %}"
+
           ]
         },
         "options": {}
@@ -1003,7 +1004,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n//  Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n// 🧠 Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  await new Promise(r => setTimeout(r, 1500)); // petit délai avant recherche\n  const out = $node[\"HTTP Request_find_user\"].json;   // peut être un objet OU un tableau\n  const existingUser = Array.isArray(out) ? out[0] : out; \n\n  if (existingUser && existingUser.id) {\n    userId = existingUser.id;\n    console.log(\" Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
+        "jsCode": "// === Étape 1 : Récupération du userId ===\nlet userId = null;\n\n//  Essayer d’obtenir le user créé (s’il y a un nœud Create User exécuté)\ntry {\n  const userResponse = $node[\"Keycloak: Create User\"].json;\n  const location = userResponse.headers?.location;\n  if (location) {\n    userId = location.split(\"/\").pop();\n    console.log(\" Nouvel utilisateur créé avec ID:\", userId);\n  }\n} catch (e) {\n  console.log(\" Aucun nouvel utilisateur créé (le user existe déjà).\");\n}\n\n//  Si aucun userId trouvé, récupérer celui de la recherche utilisateur\nif (!userId) {\n  const email = $node[\"Extract Plan + Email\"].json[\"email\"];\n  const token = $node[\"(recuperation-token)\"].json[\"access_token\"];\n\n  const options = {\n    method: 'GET',\n    url: `https://sso.wikiplatform.app/admin/realms/saas/users?email=${encodeURIComponent(email)}`,\n    headers: {\n      'Authorization': `Bearer ${token}`,\n      'Content-Type': 'application/json',\n    },\n  };\n\n  // 🔹 Appel Keycloak via la méthode interne de n8n\n  const data = await this.helpers.httpRequest(options);\n  console.log(\"🔍 Résultat Keycloak:\", data);\n\n  if (Array.isArray(data) && data.length > 0) {\n    userId = data[0].id;\n    console.log(\"✅ Utilisateur existant trouvé avec ID:\", userId);\n  } else {\n    throw new Error(\"❌ Aucun utilisateur trouvé ni créé !\");\n  }\n}\n\n// === Étape 2 : Récupération du groupId depuis find_group_by_plan ===\nconst rawGroup = $node[\"find_group_id\"].json;   // souvent un tableau avec 1 objet\nconst group = Array.isArray(rawGroup) ? rawGroup[0] : rawGroup; \nconst groupId = group?.id;\n\nif (!groupId) throw new Error(\" Aucun groupId trouvé depuis find_group_by_plan\");\n\nconsole.log(` Groupe trouvé : ${group.name} (ID: ${groupId})`);\n\n\n// === Étape 3 : Retourner les deux IDs ===\nreturn [{\n  userId,\n  groupId\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1359,9 +1360,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "4d5b4be8-50e2-4376-b5f7-b6e00b89a96b",
+  "versionId": "c12bef38-9d67-4e06-ac69-4ae18709507c",
   "meta": {
-    "instanceId": "f8a00f9c5ca29a15ffe76be420a20f7e6fec5279a5b7c7ceab1412f6237bfd2b"
+    "instanceId": "1884093067ae6f6165375c710c94cba1736fde4701905f32096fe8882397245b"
   },
   "id": "K75m59X2ypLYWHtB",
   "tags": []

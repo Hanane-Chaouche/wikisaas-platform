@@ -19,6 +19,15 @@
     group: root
     mode: '0755'
 
+# Ajouter cette tâche avant la copie du site_wiki.yml
+- name: Créer le dossier Ansible sur la VM
+  file:
+    path: /opt/wikisaas-platform/ansible
+    state: directory
+    owner: root
+    group: ubuntu
+    mode: '0755'
+  
 - name: Copier le playbook site_wiki.yml
   copy:
     src: "{{ playbook_dir }}/../ansible/site_wiki.yml"
