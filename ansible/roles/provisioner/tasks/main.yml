@@ -11,13 +11,16 @@
       state: present
       update_cache: yes
 
-- name: Copier le code du provisioner
+
+- name: Déployer les fichiers applicatifs (Dockerfile, package.json,provisioner.js)
   copy:
-    src: "{{ playbook_dir }}/../provisioner/files/"
-    dest: /opt/provisioner/
-    owner: root
-    group: root
-    mode: '0755'
+    src: "{{ item.src }}"
+    dest: "/opt/provisioner/{{ item.dest }}"
+    mode: "0644"
+  with_items:
+    - { src: "Dockerfile",            dest: "Dockerfile" }
+    - { src: "package.json",          dest: "package.json" }
+    - { src: "provisionner.js",      dest: "provisionner.js" }
 
 - name: Copier le playbook site_wiki.yml
   copy:
