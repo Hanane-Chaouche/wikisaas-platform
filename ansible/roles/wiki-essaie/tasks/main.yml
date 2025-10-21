@@ -157,19 +157,28 @@
   loop_control:
     label: "{{ item.name }}"
   when: item.pg_host is defined
-# on peut ignorer l’erreur si elle existe déjà
-- name: Ajouter contrainte UNIQUE sur strategyKey dans authentication
+
+- name: Ajouter contrainte UNIQUE sur strategyKey dans authentication (si absente)
   command: >
     docker exec -i {{ item.pg_host }}
     psql -U {{ item.pg_user }} -d {{ item.pg_db }} -c "
-      ALTER TABLE authentication
-      ADD CONSTRAINT authentication_strategykey_unique
-      UNIQUE (\"strategyKey\");
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'authentication_strategykey_unique'
+        ) THEN
+          ALTER TABLE authentication
+          ADD CONSTRAINT authentication_strategykey_unique
+          UNIQUE (\"strategyKey\");
+        END IF;
+      END
+      $$;
     "
   loop: "{{ wikis_docker }}"
   loop_control:
     label: "{{ item.name }}"
-  ignore_errors: true
+
+
 # Configurer Keycloak comme provider d’authentification dans Wiki.js
 
 - name: Configurer Keycloak dans la table authentication (DB Docker)
