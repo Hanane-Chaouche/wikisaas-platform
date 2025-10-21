@@ -1,4 +1,5 @@
-
+---
+services:
   provisioner:
     build: .
     container_name: provisioner
@@ -9,7 +10,7 @@
     volumes:
       - ./provisioner:/app/provisioner
     networks:
-      - proxycd 
+      - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.provisioner.rule=Host(`provisioner.wikiplatform.app`)"
