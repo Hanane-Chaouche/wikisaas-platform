@@ -19,7 +19,7 @@ services:
       - "traefik.http.routers.provisioner.tls.certresolver=le"
       - "traefik.http.services.provisioner.loadbalancer.server.port=3000"
 
-  networks:
+networks:
     proxy:
       external: true
 
