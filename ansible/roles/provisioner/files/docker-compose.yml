@@ -1,4 +1,6 @@
 ---
+version: "3.9"
+
 services:
   provisioner:
     build: .
@@ -20,7 +22,5 @@ services:
       - "traefik.http.services.provisioner.loadbalancer.server.port=3000"
 
 networks:
-    proxy:
-      external: true
-
-
+  proxy:
+    external: true
