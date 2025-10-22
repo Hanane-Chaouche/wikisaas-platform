@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm install --production
 
 # Copier le code de l'application
-COPY provisionner.js ./provisionner.js
+COPY provisioner.js ./provisioner.js
 
 
 # Variables d'environnement
