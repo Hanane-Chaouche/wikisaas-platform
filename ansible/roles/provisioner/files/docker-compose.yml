@@ -6,9 +6,6 @@ services:
     restart: always
     env_file:
       - .env
-    command: node provisionner.js
-    volumes:
-      - ./provisioner:/app/provisioner
     networks:
       - proxy
     labels:
