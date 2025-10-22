@@ -13,11 +13,6 @@
       "id": "d0a78ad5-2146-4102-aaee-ddaafd7f557a",
       "name": "Stripe Trigger",
       "type": "n8n-nodes-base.stripeTrigger",
-      "typeVersion": 1,
-      "position": [
-        -2096,
-        96
-      ],
       "webhookId": "60f4f349-1860-4ddc-aad2-52fe2168143a",
       "credentials": {
         "stripeApi": {
@@ -26,7 +21,12 @@
         }
       },
       "disabled": true
-    },
+    },"typeVersion": 1,
+      "position": [
+        -2096,
+        96
+      ],
+      
     {
       "parameters": {
         "functionCode": "const session = $json.data.object;\nconst type = $json.type;\nconst email = session.customer_details?.email || session.customer_email || \"inconnu\";\nconst fullName = session.customer_details?.name || email.split(\"@\")[0];\nconst plan = session.metadata?.plan || \"starter\";\n\n//  Découper le nom complet\nlet firstName = \"\";\nlet lastName = \"\";\n\nif (fullName.includes(\" \")) {\n  const parts = fullName.trim().split(\" \");\n  firstName = parts[0];\n  lastName = parts.slice(1).join(\" \"); // gère les noms composés\n} else {\n  firstName = fullName;\n  lastName = \"\";\n}\n\n// 🧱 Générer un username unique à partir de l’email\nconst base = email.split(\"@\")[0].toLowerCase().replace(/[^a-z0-9]/g, \"\");\nconst unique = Date.now().toString().slice(-4);\nconst username = `${base}${unique}`;\n\nreturn [{\n  email,\n  username,\n  firstName,\n  lastName,\n  plan,\n  customer_id: session.customer,\n  subscription_id: session.subscription,\n  session_id: session.id,\n  amount: session.amount_total / 100,\n  currency: session.currency,\n  status: session.status,\n  payment_status: session.payment_status,\n  type\n  \n}];\n"

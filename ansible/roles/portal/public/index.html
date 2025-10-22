@@ -127,18 +127,9 @@
 </style>
 
 <script>
-
-function openForm() {
-  document.getElementById("contactModal").style.display = "block";
-}
-
-function closeForm() {
-  document.getElementById("contactModal").style.display = "none";
-}
 async function sendMessage(e) {
   e.preventDefault();
-  console.log("Fonction sendMessage appelée !");
-  
+
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
   const message = document.getElementById("message").value;
@@ -147,8 +138,8 @@ async function sendMessage(e) {
   status.textContent = "Envoi en cours...";
 
   try {
-    //  APPEL DIRECT À L'API
-    const res = await fetch("https://provisioner.wikiplatform.app/contact-enterprise", {
+    // ✅ APPEL DIRECT À L'API
+    const res = await fetch("http://10.0.1.201:3000/contact-enterprise", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, message })
@@ -156,14 +147,14 @@ async function sendMessage(e) {
     const data = await res.json();
 
     if (data.success) {
-      status.textContent = " Message envoyé avec succès !";
+      status.textContent = "✅ Message envoyé avec succès !";
       document.getElementById("contactForm").reset();
       setTimeout(() => closeForm(), 2000);
     } else {
-      status.textContent = " Erreur : " + data.message;
+      status.textContent = "❌ Erreur : " + data.message;
     }
   } catch (err) {
-    status.textContent = " Impossible d'envoyer le message.";
+    status.textContent = "❌ Impossible d'envoyer le message.";
     console.error("Erreur:", err);
   }
 }
