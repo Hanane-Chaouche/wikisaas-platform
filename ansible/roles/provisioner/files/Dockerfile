@@ -17,4 +17,4 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Lancer le serveur
-CMD ["node", "provisionner.js"]
+CMD ["node", "provisioner.js"]
